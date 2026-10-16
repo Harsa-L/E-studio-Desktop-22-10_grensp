@@ -1,0 +1,8 @@
+{
+  "name": "Remix E-Studio-Desktop",
+  "description": "Imported from GitHub: leneigenoirblanc/E-Studio-Desktop",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
