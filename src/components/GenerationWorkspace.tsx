@@ -207,7 +207,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
   // Preflight diagnostics for rows
   const preFlightReport = useMemo(() => {
-    return PreFlightEngine.analyzeTemplate(template, effectivePrintItems[0], exportConfirmTarget || 'screen');
+    return PreFlightEngine.analyzeBatch(template, effectivePrintItems, exportConfirmTarget || 'screen');
   }, [template, effectivePrintItems, exportConfirmTarget]);
 
   const diagnostics = useMemo(() => {
@@ -339,7 +339,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
   // ZPL Direct Thermal Export
   const handleExportZpl = async () => {
-    const targetReport = PreFlightEngine.analyzeTemplate(template, effectivePrintItems[0], 'zpl');
+    const targetReport = PreFlightEngine.analyzeBatch(template, effectivePrintItems, 'zpl');
     if (!targetReport.passed) {
       console.warn("Export ZPL refusé : le gabarit contient des erreurs bloquantes.", targetReport.issues);
       return;
@@ -752,13 +752,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
             doc.text(priceStr, textX, textY, { align: align as any });
           } else if (item.type === 'tier_price') {
-            doc.setDrawColor(203, 213, 225);
-            doc.setFillColor(248, 250, 252);
-            doc.rect(itemX, itemY, item.w_mm, item.h_mm, 'FD');
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(6.5);
-            doc.setTextColor(51, 65, 85);
-            doc.text('PALIERS DE PRIX', itemX + item.w_mm / 2, itemY + 3, { align: 'center' });
+            drawPdfItem(doc, item, itemX, itemY, prod);
           } else if (item.type === 'pictogram') {
             doc.setFillColor(220, 38, 38);
             doc.rect(itemX, itemY, item.w_mm, item.h_mm, 'F');
@@ -775,7 +769,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
   // Generate and save Imposed PDF via native OS dialog
   const handleGeneratePdf = async () => {
-    const targetReport = PreFlightEngine.analyzeTemplate(template, effectivePrintItems[0], 'pdf');
+    const targetReport = PreFlightEngine.analyzeBatch(template, effectivePrintItems, 'pdf');
     if (!targetReport.passed) {
       console.warn("Export PDF refusé : le gabarit contient des erreurs bloquantes.", targetReport.issues);
       return;

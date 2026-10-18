@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { normalizeCatalogProduct } from '../utils/catalogImport';
 import {
   LabelTemplate,
   ProductRecord,
@@ -170,13 +171,14 @@ export const api = {
     inMemoryStore.jobs.set(job.id, job);
   },
 
-  async jobList(): Promise<PrintJob[]> {
+  async jobList(limit?: number): Promise<PrintJob[]> {
     if (isTauriEnvironment()) {
-      return await invoke<PrintJob[]>('job_list');
+      return await invoke<PrintJob[]>('job_list', { limit: limit ?? null });
     }
-    return Array.from(inMemoryStore.jobs.values()).sort(
+    const jobs = Array.from(inMemoryStore.jobs.values()).sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
+    return limit ? jobs.slice(0, limit) : jobs.slice(0, 100);
   },
 
   async jobSetStatus(id: string, status: string, error?: string | null): Promise<void> {
@@ -234,6 +236,14 @@ export const api = {
     inMemoryStore.kv.set(key, value);
   },
 
+  async prefsList(): Promise<Record<string, string>> {
+    if (isTauriEnvironment()) {
+      const entries = await invoke<[string, string][]>('prefs_list');
+      return Object.fromEntries(entries);
+    }
+    return Object.fromEntries(inMemoryStore.kv);
+  },
+
   async batchImportRecord(id: string, filename: string, reportJson: string): Promise<void> {
     if (isTauriEnvironment()) {
       await invoke('batch_import_record', {
@@ -263,11 +273,11 @@ export const api = {
     }
   },
 
-  async batchImportList(): Promise<any[]> {
+  async batchImportList(limit?: number): Promise<any[]> {
     if (isTauriEnvironment()) {
-      return await invoke<any[]>('batch_import_list');
+      return await invoke<any[]>('batch_import_list', { limit: limit ?? null });
     }
-    return [...inMemoryStore.importBatches];
+    return limit ? inMemoryStore.importBatches.slice(0, limit) : inMemoryStore.importBatches.slice(0, 100);
   },
 
   async exportDatabase(): Promise<string> {
@@ -282,10 +292,12 @@ export const api = {
       })
     );
     const validTemplates = fullTemplates.filter((t): t is LabelTemplate => t !== null);
-    const products = await api.catalogSearch('', 100000);
-    const jobs = await api.jobList();
-    const audit = await api.auditList(500);
-    const importBatches = await api.batchImportList();
+    const allRows = Number.MAX_SAFE_INTEGER;
+    const products = await api.catalogSearch('', allRows);
+    const jobs = await api.jobList(allRows);
+    const audit = await api.auditList(allRows);
+    const importBatches = await api.batchImportList(allRows);
+    const preferences = await api.prefsList();
     const dump = {
       version: 1,
       exported_at: new Date().toISOString(),
@@ -294,27 +306,104 @@ export const api = {
       jobs,
       audit,
       import_batches: importBatches,
+      preferences,
     };
     return JSON.stringify(dump, null, 2);
   },
 
-  async importDatabase(jsonStr: string): Promise<{ templates: number; products: number }> {
+  async importDatabase(jsonStr: string): Promise<{
+    templates: number;
+    products: number;
+    jobs: number;
+    audit: number;
+    import_batches: number;
+    preferences: number;
+  }> {
     const data = JSON.parse(jsonStr);
-    let tCount = 0;
-    let pCount = 0;
-    if (Array.isArray(data.templates)) {
-      for (const t of data.templates) {
-        if (t && t.id && t.name) {
-          await api.templateSave(t);
-          tCount++;
-        }
+    if (!data || data.version !== 1 || typeof data !== 'object') {
+      throw new Error('Unsupported database backup format.');
+    }
+
+    const current = JSON.parse(await api.exportDatabase());
+    const backup = {
+      ...current,
+      ...data,
+      templates: Array.isArray(data.templates) ? data.templates : current.templates,
+      products: Array.isArray(data.products) ? data.products : current.products,
+      jobs: Array.isArray(data.jobs) ? data.jobs : current.jobs,
+      audit: Array.isArray(data.audit) ? data.audit : current.audit,
+      import_batches: Array.isArray(data.import_batches) ? data.import_batches : current.import_batches,
+      preferences: data.preferences && typeof data.preferences === 'object' ? data.preferences : current.preferences,
+    };
+
+    const templates = backup.templates.map((template: any) => {
+      if (!template || typeof template !== 'object' || !template.id || !template.name) {
+        throw new Error('Backup contains a template without an id or name.');
       }
+      return template as LabelTemplate;
+    });
+    const products = backup.products.map((product: any) => {
+      if (!product || typeof product !== 'object') throw new Error('Backup contains an invalid product.');
+      return normalizeCatalogProduct(product as ProductRecord);
+    });
+    const jobs = backup.jobs as PrintJob[];
+    const audit = backup.audit as AuditRecord[];
+    const importBatches = backup.import_batches as any[];
+    const preferences = backup.preferences as Record<string, string>;
+    if (jobs.some((job: PrintJob) => !job?.id) || audit.some((record: AuditRecord) => !record?.id) || importBatches.some((batch: any) => !batch?.id)) {
+      throw new Error('Backup contains a history entry without an id.');
     }
-    if (Array.isArray(data.products) && data.products.length > 0) {
-      await api.catalogUpsert(data.products);
-      pCount = data.products.length;
+    if (!preferences || Object.values(preferences).some((value) => typeof value !== 'string')) {
+      throw new Error('Backup contains invalid preferences.');
     }
-    return { templates: tCount, products: pCount };
+
+    if (isTauriEnvironment()) {
+      return await invoke<{
+        templates: number;
+        products: number;
+        jobs: number;
+        audit: number;
+        import_batches: number;
+        preferences: number;
+      }>('database_restore', {
+        backup: { ...backup, templates, products, jobs, audit, import_batches: importBatches },
+      });
+    }
+
+    const uniqueTemplates = new Map<string, LabelTemplate>();
+    templates.forEach((template) => {
+      if (uniqueTemplates.has(template.id)) throw new Error(`Duplicate template id: ${template.id}`);
+      uniqueTemplates.set(template.id, template);
+    });
+    const uniqueProducts = new Map<string, ProductRecord>();
+    products.forEach((product) => {
+      if (uniqueProducts.has(product.id)) throw new Error(`Duplicate product id: ${product.id}`);
+      uniqueProducts.set(product.id, product);
+    });
+
+    inMemoryStore.templates.clear();
+    inMemoryStore.templateRevisions.clear();
+    uniqueTemplates.forEach((template) => {
+      inMemoryStore.templates.set(template.id, template);
+      inMemoryStore.templateRevisions.set(`${template.id}_v${template.revision}`, template);
+    });
+    inMemoryStore.products.clear();
+    uniqueProducts.forEach((product) => inMemoryStore.products.set(product.id, product));
+    inMemoryStore.jobs.clear();
+    jobs.forEach((job) => inMemoryStore.jobs.set(job.id, job));
+    inMemoryStore.audit = audit;
+    inMemoryStore.importBatches = importBatches;
+    inMemoryStore.kv.clear();
+    Object.entries(preferences).forEach(([key, value]) => inMemoryStore.kv.set(key, value));
+
+    return {
+      templates: templates.length,
+      products: products.length,
+      jobs: jobs.length,
+      audit: audit.length,
+      import_batches: importBatches.length,
+      preferences: Object.keys(preferences).length,
+    };
   },
 
   async backupDb(destPath: string): Promise<string> {

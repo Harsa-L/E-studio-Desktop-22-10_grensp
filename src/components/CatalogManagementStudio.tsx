@@ -25,16 +25,9 @@ import {
 } from 'lucide-react';
 import { desktopFileService } from '../services/desktopFileService';
 import { resolveCanonicalKey } from '../utils/mappingDictionary';
+import { CatalogImportCollision, prepareCatalogImport } from '../utils/catalogImport';
 
-export interface CollisionItem {
-  id: string;
-  key: string;
-  existingName: string;
-  existingPrice: number;
-  incomingName: string;
-  incomingPrice: number;
-  overwrite: boolean;
-}
+export interface CollisionItem extends CatalogImportCollision {}
 
 interface CatalogManagementStudioProps {
   onBack: () => void;
@@ -63,6 +56,7 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [collisions, setCollisions] = useState<CollisionItem[]>([]);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const restoreInputRef = useRef<HTMLInputElement>(null);
@@ -196,123 +190,56 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
       setActionFeedback('Veuillez au minimum mapper la colonne de Désignation (Nom de l\'article).');
       return;
     }
-
-    const issues: string[] = [];
-    const nameColIdx = parsedHeaders.indexOf(fieldMappings['ITEMNAME']);
-    const scanColIdx = parsedHeaders.indexOf(fieldMappings['PRODUCT_SCAN'] || '');
-    const priceColIdx = parsedHeaders.indexOf(fieldMappings['SELLING_PRICE'] || '');
-    const partNoColIdx = parsedHeaders.indexOf(fieldMappings['PARTNO'] || '');
-
-    const detectedCollisions: CollisionItem[] = [];
-    const scanMap = new Map<string, ProductRecord>();
-    const partMap = new Map<string, ProductRecord>();
-    products.forEach((p) => {
-      if (p.PRODUCT_SCAN) scanMap.set(p.PRODUCT_SCAN.trim(), p);
-      if (p.PARTNO) partMap.set(p.PARTNO.trim(), p);
-    });
-
-    parsedRows.forEach((row, i) => {
-      const name = row[nameColIdx];
-      if (!name) issues.push(`Ligne ${i + 2}: Désignation manquante`);
-      if (priceColIdx >= 0) {
-        const rawPrice = row[priceColIdx];
-        if (rawPrice !== undefined && isNaN(Number(String(rawPrice).replace(',', '.')))) {
-          issues.push(`Ligne ${i + 2}: Prix invalide "${rawPrice}"`);
-        }
-      }
-
-      const barcode = scanColIdx >= 0 ? String(row[scanColIdx] || '').trim() : '';
-      const partNo = partNoColIdx >= 0 ? String(row[partNoColIdx] || '').trim() : '';
-      const match = (barcode && scanMap.get(barcode)) || (partNo && partMap.get(partNo));
-      if (match) {
-        const rawPrice = priceColIdx >= 0 ? row[priceColIdx] : 0;
-        const parsedPrice = rawPrice ? Number(String(rawPrice).replace(',', '.')) : 0;
-        const key = barcode || partNo || match.id;
-        detectedCollisions.push({
-          id: match.id,
-          key,
-          existingName: match.ITEMNAME,
-          existingPrice: match.SELLING_PRICE,
-          incomingName: String(name || '').trim(),
-          incomingPrice: isNaN(parsedPrice) ? 0 : parsedPrice,
-          overwrite: true,
-        });
-      }
-    });
-
-    setCollisions(detectedCollisions);
-    setValidationIssues(issues);
+    const prepared = prepareCatalogImport(parsedHeaders, parsedRows, fieldMappings, products);
+    setCollisions(prepared.collisions);
+    setValidationIssues(prepared.issues);
     setWizardStep(3);
   };
 
-  const handleCommitImport = () => {
-    const nameColIdx = parsedHeaders.indexOf(fieldMappings['ITEMNAME']);
-    const scanColIdx = parsedHeaders.indexOf(fieldMappings['PRODUCT_SCAN'] || '');
-    const partNoColIdx = parsedHeaders.indexOf(fieldMappings['PARTNO'] || '');
-    const priceColIdx = parsedHeaders.indexOf(fieldMappings['SELLING_PRICE'] || '');
-    const promoColIdx = parsedHeaders.indexOf(fieldMappings['PROMOPRICE'] || '');
-    const deptColIdx = parsedHeaders.indexOf(fieldMappings['DEPT_NAME'] || '');
-    const catColIdx = parsedHeaders.indexOf(fieldMappings['CATEGORY_NAME'] || '');
+  const handleCommitImport = async () => {
+    const prepared = prepareCatalogImport(parsedHeaders, parsedRows, fieldMappings, catalogRepository.getProducts());
+    setValidationIssues(prepared.issues);
+    if (prepared.issues.length > 0) return;
 
-    const imported: ProductRecord[] = [];
+    setIsImporting(true);
+    setActionFeedback(null);
+    try {
+      const skipKeys = new Set<string>();
+      if (importMode === 'review_collisions') {
+        collisions.filter((collision) => !collision.overwrite).forEach((collision) => skipKeys.add(collision.id));
+      }
 
-    parsedRows.forEach((row, index) => {
-      const name = String(row[nameColIdx] || '').trim();
-      if (!name) return; // Skip empty rows
+      const accepted = prepared.products.filter((product) => !skipKeys.has(product.id));
+      const existingIds = new Set(catalogRepository.getProducts().map((product) => product.id));
+      const report: ImportReport = {
+        id: `IMP-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        filename: importFile?.name || 'import.xlsx',
+        totalRowsRead: parsedRows.length,
+        importedCount: accepted.length,
+        updatedCount: accepted.filter((product) => existingIds.has(product.id)).length,
+        rejectedCount: parsedRows.length - prepared.products.length,
+        duplicateCount: prepared.collisions.length,
+        warnings: [],
+      };
 
-      const barcode = scanColIdx >= 0 ? String(row[scanColIdx] || '').trim() : '';
-      const partNo = partNoColIdx >= 0 ? String(row[partNoColIdx] || '').trim() : '';
-      const rawPrice = priceColIdx >= 0 ? row[priceColIdx] : 0;
-      const parsedPrice = rawPrice ? Number(String(rawPrice).replace(',', '.')) : 0;
-      const rawPromo = promoColIdx >= 0 ? row[promoColIdx] : null;
-      const parsedPromo = rawPromo ? Number(String(rawPromo).replace(',', '.')) : null;
-
-      imported.push({
-        id: `PROD-${Date.now().toString(36)}-${index}`,
-        ITEMNAME: name,
-        PRODUCT_SCAN: barcode,
-        PARTNO: partNo || barcode,
-        SELLING_PRICE: isNaN(parsedPrice) ? 0 : parsedPrice,
-        PROMOPRICE: parsedPromo !== null && !isNaN(parsedPromo) ? parsedPromo : undefined,
-        DEPT_NAME: deptColIdx >= 0 ? String(row[deptColIdx] || '').trim() : 'Général',
-        CATEGORY_NAME: catColIdx >= 0 ? String(row[catColIdx] || '').trim() : undefined,
+      await catalogRepository.commitImport(prepared.products, report, importMode, skipKeys);
+      await AuditLogService.append({
+        action: 'IMPORT_CATALOGUE',
+        details: `Importation de ${accepted.length} articles depuis ${importFile?.name} (mode: ${importMode})`,
       });
-    });
 
-    const report: ImportReport = {
-      id: `IMP-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      filename: importFile?.name || 'import.xlsx',
-      totalRowsRead: parsedRows.length,
-      importedCount: imported.length,
-      updatedCount: 0,
-      rejectedCount: parsedRows.length - imported.length,
-      duplicateCount: collisions.length,
-      warnings: validationIssues.slice(0, 10),
-    };
-
-    const skipKeys = new Set<string>();
-    if (importMode === 'review_collisions') {
-      collisions.forEach((c) => {
-        if (!c.overwrite) {
-          skipKeys.add(c.key);
-        }
-      });
+      setActionFeedback(`Import terminé : ${accepted.length} article(s) enregistré(s).`);
+      setWizardStep(1);
+      setImportFile(null);
+      setParsedHeaders([]);
+      setParsedRows([]);
+      setActiveTab('catalog');
+    } catch (err: any) {
+      setActionFeedback(`Échec de l'import : ${err?.message || String(err)}`);
+    } finally {
+      setIsImporting(false);
     }
-
-    catalogRepository.commitImport(imported, report, importMode, skipKeys);
-
-    AuditLogService.append({
-      action: 'IMPORT_CATALOGUE',
-      details: `Importation de ${imported.length} articles depuis ${importFile?.name} (mode: ${importMode})`,
-    });
-
-    // Reset wizard
-    setWizardStep(1);
-    setImportFile(null);
-    setParsedHeaders([]);
-    setParsedRows([]);
-    setActiveTab('catalog');
   };
 
   const handleExportWorkspace = async () => {
@@ -327,8 +254,8 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const res = catalogRepository.importWorkspaceJson(event.target?.result as string);
+    reader.onload = async (event) => {
+      const res = await catalogRepository.importWorkspaceJson(event.target?.result as string);
       setActionFeedback(res.message);
     };
     reader.readAsText(file);
@@ -416,6 +343,17 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
           </button>
         </div>
       </header>
+
+      {actionFeedback && (
+        <div
+          role={/^(Échec|Erreur|Veuillez)/.test(actionFeedback) ? 'alert' : 'status'}
+          className={`px-5 py-2 text-xs border-b ${/^(Échec|Erreur|Veuillez)/.test(actionFeedback)
+            ? 'bg-red-950/40 border-red-900 text-red-200'
+            : 'bg-emerald-950/30 border-emerald-900 text-emerald-200'}`}
+        >
+          {actionFeedback}
+        </div>
+      )}
 
       {/* Main Container */}
       <main className="flex-1 flex flex-col min-h-0 p-6 overflow-hidden">
@@ -802,10 +740,11 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
                     </button>
                     <button
                       onClick={handleCommitImport}
-                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm"
+                      disabled={validationIssues.length > 0 || isImporting}
+                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Confirmer et Enregistrer dans le Catalogue</span>
+                      <span>{isImporting ? 'Enregistrement…' : 'Confirmer et Enregistrer dans le Catalogue'}</span>
                     </button>
                   </div>
                 </div>

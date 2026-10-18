@@ -542,7 +542,7 @@ export interface ProductRecord {
   PACK_UNIT?: string;
   VENDOR_NAME?: string;
   SELLING_UNIT?: string;
-  SELLING_PRICE: number;
+  SELLING_PRICE?: number;
   PROMOPRICE?: number;
   LAST_SELLING_PRICE?: number;
   SUPPLIER?: string;

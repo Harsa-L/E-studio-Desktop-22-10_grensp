@@ -136,6 +136,75 @@ describe('PreFlightEngine Unit Tests', () => {
     expect(reportPdf.issues.some((i) => i.id === 'missing_price')).toBe(true);
   });
 
+  it('blocks a batch when any product has no valid selling price', () => {
+    const goodProduct = { ...sampleProduct, PRODUCT_SCAN: '4006381333931' };
+    const badProduct = { ...sampleProduct, id: 'prod2', ITEMNAME: 'Produit sans prix', SELLING_PRICE: undefined };
+    const report = PreFlightEngine.analyzeBatch(baseTemplate, [goodProduct, badProduct], 'pdf');
+
+    expect(report.passed).toBe(false);
+    expect(report.totalProductsChecked).toBe(2);
+    expect(report.defectiveProductsCount).toBe(1);
+    expect(report.issues.some((issue) => issue.message.includes('Produit sans prix'))).toBe(true);
+  });
+
+  it('passes a valid product batch with a bound barcode', () => {
+    const template: LabelTemplate = {
+      ...baseTemplate,
+      items: [
+        {
+          id: 'barcode1',
+          type: 'barcode',
+          x_mm: 10,
+          y_mm: 10,
+          w_mm: 35,
+          h_mm: 15,
+          rotation: 0,
+          z_index: 1,
+          locked: false,
+          barcode_type: 'ean13',
+          binding_key: 'PRODUCT_SCAN',
+          code: '',
+          show_text: true,
+          bar_color: '#000000',
+        } as unknown as TemplateItem,
+        ...baseTemplate.items,
+      ],
+    };
+    const report = PreFlightEngine.analyzeBatch(template, [
+      { ...sampleProduct, PRODUCT_SCAN: '3017620422003' },
+    ], 'pdf');
+
+    expect(report.passed).toBe(true);
+  });
+
+  it('blocks a batch when a strict required price tier is missing', () => {
+    const template: LabelTemplate = {
+      ...baseTemplate,
+      items: [
+        ...baseTemplate.items,
+        {
+          id: 'strict_tier',
+          type: 'tier_price',
+          x_mm: 10,
+          y_mm: 40,
+          w_mm: 40,
+          h_mm: 8,
+          rotation: 0,
+          z_index: 3,
+          locked: false,
+          primary_tier: 1,
+          prefix_text: 'Lot de',
+          unit_label: '€',
+          strict_required: true,
+        } as TemplateItem,
+      ],
+    };
+    const report = PreFlightEngine.analyzeBatch(template, [sampleProduct], 'pdf');
+
+    expect(report.passed).toBe(false);
+    expect(report.issues.some((issue) => issue.id.startsWith('strict_tier_missing_'))).toBe(true);
+  });
+
   it('fails if element exceeds label outer boundary', () => {
     const overflowTemplate: LabelTemplate = {
       ...baseTemplate,

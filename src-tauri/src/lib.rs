@@ -36,8 +36,10 @@ pub fn run() {
             commands::audit_list,
             commands::prefs_get,
             commands::prefs_set,
+            commands::prefs_list,
             commands::batch_import_record,
             commands::batch_import_list,
+            commands::database_restore,
             commands::backup_db,
             commands::restore_db,
         ])

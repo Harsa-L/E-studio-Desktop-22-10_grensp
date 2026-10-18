@@ -2,6 +2,7 @@ import { LabelTemplate, TemplateItem, ProductRecord } from '../types';
 import { PricingEngine, isPriceRelatedElement } from './pricingEngine';
 import { validateEAN13 } from './barcodeGenerator';
 import { ImpositionCalculator } from './impositionCalculator';
+import { TierEngine } from './tierEngine';
 
 export type PreFlightSeverity = 'error' | 'warning' | 'info';
 export type PreFlightCategory = 'geometry' | 'data' | 'barcode' | 'typography' | 'compatibility';
@@ -33,6 +34,67 @@ export interface BatchPreFlightReport extends PreFlightReport {
 }
 
 export class PreFlightEngine {
+  static analyzeBatch(
+    template: LabelTemplate,
+    products: ProductRecord[],
+    target: PreFlightTarget
+  ): BatchPreFlightReport {
+    const sampleReport = PreFlightEngine.analyzeTemplate(template, products[0], target);
+    const isProductIssue = (id: string) =>
+      id === 'product_missing_price' ||
+      id === 'invalid_promo_start_date' ||
+      id === 'invalid_promo_end_date' ||
+      id.startsWith('empty_barcode_') ||
+      id.startsWith('ean_invalid_') ||
+      id.startsWith('strict_tier_missing_');
+    const issues = sampleReport.issues.filter((issue) => !isProductIssue(issue.id));
+    const uniqueProducts = new Map<string, ProductRecord>();
+
+    products.forEach((product, index) => {
+      const key = product.id || product.PRODUCT_SCAN || product.PARTNO || `row-${index}`;
+      if (!uniqueProducts.has(key)) uniqueProducts.set(key, product);
+    });
+
+    const defectiveProducts = new Set<string>();
+    uniqueProducts.forEach((product, key) => {
+      const productReport = PreFlightEngine.analyzeTemplate(template, product, target);
+      productReport.issues
+        .filter((issue) => isProductIssue(issue.id))
+        .forEach((issue) => {
+          issues.push({
+            ...issue,
+            id: `${issue.id}_${key}`,
+            message: `${product.ITEMNAME || product.PARTNO || product.id || key}: ${issue.message}`,
+          });
+          if (issue.severity === 'error') defectiveProducts.add(key);
+        });
+    });
+
+    if (uniqueProducts.size === 0) {
+      issues.push({
+        id: 'empty_batch',
+        severity: 'error',
+        category: 'data',
+        message: 'Aucun produit sélectionné pour cet export.',
+      });
+    }
+
+    const errorsCount = issues.filter((issue) => issue.severity === 'error').length;
+    const warningsCount = issues.filter((issue) => issue.severity === 'warning').length;
+    const infosCount = issues.filter((issue) => issue.severity === 'info').length;
+
+    return {
+      status: errorsCount > 0 ? 'draft' : warningsCount > 0 ? 'warning' : 'ready',
+      errorsCount,
+      warningsCount,
+      infosCount,
+      issues,
+      passed: errorsCount === 0,
+      totalProductsChecked: uniqueProducts.size,
+      defectiveProductsCount: defectiveProducts.size,
+    };
+  }
+
   /**
    * Evaluates template geometric integrity, required retail bindings,
    * barcode encodability, minimum font sizing, and export target compatibility.
@@ -471,6 +533,27 @@ export class PreFlightEngine {
           message: `Date de fin de promotion non reconnue ("${sampleProduct.PROMO_END_DATE}", attendu YYYY-MM-DD ou DD/MM/YYYY).`,
         });
       }
+
+      template.items.filter((item) => item.type === 'tier_price' && item.strict_required).forEach((item) => {
+        if (item.type !== 'tier_price') return;
+        const resolved = TierEngine.resolve({
+          primary_index: Math.max(0, item.primary_tier - 1),
+          keyword_prefix: item.prefix_text,
+          unit_label: item.unit_label,
+          strict_required: true,
+          pricing_strategy: item.pricing_strategy,
+          cross_conditional: item.cross_conditional,
+        }, sampleProduct);
+        if (resolved?.error) {
+          issues.push({
+            id: `strict_tier_missing_${item.id}`,
+            severity: target === 'screen' ? 'warning' : 'error',
+            category: 'data',
+            message: `L'article "${sampleProduct.ITEMNAME || sampleProduct.id}" : ${resolved.error}`,
+            itemId: item.id,
+          });
+        }
+      });
     }
 
     const errorsCount = issues.filter((i) => i.severity === 'error').length;

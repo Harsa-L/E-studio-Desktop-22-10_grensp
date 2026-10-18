@@ -89,7 +89,7 @@ import { ViewportZoomToolbar } from './ViewportZoomToolbar';
 
 interface TemplateEditorProps {
   initialTemplate: LabelTemplate;
-  onSaveTemplate: (updated: LabelTemplate) => void;
+  onSaveTemplate: (updated: LabelTemplate) => Promise<void>;
   onBackToHome: () => void;
   onOpenGeneration: (template: LabelTemplate) => void;
   onOpenRulesModal?: () => void;
@@ -135,7 +135,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const [smartGuidesEnabled, setSmartGuidesEnabled] = useState(true);
   const [activeSmartGuides, setActiveSmartGuides] = useState<SmartGuideLine[]>([]);
   const [previewDataIndex, setPreviewDataIndex] = useState<number | null>(null);
-  const [savedNotification, setSavedNotification] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Context-Driven Adaptive Workspace & Diagnostic States
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
@@ -996,10 +996,15 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
     pushState(next);
   };
 
-  const handleSave = () => {
-    onSaveTemplate(template);
-    setSavedNotification(true);
-    setTimeout(() => setSavedNotification(false), 2500);
+  const handleSave = async () => {
+    setSaveStatus('saving');
+    try {
+      await onSaveTemplate(template);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch {
+      setSaveStatus('error');
+    }
   };
 
   const exportJson = async () => {
@@ -1822,10 +1827,15 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
           <div className="h-4 w-px bg-slate-200 mx-1" />
 
-          {savedNotification && (
-            <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1 animate-in fade-in">
-              <CheckCircle className="w-4 h-4" />
-              Sauvegardé !
+          {saveStatus !== 'idle' && (
+            <span
+              role={saveStatus === 'error' ? 'alert' : 'status'}
+              className={`text-xs font-semibold flex items-center gap-1 animate-in fade-in ${saveStatus === 'error' ? 'text-red-600' : 'text-emerald-600'}`}
+            >
+              {saveStatus === 'saved' && <CheckCircle className="w-4 h-4" />}
+              {saveStatus === 'saving' && 'Enregistrement…'}
+              {saveStatus === 'saved' && 'Sauvegardé'}
+              {saveStatus === 'error' && 'Échec de la sauvegarde. Vos modifications sont conservées.'}
             </span>
           )}
           <ContextTooltip
@@ -1836,10 +1846,11 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           >
             <button
               onClick={handleSave}
+              disabled={saveStatus === 'saving'}
               className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-2xs"
             >
               <Save className="w-3.5 h-3.5 text-slate-600" />
-              <span>Enregistrer</span>
+              <span>{saveStatus === 'saving' ? 'Enregistrement…' : 'Enregistrer'}</span>
             </button>
           </ContextTooltip>
           <ContextTooltip

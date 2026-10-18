@@ -1,7 +1,7 @@
 use crate::db::{AuditRecord, TemplateSummary, UpsertRejection, UpsertResult};
 use chrono::Utc;
 use rusqlite::{params, Connection, OptionalExtension};
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use tauri::State;
@@ -463,14 +463,14 @@ pub fn job_insert(state: State<'_, DbState>, job: Value) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn job_list(state: State<'_, DbState>) -> Result<Vec<Value>, String> {
+pub fn job_list(state: State<'_, DbState>, limit: Option<usize>) -> Result<Vec<Value>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn
-        .prepare("SELECT job_json FROM print_jobs ORDER BY created_at DESC LIMIT 100")
+        .prepare("SELECT job_json FROM print_jobs ORDER BY created_at DESC LIMIT ?1")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![limit.unwrap_or(100)], |row| {
             let json_str: String = row.get(0)?;
             Ok(json_str)
         })
@@ -549,7 +549,7 @@ pub fn audit_append(
 }
 
 #[tauri::command]
-pub fn audit_list(state: State<'_, DbState>, limit: Option<u32>) -> Result<Vec<AuditRecord>, String> {
+pub fn audit_list(state: State<'_, DbState>, limit: Option<usize>) -> Result<Vec<AuditRecord>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     let lim = limit.unwrap_or(200);
     let mut stmt = conn
@@ -604,6 +604,18 @@ pub fn prefs_set(state: State<'_, DbState>, key: String, value: String) -> Resul
 }
 
 #[tauri::command]
+pub fn prefs_list(state: State<'_, DbState>) -> Result<Vec<(String, String)>, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT key, value FROM kv ORDER BY key ASC").map_err(|e| e.to_string())?;
+    let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?))).map_err(|e| e.to_string())?;
+    let mut values = Vec::new();
+    for row in rows {
+        values.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(values)
+}
+
+#[tauri::command]
 pub fn batch_import_record(
     state: State<'_, DbState>,
     id: String,
@@ -621,14 +633,14 @@ pub fn batch_import_record(
 }
 
 #[tauri::command]
-pub fn batch_import_list(state: State<'_, DbState>) -> Result<Vec<Value>, String> {
+pub fn batch_import_list(state: State<'_, DbState>, limit: Option<usize>) -> Result<Vec<Value>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn
-        .prepare("SELECT id, filename, report_json, created_at FROM import_batches ORDER BY created_at DESC LIMIT 100")
+        .prepare("SELECT id, filename, report_json, created_at FROM import_batches ORDER BY created_at DESC LIMIT ?1")
         .map_err(|e| e.to_string())?;
 
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![limit.unwrap_or(100)], |row| {
             let id: String = row.get(0)?;
             let filename: String = row.get(1)?;
             let report_json: String = row.get(2)?;
@@ -648,6 +660,174 @@ pub fn batch_import_list(state: State<'_, DbState>) -> Result<Vec<Value>, String
         list.push(r.map_err(|e| e.to_string())?);
     }
     Ok(list)
+}
+
+#[tauri::command]
+pub fn database_restore(state: State<'_, DbState>, backup: Value) -> Result<Value, String> {
+    if backup.get("version").and_then(Value::as_i64) != Some(1) {
+        return Err("Unsupported database backup version".to_string());
+    }
+
+    let templates = backup.get("templates").and_then(Value::as_array)
+        .ok_or_else(|| "Backup templates must be an array".to_string())?;
+    let products = backup.get("products").and_then(Value::as_array)
+        .ok_or_else(|| "Backup products must be an array".to_string())?;
+    let jobs = backup.get("jobs").and_then(Value::as_array)
+        .ok_or_else(|| "Backup jobs must be an array".to_string())?;
+    let audit = backup.get("audit").and_then(Value::as_array)
+        .ok_or_else(|| "Backup audit must be an array".to_string())?;
+    let batches = backup.get("import_batches").and_then(Value::as_array)
+        .ok_or_else(|| "Backup import_batches must be an array".to_string())?;
+    let preferences = backup.get("preferences").and_then(Value::as_object)
+        .ok_or_else(|| "Backup preferences must be an object".to_string())?;
+    if preferences.values().any(|value| !value.is_string()) {
+        return Err("Backup preferences must contain string values".to_string());
+    }
+
+    for template in templates {
+        let obj = template.as_object().ok_or_else(|| "Each template must be an object".to_string())?;
+        let id = value_to_str(obj.get("id")).ok_or_else(|| "Each template must have an id".to_string())?;
+        let name = value_to_str(obj.get("name")).ok_or_else(|| format!("Template '{}' must have a name", id))?;
+        let width = obj.get("width_mm").and_then(Value::as_f64).ok_or_else(|| format!("Template '{}' has invalid width_mm", id))?;
+        let height = obj.get("height_mm").and_then(Value::as_f64).ok_or_else(|| format!("Template '{}' has invalid height_mm", id))?;
+        if name.is_empty() || !width.is_finite() || !height.is_finite() || width <= 0.0 || height <= 0.0 || width > 2000.0 || height > 2000.0 {
+            return Err(format!("Template '{}' failed validation", id));
+        }
+        if !obj.get("items").map_or(false, Value::is_array) {
+            return Err(format!("Template '{}' items must be an array", id));
+        }
+    }
+
+    for product in products {
+        let obj = product.as_object().ok_or_else(|| "Each product must be an object".to_string())?;
+        if value_to_str(obj.get("id")).or_else(|| value_to_str(obj.get("PARTNO"))).or_else(|| value_to_str(obj.get("PRODUCT_SCAN"))).is_none() {
+            return Err("Each product must have an id, PARTNO, or PRODUCT_SCAN".to_string());
+        }
+        for field in ["SELLING_PRICE", "PROMOPRICE"] {
+            if let Some(price) = obj.get(field) {
+                if !price.is_null() {
+                    let valid = match price {
+                        Value::Number(number) => number.as_f64().map_or(false, f64::is_finite),
+                        Value::String(raw) if raw.trim().is_empty() => true,
+                        Value::String(raw) => {
+                            let normalized = raw.trim().replace('€', "").replace('$', "").replace("FCFA", "").replace(' ', "").replace(',', ".");
+                            normalized.parse::<f64>().map_or(false, f64::is_finite)
+                        }
+                        _ => false,
+                    };
+                    if !valid {
+                        return Err(format!("Backup contains an invalid {}", field));
+                    }
+                }
+            }
+        }
+    }
+
+    for (collection, rows) in [("jobs", jobs), ("audit", audit), ("import_batches", batches)] {
+        for row in rows {
+            let obj = row.as_object().ok_or_else(|| format!("Each {} entry must be an object", collection))?;
+            if value_to_str(obj.get("id")).is_none() {
+                return Err(format!("Each {} entry must have an id", collection));
+            }
+        }
+    }
+
+    let mut conn = state.0.lock().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM templates", []).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM template_revisions", []).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM products", []).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM print_jobs", []).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM audit", []).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM import_batches", []).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM kv", []).map_err(|e| e.to_string())?;
+
+    let now = Utc::now().to_rfc3339();
+    for template in templates {
+        let mut doc = template.clone();
+        let obj = doc.as_object_mut().ok_or_else(|| "Each template must be an object".to_string())?;
+        let id = value_to_str(obj.get("id")).unwrap();
+        let name = value_to_str(obj.get("name")).unwrap();
+        let revision = obj.get("revision").and_then(Value::as_i64).unwrap_or(1).max(1);
+        let created_at = obj.get("created_at").and_then(Value::as_str).unwrap_or(&now).to_string();
+        let updated_at = obj.get("updated_at").and_then(Value::as_str).unwrap_or(&created_at).to_string();
+        obj.insert("revision".to_string(), Value::Number(revision.into()));
+        let doc_json = serde_json::to_string(&doc).map_err(|e| e.to_string())?;
+        tx.execute(
+            "INSERT INTO templates (id, name, revision, document_json, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![id, name, revision, doc_json, created_at, updated_at],
+        ).map_err(|e| e.to_string())?;
+        tx.execute(
+            "INSERT INTO template_revisions (id, revision, document_json, saved_at) VALUES (?1, ?2, ?3, ?4)",
+            params![id, revision, doc_json, updated_at],
+        ).map_err(|e| e.to_string())?;
+    }
+
+    for product in products {
+        let obj = product.as_object().unwrap();
+        let id = value_to_str(obj.get("id")).or_else(|| value_to_str(obj.get("PARTNO"))).or_else(|| value_to_str(obj.get("PRODUCT_SCAN"))).unwrap();
+        let scan = value_to_str(obj.get("PRODUCT_SCAN")).or_else(|| value_to_str(obj.get("scan")));
+        let partno = value_to_str(obj.get("PARTNO")).or_else(|| value_to_str(obj.get("partno")));
+        let doc_json = serde_json::to_string(product).map_err(|e| e.to_string())?;
+        tx.execute(
+            "INSERT INTO products (id, scan, partno, document_json) VALUES (?1, ?2, ?3, ?4)",
+            params![id, scan, partno, doc_json],
+        ).map_err(|e| e.to_string())?;
+    }
+
+    for job in jobs {
+        let obj = job.as_object().unwrap();
+        let id = value_to_str(obj.get("id")).unwrap();
+        let created_at = obj.get("created_at").and_then(Value::as_str).unwrap_or(&now);
+        let job_json = serde_json::to_string(job).map_err(|e| e.to_string())?;
+        tx.execute(
+            "INSERT INTO print_jobs (id, job_json, created_at) VALUES (?1, ?2, ?3)",
+            params![id, job_json, created_at],
+        ).map_err(|e| e.to_string())?;
+    }
+
+    for row in audit {
+        let obj = row.as_object().unwrap();
+        let id = value_to_str(obj.get("id")).unwrap();
+        let at = value_to_str(obj.get("at")).ok_or_else(|| "Audit entry must have a timestamp".to_string())?;
+        let os_user = value_to_str(obj.get("os_user")).ok_or_else(|| "Audit entry must have an OS user".to_string())?;
+        let action = value_to_str(obj.get("action")).ok_or_else(|| "Audit entry must have an action".to_string())?;
+        let entity_id = value_to_str(obj.get("entity_id"));
+        let details = obj.get("details").and_then(Value::as_str).unwrap_or("");
+        tx.execute(
+            "INSERT INTO audit (id, at, os_user, action, entity_id, details) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![id, at, os_user, action, entity_id, details],
+        ).map_err(|e| e.to_string())?;
+    }
+
+    for batch in batches {
+        let obj = batch.as_object().unwrap();
+        let id = value_to_str(obj.get("id")).unwrap();
+        let filename = value_to_str(obj.get("filename")).unwrap_or_else(|| "import".to_string());
+        let created_at = value_to_str(obj.get("timestamp")).or_else(|| value_to_str(obj.get("created_at"))).unwrap_or_else(|| now.clone());
+        let report_json = serde_json::to_string(batch).map_err(|e| e.to_string())?;
+        tx.execute(
+            "INSERT INTO import_batches (id, filename, report_json, created_at) VALUES (?1, ?2, ?3, ?4)",
+            params![id, filename, report_json, created_at],
+        ).map_err(|e| e.to_string())?;
+    }
+
+    for (key, value) in preferences {
+        tx.execute(
+            "INSERT INTO kv (key, value) VALUES (?1, ?2)",
+            params![key, value.as_str().unwrap()],
+        ).map_err(|e| e.to_string())?;
+    }
+
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(json!({
+        "templates": templates.len(),
+        "products": products.len(),
+        "jobs": jobs.len(),
+        "audit": audit.len(),
+        "import_batches": batches.len(),
+        "preferences": preferences.len()
+    }))
 }
 
 #[tauri::command]

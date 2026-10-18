@@ -181,4 +181,22 @@ export const desktopFileService = {
 
     return null;
   },
+
+  async openPath(filters: FileFilter[]): Promise<string | null> {
+    if (!isTauriEnvironment()) return null;
+    try {
+      const selected = await open({ multiple: false, directory: false, filters });
+      return typeof selected === 'string' ? selected : null;
+    } catch (err) {
+      console.error('Failed to select file path:', err);
+      return null;
+    }
+  },
+
+  async readBinaryPath(path: string): Promise<Uint8Array> {
+    if (!isTauriEnvironment()) {
+      throw new Error('Reading a saved export by path is only available in the desktop application.');
+    }
+    return await readFile(path);
+  },
 };

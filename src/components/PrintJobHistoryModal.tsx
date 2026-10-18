@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { PrintJob, PrintJobStatus, ProductRecord } from '../types';
+import { ImpositionConfig, PrintJob, PrintJobStatus, ProductRecord } from '../types';
 import { api } from '../services/api';
 import { desktopFileService } from '../services/desktopFileService';
 import { ZplExporter } from '../utils/zplExporter';
-import jsPDF from 'jspdf';
+import { renderImposedPdfJob } from '../utils/pdfJobRenderer';
 import {
   Printer,
   History,
@@ -77,10 +77,50 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
   const handleReExport = async (job: PrintJob) => {
     try {
       const filename = `reexport_${job.id}.${job.format}`;
+      if (job.format === 'pdf') {
+        let artifact: Uint8Array | null = null;
+        try {
+          if (job.target) artifact = await desktopFileService.readBinaryPath(job.target);
+        } catch {
+          artifact = null;
+        }
+
+        if (!artifact) {
+          let template = job.template_snapshot;
+          if (!template && job.template_id) {
+            template = await api.templateGetRevision(job.template_id, job.template_revision);
+          }
+          let products = (job.products_snapshot || job.printed_products) as ProductRecord[] | undefined;
+          if ((!products || products.length === 0) && job.product_ids?.length > 0) {
+            const currentProducts = await api.catalogSearch('');
+            const ids = new Set(job.product_ids);
+            products = currentProducts.filter((product) => ids.has(product.id));
+            setActionMessage('Snapshot indisponible : ré-export reconstruit depuis les données actuelles.');
+          }
+          if (!template || !products?.length) {
+            throw new Error('Le travail ne contient pas de gabarit et de produits récupérables.');
+          }
+          const config = JSON.parse(job.imposition_json) as ImpositionConfig;
+          const doc = renderImposedPdfJob(template, products, config);
+          artifact = new Uint8Array(doc.output('arraybuffer'));
+        }
+
+        const path = await desktopFileService.saveBinary(
+          filename,
+          artifact,
+          [{ name: 'Document PDF', extensions: ['pdf'] }]
+        );
+        if (path) {
+          setActionMessage(`PDF original ré-exporté vers ${path}`);
+          await handleUpdateStatus(job.id, 'ready');
+        }
+        return;
+      }
+
       let template = job.template_snapshot;
       let isFallback = false;
       if (!template && job.template_id) {
-        template = (await api.templateGet(job.template_id)) || undefined;
+        template = await api.templateGetRevision(job.template_id, job.template_revision);
         isFallback = true;
       }
       let products = (job.products_snapshot || job.printed_products) as ProductRecord[] | undefined;
@@ -111,35 +151,10 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
           setActionMessage(isFallback ? `⚠️ Ré-exporté (données actuelles) vers ${path}` : `Travail ré-exporté avec succès vers ${path}`);
           await handleUpdateStatus(job.id, 'ready');
         }
-      } else {
-        const doc = new jsPDF({ unit: 'mm' });
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(14);
-        doc.text(`E-Studio Re-spool Job : ${job.id}`, 15, 20);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.text(`Template ID: ${job.template_id} (Rev ${job.template_revision})`, 15, 28);
-        doc.text(`Date de création initiale: ${job.created_at}`, 15, 34);
-        doc.text(`Articles inclus: ${job.product_ids?.length || 0}`, 15, 40);
-        if (products && products.length > 0) {
-          doc.text(`Articles ré-imprimés :`, 15, 48);
-          products.slice(0, 15).forEach((p, idx) => {
-            doc.text(`• ${p.ITEMNAME || p.id} — ${p.SELLING_PRICE ?? '—'} €`, 20, 56 + idx * 6);
-          });
-        }
-        const arrayBuffer = doc.output('arraybuffer');
-        const path = await desktopFileService.saveBinary(
-          filename,
-          new Uint8Array(arrayBuffer),
-          [{ name: 'Document PDF', extensions: ['pdf'] }]
-        );
-        if (path) {
-          setActionMessage(`Travail ré-exporté avec succès vers ${path}`);
-          await handleUpdateStatus(job.id, 'ready');
-        }
       }
     } catch (err: any) {
       console.error('Failed to re-export job:', err);
+      setActionMessage(`Échec du ré-export : ${err?.message || String(err)}`);
     }
   };
 

@@ -58,15 +58,38 @@ describe('API Services & In-Memory Store Unit Tests', () => {
     expect(result.rejections.some((r) => r.reason === 'invalid_price')).toBe(true);
   });
 
-  it('exports and restores database accurately', async () => {
+  it('exports and restores templates, products, jobs, audit, and import history', async () => {
+    await api.jobInsert({
+      id: 'job_restore_test',
+      template_id: 'tpl_unit_test',
+      template_revision: 2,
+      product_ids: ['p_valid_1'],
+      format: 'pdf',
+      imposition_json: '{}',
+      target: '/tmp/test.pdf',
+      status: 'ready',
+      error: null,
+      created_at: new Date().toISOString(),
+    });
+    await api.auditAppend('RESTORE_TEST', 'entity-1', 'restore roundtrip');
+    await api.batchImportRecord('batch_restore_test', 'catalog.xlsx', JSON.stringify({ importedCount: 1 }));
+    await api.prefsSet('restore_test_preference', 'enabled');
+
     const dump = await api.exportDatabase();
     expect(dump).toBeDefined();
     const parsed = JSON.parse(dump);
     expect(parsed.version).toBe(1);
     expect(Array.isArray(parsed.templates)).toBe(true);
+    expect(Array.isArray(parsed.jobs)).toBe(true);
+    expect(Array.isArray(parsed.audit)).toBe(true);
+    expect(Array.isArray(parsed.import_batches)).toBe(true);
+    expect(parsed.preferences.restore_test_preference).toBe('enabled');
 
     const restoreRes = await api.importDatabase(dump);
-    expect(restoreRes).toBeDefined();
-    expect(typeof restoreRes.templates).toBe('number');
+    expect(restoreRes).toMatchObject({ templates: expect.any(Number), products: expect.any(Number) });
+    expect((await api.jobList()).some((job) => job.id === 'job_restore_test')).toBe(true);
+    expect((await api.auditList()).some((record) => record.action === 'RESTORE_TEST')).toBe(true);
+    expect((await api.batchImportList()).some((batch) => batch.id === 'batch_restore_test')).toBe(true);
+    expect(await api.prefsGet('restore_test_preference')).toBe('enabled');
   });
 });

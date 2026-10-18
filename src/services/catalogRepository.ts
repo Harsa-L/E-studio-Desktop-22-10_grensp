@@ -1,5 +1,6 @@
 import { ProductRecord } from '../types';
 import { api } from './api';
+import { applyCatalogImport, normalizeCatalogProduct } from '../utils/catalogImport';
 
 export interface ImportReport {
   id: string;
@@ -134,108 +135,74 @@ class CatalogRepository {
     });
   }
 
-  public saveToMasterDatabase(
-    incomingProducts: ProductRecord[],
-    mode: 'merge_update' | 'replace' | 'keep_existing' | 'update_upsert' | 'overwrite' | 'append' = 'merge_update'
-  ): { totalCount: number; updatedCount: number; addedCount: number } {
-    let updatedCount = 0;
-    let addedCount = 0;
-
-    const isReplace = mode === 'replace' || mode === 'overwrite';
-    const isAppendOnly = mode === 'append' || mode === 'keep_existing';
-
-    if (isReplace) {
-      this.products = [...incomingProducts];
-      addedCount = incomingProducts.length;
-      api.catalogReplaceAll(incomingProducts).catch((err) => console.warn('Catalog SQLite sync failed:', err));
-    } else {
-      const map = new Map<string, ProductRecord>();
-      this.products.forEach((p) => {
-        const key = p.id || p.PARTNO || p.PRODUCT_SCAN;
-        map.set(key, p);
-      });
-
-      incomingProducts.forEach((prod) => {
-        const key = prod.id || prod.PARTNO || prod.PRODUCT_SCAN;
-        const existing = map.get(key);
-        if (existing) {
-          if (!isAppendOnly) {
-            map.set(key, { ...existing, ...prod });
-            updatedCount++;
-          }
-        } else {
-          map.set(key, prod);
-          addedCount++;
-        }
-      });
-      this.products = Array.from(map.values());
-      api.catalogUpsert(incomingProducts).catch((err) => console.warn('Catalog SQLite sync failed:', err));
-    }
-
-    this.notify();
-    return {
-      totalCount: this.products.length,
-      updatedCount,
-      addedCount,
-    };
-  }
-
   public async saveToMasterDatabaseAsync(
     incomingProducts: ProductRecord[],
     mode: 'merge_update' | 'replace' | 'keep_existing' | 'update_upsert' | 'overwrite' | 'append' = 'merge_update'
   ): Promise<{ totalCount: number; updatedCount: number; addedCount: number }> {
-    const res = this.saveToMasterDatabase(incomingProducts, mode);
-    try {
-      if (mode === 'replace' || mode === 'overwrite') {
-        await api.catalogReplaceAll(incomingProducts);
-      } else {
-        await api.catalogUpsert(incomingProducts);
-      }
-    } catch (err) {
-      console.error('Failed to persist to SQLite catalog', err);
-      throw err;
+    const normalized = incomingProducts.map(normalizeCatalogProduct);
+    const isReplace = mode === 'replace' || mode === 'overwrite';
+    let nextProducts: ProductRecord[];
+    let addedCount = 0;
+    let updatedCount = 0;
+
+    if (isReplace) {
+      const count = await api.catalogReplaceAll(normalized);
+      if (count !== normalized.length) throw new Error(`Only ${count} of ${normalized.length} products were saved.`);
+      nextProducts = normalized;
+      addedCount = normalized.length;
+    } else {
+      const existingIds = new Set(this.products.map((product) => product.id));
+      const skipIds = mode === 'append' || mode === 'keep_existing'
+        ? new Set(normalized.filter((product) => existingIds.has(product.id)).map((product) => product.id))
+        : new Set<string>();
+      const merged = applyCatalogImport(this.products, normalized, 'merge_update', skipIds);
+      const result = await api.catalogUpsert(merged.toPersist);
+      if (result.rejected > 0) throw new Error(`The catalog rejected ${result.rejected} product(s).`);
+      nextProducts = merged.products;
+      addedCount = merged.toPersist.filter((product) => !existingIds.has(product.id)).length;
+      updatedCount = merged.toPersist.length - addedCount;
     }
-    return res;
+
+    this.products = nextProducts;
+    this.notify();
+    return { totalCount: nextProducts.length, updatedCount, addedCount };
   }
 
-  public commitImport(
+  public async commitImport(
     importedRecords: ProductRecord[],
     report: ImportReport,
     mode: 'merge_update' | 'replace' | 'review_collisions' = 'merge_update',
     skipKeys?: Set<string>
-  ) {
+  ): Promise<void> {
+    let nextProducts: ProductRecord[];
+    let toUpsert = importedRecords;
+
     if (mode === 'replace') {
-      this.products = [...importedRecords];
-      api.catalogReplaceAll(importedRecords).catch((err) => console.warn('Catalog SQLite sync failed:', err));
+      nextProducts = [...importedRecords];
+      const persistedCount = await api.catalogReplaceAll(importedRecords);
+      if (persistedCount !== importedRecords.length) {
+        throw new Error(`Only ${persistedCount} of ${importedRecords.length} products were saved.`);
+      }
     } else {
-      const map = new Map<string, ProductRecord>();
-      this.products.forEach((p) => {
-        const key = p.id || p.PARTNO || p.PRODUCT_SCAN;
-        map.set(key, p);
-      });
-      const toUpsert: ProductRecord[] = [];
-      importedRecords.forEach((imp) => {
-        const key = imp.id || imp.PARTNO || imp.PRODUCT_SCAN;
-        if (skipKeys && skipKeys.has(key)) {
-          // Preserve existing record, skip updating
-          return;
-        }
-        const existing = map.get(key);
-        if (existing) {
-          map.set(key, { ...existing, ...imp });
-        } else {
-          map.set(key, imp);
-        }
-        toUpsert.push(imp);
-      });
-      this.products = Array.from(map.values());
-      api.catalogUpsert(toUpsert).catch((err) => console.warn('Catalog SQLite sync failed:', err));
+      const mergeResult = applyCatalogImport(this.products, importedRecords, mode, skipKeys);
+      nextProducts = mergeResult.products;
+      toUpsert = mergeResult.toPersist;
+      const upsertResult = await api.catalogUpsert(toUpsert);
+      if (upsertResult.rejected > 0) {
+        throw new Error(`The catalog rejected ${upsertResult.rejected} imported product(s).`);
+      }
     }
 
+    this.products = nextProducts;
     this.importReports.unshift(report);
-    api.batchImportRecord(report.id, report.filename, JSON.stringify(report)).catch(() => {});
-    api.prefsSet('catalog_import_history', JSON.stringify(this.importReports.slice(0, 50))).catch(() => {});
     this.notify();
+
+    try {
+      await api.batchImportRecord(report.id, report.filename, JSON.stringify(report));
+      await api.prefsSet('catalog_import_history', JSON.stringify(this.importReports.slice(0, 50)));
+    } catch (err) {
+      console.warn('Catalog import history could not be persisted:', err);
+    }
   }
 
   public deleteProduct(id: string) {
@@ -266,16 +233,17 @@ class CatalogRepository {
     return JSON.stringify(data, null, 2);
   }
 
-  public importWorkspaceJson(jsonStr: string): { success: boolean; message: string; count?: number } {
+  public async importWorkspaceJson(jsonStr: string): Promise<{ success: boolean; message: string; count?: number }> {
     try {
       const parsed = JSON.parse(jsonStr);
       if (parsed && parsed.catalog && Array.isArray(parsed.catalog.products)) {
-        this.products = parsed.catalog.products;
-        if (Array.isArray(parsed.catalog.importHistory)) {
-          this.importReports = parsed.catalog.importHistory;
-        }
-        api.catalogReplaceAll(this.products).catch((err) => console.warn('Catalog SQLite sync failed:', err));
-        api.prefsSet('catalog_import_history', JSON.stringify(this.importReports.slice(0, 50))).catch(() => {});
+        const products = (parsed.catalog.products as ProductRecord[]).map(normalizeCatalogProduct);
+        const count = await api.catalogReplaceAll(products);
+        if (count !== products.length) throw new Error(`Seulement ${count} articles sur ${products.length} ont été enregistrés.`);
+        const importReports = Array.isArray(parsed.catalog.importHistory) ? parsed.catalog.importHistory : this.importReports;
+        await api.prefsSet('catalog_import_history', JSON.stringify(importReports.slice(0, 50)));
+        this.products = products;
+        this.importReports = importReports;
         this.notify();
         return {
           success: true,

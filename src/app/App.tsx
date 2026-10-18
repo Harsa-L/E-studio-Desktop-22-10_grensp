@@ -120,26 +120,22 @@ function MainWorkspace() {
       updated_at: now,
       items: (updated.items || []).map((it) => sanitizeNonPriceElement(it)),
     };
-    try {
-      const savedDoc = await api.templateSave(sanitized);
-      setTemplates((prev) => {
-        const existingIndex = prev.findIndex((t) => t.id === savedDoc.id);
-        if (existingIndex >= 0) {
-          const next = [...prev];
-          next[existingIndex] = savedDoc;
-          return next;
-        }
-        return [savedDoc, ...prev];
-      });
-      setActiveTemplate(savedDoc);
-      AuditLogService.append({
-        action: 'MODIFICATION_GABARIT',
-        template_name: savedDoc.name,
-        details: `Gabarit sauvegardé : ${savedDoc.name} (Rev ${savedDoc.revision}, ${savedDoc.items.length} éléments)`,
-      });
-    } catch (err) {
-      console.error('Failed to save template to SQLite', err);
-    }
+    const savedDoc = await api.templateSave(sanitized);
+    setTemplates((prev) => {
+      const existingIndex = prev.findIndex((t) => t.id === savedDoc.id);
+      if (existingIndex >= 0) {
+        const next = [...prev];
+        next[existingIndex] = savedDoc;
+        return next;
+      }
+      return [savedDoc, ...prev];
+    });
+    setActiveTemplate(savedDoc);
+    AuditLogService.append({
+      action: 'MODIFICATION_GABARIT',
+      template_name: savedDoc.name,
+      details: `Gabarit sauvegardé : ${savedDoc.name} (Rev ${savedDoc.revision}, ${savedDoc.items.length} éléments)`,
+    });
   };
 
   const handleDuplicateTemplate = async (template: LabelTemplate) => {

@@ -1,14 +1,7 @@
 import { ProductRecord, TextItemProperties, TemplateItem } from '../types';
 import { resolveCanonicalKey } from './mappingDictionary';
-
-export type PriceParseStatus = 'valid' | 'missing' | 'invalid';
-
-export interface PriceParseResult {
-  status: PriceParseStatus;
-  amount?: number;
-  raw?: any;
-  reason?: string;
-}
+import { parsePriceValue, type PriceParseResult } from './priceParser';
+export type { PriceParseResult, PriceParseStatus } from './priceParser';
 
 /**
  * Advanced Retail & Pricing Engine for E-Studio
@@ -80,42 +73,7 @@ export class PricingEngine {
    * - 'invalid': non-numeric string, corrupted text or NaN
    */
   static parsePrice(val: any): PriceParseResult {
-    if (val === undefined || val === null) {
-      return { status: 'missing', raw: val };
-    }
-    if (typeof val === 'number') {
-      if (isNaN(val)) return { status: 'invalid', raw: val, reason: 'Valeur NaN' };
-      return { status: 'valid', amount: val, raw: val };
-    }
-    const s = String(val).trim();
-    if (s === '') {
-      return { status: 'missing', raw: val };
-    }
-
-    // Strip currency symbols and letters (Unicode aware)
-    const cleaned = s.replace(/[€$£¥\p{L}]/gu, '').replace(/\s+/g, '');
-    if (!cleaned) {
-      return { status: 'invalid', raw: val, reason: `Contenu non numérique ("${s}")` };
-    }
-
-    let numStr = cleaned;
-    const hasComma = numStr.includes(',');
-    const hasDot = numStr.includes('.');
-    if (hasComma && hasDot) {
-      if (numStr.lastIndexOf(',') < numStr.lastIndexOf('.')) {
-        numStr = numStr.replace(/,/g, '');
-      } else {
-        numStr = numStr.replace(/\./g, '').replace(',', '.');
-      }
-    } else if (hasComma) {
-      numStr = numStr.replace(',', '.');
-    }
-
-    const num = parseFloat(numStr);
-    if (isNaN(num)) {
-      return { status: 'invalid', raw: val, reason: `Impossible de convertir "${s}" en nombre` };
-    }
-    return { status: 'valid', amount: num, raw: val };
+    return parsePriceValue(val);
   }
 
   /**

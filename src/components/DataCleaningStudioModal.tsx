@@ -8,6 +8,7 @@ import {
   CleaningDiagnosticReport,
 } from '../utils/excelCleaner';
 import { catalogRepository as databaseService } from '../services/catalogRepository';
+import { parsePriceValue } from '../utils/priceParser';
 import {
   FileSpreadsheet,
   Check,
@@ -79,7 +80,8 @@ export const DataCleaningStudioModal: React.FC<DataCleaningStudioModalProps> = (
   const [activeStep, setActiveStep] = useState<'clean_grid' | 'mapping_confirm'>('clean_grid');
 
   // Feedback banner
-  const [bannerMessage, setBannerMessage] = useState<{ type: 'success' | 'info'; text: string } | null>(null);
+  const [bannerMessage, setBannerMessage] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // When raw headers or rows arrive, auto-clean and initialize
   React.useEffect(() => {
@@ -342,13 +344,30 @@ export const DataCleaningStudioModal: React.FC<DataCleaningStudioModalProps> = (
   }, [rows, filterMode, headers]);
 
   // Final Commit to Master Database
-  const handleCommitToMasterDatabase = () => {
+  const handleCommitToMasterDatabase = async () => {
+    const invalidPrices = rows.flatMap((row, rowIndex) =>
+      headers.flatMap((header) => {
+        const field = fieldMapping[header];
+        if (field !== 'SELLING_PRICE' && field !== 'PROMOPRICE') return [];
+        const value = row[header];
+        if (value === undefined || value === null || String(value).trim() === '') return [];
+        const parsed = parsePriceValue(value);
+        return parsed.status !== 'valid' || (parsed.amount ?? 0) < 0
+          ? [`Ligne ${rowIndex + 2}: ${field} invalide ("${value}")`]
+          : [];
+      })
+    );
+    if (invalidPrices.length > 0) {
+      setBannerMessage({ type: 'error', text: invalidPrices.slice(0, 3).join(' · ') });
+      return;
+    }
+
     // Convert rows to ProductRecord
     const canonicalProducts: ProductRecord[] = rows.map((r, rIdx) => {
+      const sourceId = r.id;
       const prod: ProductRecord = {
-        id: r.id || `PROD_IMP_${Date.now()}_${rIdx}`,
+        id: sourceId || `PROD_IMP_${Date.now()}_${rIdx}`,
         ITEMNAME: 'Article Sans Nom',
-        SELLING_PRICE: 0,
       };
 
       headers.forEach((h) => {
@@ -373,14 +392,26 @@ export const DataCleaningStudioModal: React.FC<DataCleaningStudioModalProps> = (
       if (!prod.ITEMNAME || prod.ITEMNAME === 'Article Sans Nom') {
         prod.ITEMNAME = prod.designation || prod.name || prod.libelle || `Article ${prod.PRODUCT_SCAN || rIdx + 1}`;
       }
+      if (!sourceId && prod.PRODUCT_SCAN) prod.id = `scan:${prod.PRODUCT_SCAN.trim().toUpperCase()}`;
+      else if (!sourceId && prod.PARTNO) prod.id = `part:${prod.PARTNO.trim().toUpperCase()}`;
 
       return prod;
     });
 
-    const res = databaseService.saveToMasterDatabase(canonicalProducts, saveMode);
-
-    if (onDatabaseUpdated) onDatabaseUpdated();
-    onClose();
+    setIsSaving(true);
+    try {
+      const res = await databaseService.saveToMasterDatabaseAsync(canonicalProducts, saveMode);
+      setBannerMessage({
+        type: 'success',
+        text: `Enregistré : ${res.addedCount} ajouté(s), ${res.updatedCount} mis à jour.`,
+      });
+      onDatabaseUpdated?.();
+      onClose();
+    } catch (err: any) {
+      setBannerMessage({ type: 'error', text: `Échec de l'enregistrement : ${err?.message || String(err)}` });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -467,7 +498,9 @@ export const DataCleaningStudioModal: React.FC<DataCleaningStudioModalProps> = (
             className={`px-6 py-2 text-xs font-semibold flex items-center justify-between ${
               bannerMessage.type === 'success'
                 ? 'bg-emerald-600 text-white'
-                : 'bg-blue-600 text-white'
+                : bannerMessage.type === 'error'
+                  ? 'bg-red-700 text-white'
+                  : 'bg-blue-600 text-white'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -839,10 +872,11 @@ export const DataCleaningStudioModal: React.FC<DataCleaningStudioModalProps> = (
             ) : (
               <button
                 onClick={handleCommitToMasterDatabase}
+                disabled={isSaving}
                 className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all hover:scale-[1.02]"
               >
                 <Check className="w-4 h-4" />
-                <span>Enregistrer dans la Base Principale ({rows.length} articles)</span>
+                <span>{isSaving ? 'Enregistrement…' : `Enregistrer dans la Base Principale (${rows.length} articles)`}</span>
               </button>
             )}
           </div>

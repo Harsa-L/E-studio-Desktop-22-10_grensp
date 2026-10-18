@@ -22,6 +22,7 @@ import { desktopFileService } from '../services/desktopFileService';
 import { PrintJobHistoryModal } from './PrintJobHistoryModal';
 import { PreFlightEngine } from '../utils/preFlightEngine';
 import { api } from '../services/api';
+import { catalogRepository } from '../services/catalogRepository';
 
 interface HomeDashboardProps {
   templates: LabelTemplate[];
@@ -89,20 +90,12 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-      if (isTauri && (file.name.endsWith('.sqlite') || file.name.endsWith('.db'))) {
-        await api.restoreDb(file.name);
-        setDbOpMessage('Base SQLite restaurée avec succès (base locale non chiffrée).');
-        onRefreshTemplates?.();
-        e.target.value = '';
-        return;
-      }
-
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
           const text = event.target?.result as string;
           const res = await api.importDatabase(text);
+          await catalogRepository.init();
           setDbOpMessage(`Base restaurée (base locale non chiffrée) : ${res.templates} gabarit(s), ${res.products} produit(s).`);
           onRefreshTemplates?.();
         } catch (err: any) {
@@ -114,6 +107,21 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       setDbOpMessage(`Erreur de restauration: ${err?.message || String(err)}`);
     }
     e.target.value = '';
+  };
+
+  const handleRestoreNativeDatabase = async () => {
+    const sourcePath = await desktopFileService.openPath([
+      { name: 'Base SQLite E-Studio', extensions: ['sqlite', 'db'] },
+    ]);
+    if (!sourcePath) return;
+    try {
+      await api.restoreDb(sourcePath);
+      await catalogRepository.init();
+      setDbOpMessage(`Base SQLite restaurée depuis ${sourcePath}.`);
+      onRefreshTemplates?.();
+    } catch (err: any) {
+      setDbOpMessage(`Erreur de restauration: ${err?.message || String(err)}`);
+    }
   };
 
   const handleDevTestSQLite = async () => {
@@ -268,6 +276,16 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               <span>Restaurer la base (locale non chiffrée)</span>
               <input type="file" accept=".json" onChange={handleRestoreDatabase} className="hidden" />
             </label>
+
+            {typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window && (
+              <button
+                onClick={handleRestoreNativeDatabase}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
+              >
+                <Database className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Restaurer SQLite</span>
+              </button>
+            )}
 
             <button
               onClick={handleDevTestSQLite}
