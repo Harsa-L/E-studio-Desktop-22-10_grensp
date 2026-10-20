@@ -12,6 +12,7 @@ import {
 import { DEVICE_PROFILES, SAMPLE_STORES } from '../rulesEngine/deviceProfiles';
 import { DEFAULT_RULES } from '../rulesEngine/defaultRules';
 import { RulesEngine } from '../rulesEngine/engine';
+import { validateProductionRules } from '../rulesEngine/productionPipeline';
 import { catalogRepository as databaseService } from '../services/catalogRepository';
 import { api } from '../services/api';
 import {
@@ -57,17 +58,24 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
 }) => {
   // Local state for active rules
   const [rules, setRules] = useState<Rule[]>(DEFAULT_RULES);
+  const [rulesError, setRulesError] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (isOpen) {
       api.prefsGet('estudio_rules_v1').then((saved) => {
         if (saved) {
           try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) setRules(parsed);
-          } catch {}
+            const parsed: unknown = JSON.parse(saved);
+            validateProductionRules(parsed);
+            setRules(parsed);
+            setRulesError(null);
+          } catch (error) {
+            setRulesError(error instanceof Error ? error.message : String(error));
+          }
         }
-      }).catch(() => {});
+      }).catch((error) => {
+        setRulesError(error instanceof Error ? error.message : String(error));
+      });
     }
   }, [isOpen]);
 
@@ -77,6 +85,7 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
   const [selectedProductIdx, setSelectedProductIdx] = useState<number>(0);
   const [selectedDeviceKey, setSelectedDeviceKey] = useState<string>('EINK_2_1_INCH');
   const [selectedStoreIdx, setSelectedStoreIdx] = useState<number>(0);
+  const [selectedTrigger, setSelectedTrigger] = useState<TriggerType>('on_promo_active');
   const [simulatedDiscount, setSimulatedDiscount] = useState<number>(30);
   const [copiedPayload, setCopiedPayload] = useState(false);
 
@@ -130,17 +139,22 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
       product: currentProduct,
       store: currentStore,
       device: currentDevice,
+      trigger: selectedTrigger,
       timestamp: new Date().toISOString(),
     });
-  }, [engine, currentProduct, currentStore, currentDevice]);
+  }, [engine, currentProduct, currentStore, currentDevice, selectedTrigger]);
 
   if (!isOpen) return null;
 
-  const handleSaveRules = (updatedRules: Rule[]) => {
-    setRules(updatedRules);
-    api.prefsSet('estudio_rules_v1', JSON.stringify(updatedRules)).catch((e) => {
-      console.error(e);
-    });
+  const handleSaveRules = async (updatedRules: Rule[]) => {
+    setRulesError(null);
+    try {
+      validateProductionRules(updatedRules);
+      await api.prefsSet('estudio_rules_v1', JSON.stringify(updatedRules));
+      setRules(updatedRules);
+    } catch (error) {
+      setRulesError(error instanceof Error ? error.message : String(error));
+    }
   };
 
   const handleResetDefaultRules = () => {
@@ -197,15 +211,20 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-white tracking-tight">
-                  Moteur de Règles Omni-Canal & Découplage Métier (Headless)
+                  Studio de Simulation de Règles Omni-Canal
                 </h2>
                 <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] font-semibold rounded-full uppercase tracking-wider">
-                  TCA Framework v2.0
+                  Simulation locale
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Evaluation dynamique déportée : Profils Papier (Print), E-Ink (ESL) et Affichage Numérique (LCD/LED).
+                Les règles compatibles sont appliquées aux exports PDF/ZPL et aux impressions configurées. Les actions non prises en charge bloquent l'export; les écrans ESL/LCD ne sont pas déployés par cette application.
               </p>
+              {rulesError && (
+                <p role="alert" className="text-[11px] text-rose-300 mt-1">
+                  Règles non enregistrées ou invalides : {rulesError}
+                </p>
+              )}
             </div>
           </div>
 
@@ -268,9 +287,17 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
               </strong>
             </span>
 
-            <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 font-semibold rounded-full border border-emerald-300">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>SLA &lt; 50ms Respecté ({evalResult.payload.audit_trail.execution_time_ms}ms &lt;&lt; 50ms)</span>
+            <span className={`flex items-center gap-1 px-2 py-0.5 font-semibold rounded-full border ${
+              evalResult.payload.audit_trail.sla_respected
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                : 'bg-rose-100 text-rose-800 border-rose-300'
+            }`}>
+              <CheckCircle2 className={`w-3.5 h-3.5 ${
+                evalResult.payload.audit_trail.sla_respected ? 'text-emerald-600' : 'text-rose-600'
+              }`} />
+              <span>
+                SLA &lt; 50ms {evalResult.payload.audit_trail.sla_respected ? 'respecté' : 'dépassé'} ({evalResult.payload.audit_trail.execution_time_ms}ms)
+              </span>
             </span>
 
             <span className="text-slate-600 hidden sm:inline">
@@ -335,6 +362,23 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                   <Sliders className="w-3.5 h-3.5 text-blue-600" />
                   <span>Contexte d'Exécution Unifié</span>
                 </h3>
+
+                <div className="space-y-1.5 mb-3">
+                  <label className="block font-semibold text-slate-700">Événement déclencheur simulé</label>
+                  <select
+                    value={selectedTrigger}
+                    onChange={(e) => setSelectedTrigger(e.target.value as TriggerType)}
+                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium"
+                  >
+                    <option value="on_promo_active">on_promo_active</option>
+                    <option value="on_price_update">on_price_update</option>
+                    <option value="on_stock_drop">on_stock_drop</option>
+                    <option value="schedule_event">schedule_event</option>
+                    <option value="on_device_render">on_device_render</option>
+                    <option value="manual_simulation">manual_simulation</option>
+                  </select>
+                  <p className="text-[10px] text-slate-500">Seules les règles associées à cet événement sont évaluées.</p>
+                </div>
 
                 {/* 1. Device Profile Selector */}
                 <div className="space-y-1.5">
@@ -446,7 +490,7 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
               <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 text-[11px] space-y-1.5">
                 <div className="font-bold text-blue-900 flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Trace d'Audit Headless</span>
+                  <span>Trace d'Audit de Simulation</span>
                 </div>
                 <div className="text-blue-800">
                   • <strong>{evalResult.payload.audit_trail.rules_applied.length}</strong> règle(s) appliquée(s).
@@ -964,9 +1008,10 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                       >
                         <option value="on_promo_active">on_promo_active</option>
                         <option value="on_price_update">on_price_update</option>
-                        <option value="on_device_render">on_device_render</option>
-                        <option value="schedule_event">schedule_event</option>
                         <option value="on_stock_drop">on_stock_drop</option>
+                        <option value="schedule_event">schedule_event</option>
+                        <option value="on_device_render">on_device_render</option>
+                        <option value="manual_simulation">manual_simulation</option>
                       </select>
                     </div>
                   </div>

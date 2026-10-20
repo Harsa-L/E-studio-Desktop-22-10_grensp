@@ -551,16 +551,14 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
 
             {/* Slots Grid */}
             {Array.from({ length: imposition.total_per_page }).map((_, slotIdx) => {
-              const col = slotIdx % imposition.cols;
-              const row = Math.floor(slotIdx / imposition.cols);
               const prod = products[slotIdx];
 
               const nudge = slotNudges[slotIdx] || { nudge_x_mm: 0, nudge_y_mm: 0 };
-              const baseX = imposition.horizontal_offset_mm + col * (imposition.label_total_w_mm + (impositionConfig.gap_x_mm ?? impositionConfig.gap_mm));
-              const baseY = imposition.vertical_offset_mm + row * (imposition.label_total_h_mm + (impositionConfig.gap_y_mm ?? impositionConfig.gap_mm));
-
-              const finalX = baseX + nudge.nudge_x_mm + (impositionConfig.calibration_x_mm || 0);
-              const finalY = baseY + nudge.nudge_y_mm + (impositionConfig.calibration_y_mm || 0);
+              const { x_mm: finalX, y_mm: finalY } =
+                ImpositionCalculator.getSlotPosition(imposition, {
+                  ...impositionConfig,
+                  slot_nudges: slotNudges,
+                }, slotIdx);
 
               const isSelected = selectedSlotIndex === slotIdx;
               const hasNudge = nudge.nudge_x_mm !== 0 || nudge.nudge_y_mm !== 0;

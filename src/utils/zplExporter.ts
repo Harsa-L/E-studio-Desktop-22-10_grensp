@@ -64,9 +64,15 @@ export class ZplExporter {
   static generateBatchZpl(
     template: LabelTemplate,
     products: ProductRecord[],
-    config: ZplConfig = { dpi: 203, quantity: 1, printSpeed: 4, darkness: 15, includeComments: true }
+    config: ZplConfig = { dpi: 203, quantity: 1, printSpeed: 4, darkness: 15, includeComments: true },
+    productTemplates?: LabelTemplate[]
   ): string {
-    return products.map((p) => ZplExporter.generateLabelZpl(template, p, config)).join('\n\n');
+    if (productTemplates && productTemplates.length !== products.length) {
+      throw new Error('Each rule-processed product must have exactly one resolved template.');
+    }
+    return products
+      .map((product, index) => ZplExporter.generateLabelZpl(productTemplates?.[index] || template, product, config))
+      .join('\n\n');
   }
 
   /**

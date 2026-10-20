@@ -21,6 +21,10 @@ export function hexToRgb(hex: string): [number, number, number] {
   return [r, g, b];
 }
 
+function isBoldFontWeight(weight?: string): boolean {
+  return weight === '600' || weight === 'bold' || weight === '800';
+}
+
 /**
  * Draws a single template item onto the jsPDF document.
  */
@@ -74,7 +78,9 @@ export function drawPdfItem(
 
       const isCourier = textItem.font_family?.toLowerCase().includes('mono') || textItem.font_family?.toLowerCase().includes('courier');
       const fontName = isCourier ? 'courier' : 'helvetica';
-      const fontStyle = textItem.font_weight === 'bold' || textItem.font_weight === '800' ? (textItem.font_style === 'italic' ? 'bolditalic' : 'bold') : (textItem.font_style === 'italic' ? 'italic' : 'normal');
+      const fontStyle = isBoldFontWeight(textItem.font_weight)
+        ? (textItem.font_style === 'italic' ? 'bolditalic' : 'bold')
+        : (textItem.font_style === 'italic' ? 'italic' : 'normal');
 
       doc.setFont(fontName, fontStyle);
       const fontSizePt = Math.max(4, textItem.font_size_pt || 10);
@@ -105,6 +111,18 @@ export function drawPdfItem(
 
     case 'price_block': {
       const priceItem = item as PriceBlockItemProperties;
+      if (priceItem.fill_color && priceItem.fill_color !== 'transparent') {
+        const [r, g, b] = hexToRgb(priceItem.fill_color);
+        doc.setFillColor(r, g, b);
+        if (priceItem.border_color && priceItem.border_width) {
+          const [br, bg, bb] = hexToRgb(priceItem.border_color);
+          doc.setDrawColor(br, bg, bb);
+          doc.setLineWidth(priceItem.border_width * 0.35);
+          doc.rect(itemX, itemY, w, h, 'FD');
+        } else {
+          doc.rect(itemX, itemY, w, h, 'F');
+        }
+      }
       let rawPrice: any = undefined;
       if (record) {
         if (priceItem.binding_key) {
@@ -135,7 +153,8 @@ export function drawPdfItem(
       const align = priceItem.alignment || 'left';
       const isCourier = priceItem.font_family?.toLowerCase().includes('mono');
       const fontName = isCourier ? 'courier' : 'helvetica';
-      doc.setFont(fontName, 'bold');
+      const integerWeight = priceItem.integer_style?.font_weight;
+      doc.setFont(fontName, integerWeight && !isBoldFontWeight(integerWeight) ? 'normal' : 'bold');
       doc.setFontSize(intFontSizePt);
 
       // Build complete formatted text for exact vector placement
@@ -189,7 +208,7 @@ export function drawPdfItem(
         .join(' ');
 
       const defaultPt = richItem.default_font_size_pt || 10;
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('helvetica', isBoldFontWeight(richItem.default_font_weight) ? 'bold' : 'normal');
       doc.setFontSize(defaultPt);
       const [r, g, b] = hexToRgb(richItem.default_text_color || '#000000');
       doc.setTextColor(r, g, b);
@@ -237,7 +256,8 @@ export function drawPdfItem(
       // Draw text from TierEngine
       const [tR, tG, tB] = hexToRgb(tierItem.styles?.text_color || tierItem.text_color || '#1e293b');
       doc.setTextColor(tR, tG, tB);
-      doc.setFont('helvetica', 'bold');
+      const tierWeight = tierItem.font_weight;
+      doc.setFont('helvetica', tierWeight === undefined || isBoldFontWeight(tierWeight) ? 'bold' : 'normal');
       const fontSize = Math.max(5, tierItem.font_size_pt || Math.min(8, h * 0.5));
       doc.setFontSize(fontSize);
       doc.text(tierSummary, itemX + w / 2, itemY + h / 2 + fontSize * 0.15, { align: 'center' });

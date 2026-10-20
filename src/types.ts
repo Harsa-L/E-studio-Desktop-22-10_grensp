@@ -249,6 +249,9 @@ export interface PriceSubStyle {
 export interface PriceBlockItemProperties extends BaseItemProperties {
   type: 'price_block';
   binding_key: string; // e.g. "PROMOPRICE", "SELLING_PRICE"
+  fill_color?: string;
+  border_color?: string;
+  border_width?: number;
   currency_symbol?: string; // e.g. "€", "FCFA", "$"
   currency_position?: 'after' | 'before' | 'superscript';
   decimal_separator?: '.' | ',';
@@ -279,6 +282,7 @@ export interface RichTextItemProperties extends BaseItemProperties {
   runs: TextRun[];
   font_family?: string;
   default_font_size_pt?: number;
+  default_font_weight?: 'normal' | '500' | '600' | 'bold' | '800';
   default_text_color?: string;
   alignment?: 'left' | 'center' | 'right' | 'justify';
   valign?: 'top' | 'middle' | 'bottom';
@@ -446,7 +450,15 @@ export function migrateTemplateSchema(raw: any): LabelTemplate {
   };
 }
 
-export type PrintJobStatus = 'ready' | 'sent' | 'failed';
+export type PrintJobStatus =
+  | 'ready'
+  | 'sent'
+  | 'submitting'
+  | 'queued'
+  | 'submitted_unconfirmed'
+  | 'spooler_completed'
+  | 'unknown'
+  | 'failed';
 
 export interface PrintJob {
   id: string;
@@ -465,6 +477,19 @@ export interface PrintJob {
   products_snapshot?: ProductRecord[];
   printed_products?: Partial<ProductRecord>[];
   artifact_sha256?: string | null;
+  target_kind?: 'cups' | 'raw_zpl_tcp' | string;
+  target_host?: string;
+  target_port?: number;
+  native_job_id?: string | null;
+  spool_path?: string | null;
+  attempts?: number;
+  retry_allowed?: boolean;
+  device_completion_confirmed?: boolean;
+  status_detail?: string;
+  rule_template_snapshots?: LabelTemplate[];
+  rule_audit_snapshot?: unknown[];
+  rules_snapshot?: unknown[];
+  zpl_dpi?: 203 | 300 | 600;
 }
 
 export type AppView = 'home' | 'editor' | 'generation' | 'catalog';
@@ -725,4 +750,3 @@ export type ElementPlacementStrategy =
   | 'zone_semantic'
   | 'canvas_center'
   | 'fixed_classic';
-

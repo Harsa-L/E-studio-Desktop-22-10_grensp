@@ -5,7 +5,7 @@ export const DEFAULT_RULES: Rule[] = [
   {
     id: 'RULE_PROMO_30_OMNICHANNEL',
     name: 'Promo Exceptionnelle ≥ 30% (Adaptation Omni-Canal)',
-    description: 'Sur remise ≥ 30% : adapte le rendu selon le profil matériel (Inversion rouge/noir sur E-Ink compact, stickers HD CMYK sur Papier, animations sur LCD).',
+    description: 'Sur remise ≥ 30% : enrichit les données promotionnelles et applique un style prix compatible avec la cible sélectionnée.',
     enabled: true,
     priority: 800, // High Priority
     trigger: 'on_promo_active',
@@ -41,27 +41,6 @@ export const DEFAULT_RULES: Rule[] = [
           bg_color: '#dc2626', // Rouge bloc E-Ink BWR
           text_color: '#ffffff', // Texte blanc inversé
           description: 'Inversion de contraste blanc sur bloc rouge/noir pour E-ink',
-        },
-      },
-      {
-        id: 'act_eink_hide_desc_small_screen',
-        type: 'hide_element',
-        conflict_key: 'long_desc_visibility',
-        target_element_id: 'ITEMDESCRIPTION',
-        parameters: {
-          description: 'Masquage de la description longue sur écran compact <= 2.5"',
-        },
-      },
-      {
-        id: 'act_print_high_res_promo',
-        type: 'inject_asset',
-        conflict_key: 'promo_asset',
-        target_element_id: 'badge_area',
-        parameters: {
-          asset_role: 'promo_stamp',
-          asset_type: 'image_cmyk',
-          asset_url: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&q=95&auto=format&fit=crop',
-          description: 'Macaron promotionnel haute définition 300 DPI vectoriel/CMYK pour impression papier',
         },
       },
       {
@@ -162,6 +141,15 @@ export const DEFAULT_RULES: Rule[] = [
           max_chars: 26,
           scale_factor: 0.9,
           description: 'Troncature dynamique à 26 caractères avec points de suspension',
+        },
+      },
+      {
+        id: 'act_eink_hide_description',
+        type: 'hide_element',
+        conflict_key: 'long_desc_visibility',
+        target_element_id: 'ITEMDESCRIPTION',
+        parameters: {
+          description: 'Masquage de la description longue sur écran compact <= 2.5"',
         },
       },
       {

@@ -21,6 +21,8 @@ export function resolveFieldPath(context: ExecutionContext, path: string): any {
   let current: any = context;
   for (const part of parts) {
     if (current === null || current === undefined) return undefined;
+    if (part === '__proto__' || part === 'prototype' || part === 'constructor') return undefined;
+    if (!Object.prototype.hasOwnProperty.call(current, part)) return undefined;
     current = current[part];
   }
   return current;
@@ -35,17 +37,33 @@ export function evaluateCondition(condition: RuleCondition, context: ExecutionCo
 
   switch (condition.operator) {
     case 'eq':
-      return actualValue === targetValue || String(actualValue).toLowerCase() === String(targetValue).toLowerCase();
+      return actualValue === targetValue || (
+        typeof actualValue === 'string' &&
+        typeof targetValue === 'string' &&
+        actualValue.toLowerCase() === targetValue.toLowerCase()
+      );
     case 'neq':
-      return actualValue !== targetValue && String(actualValue).toLowerCase() !== String(targetValue).toLowerCase();
+      return !(actualValue === targetValue || (
+        typeof actualValue === 'string' &&
+        typeof targetValue === 'string' &&
+        actualValue.toLowerCase() === targetValue.toLowerCase()
+      ));
     case 'gt':
-      return Number(actualValue) > Number(targetValue);
+      return numericValue(actualValue) !== undefined &&
+        numericValue(targetValue) !== undefined &&
+        numericValue(actualValue)! > numericValue(targetValue)!;
     case 'gte':
-      return Number(actualValue) >= Number(targetValue);
+      return numericValue(actualValue) !== undefined &&
+        numericValue(targetValue) !== undefined &&
+        numericValue(actualValue)! >= numericValue(targetValue)!;
     case 'lt':
-      return Number(actualValue) < Number(targetValue);
+      return numericValue(actualValue) !== undefined &&
+        numericValue(targetValue) !== undefined &&
+        numericValue(actualValue)! < numericValue(targetValue)!;
     case 'lte':
-      return Number(actualValue) <= Number(targetValue);
+      return numericValue(actualValue) !== undefined &&
+        numericValue(targetValue) !== undefined &&
+        numericValue(actualValue)! <= numericValue(targetValue)!;
     case 'contains':
       if (Array.isArray(actualValue)) {
         return actualValue.some((item) => String(item).toLowerCase().includes(String(targetValue).toLowerCase()));
@@ -67,8 +85,11 @@ export function evaluateCondition(condition: RuleCondition, context: ExecutionCo
       }
       return !String(targetValue || '').split(',').map((s) => s.trim().toLowerCase()).includes(String(actualValue).toLowerCase());
     case 'in_range':
-      const num = Number(actualValue);
-      return num >= Number(condition.value) && num <= Number(condition.value_to);
+      const num = numericValue(actualValue);
+      const lower = numericValue(condition.value);
+      const upper = numericValue(condition.value_to);
+      return num !== undefined && lower !== undefined && upper !== undefined &&
+        lower <= upper && num >= lower && num <= upper;
     case 'is_empty':
       return actualValue === undefined || actualValue === null || actualValue === '' || (Array.isArray(actualValue) && actualValue.length === 0);
     case 'is_not_empty':
@@ -78,12 +99,20 @@ export function evaluateCondition(condition: RuleCondition, context: ExecutionCo
   }
 }
 
+function numericValue(value: unknown): number | undefined {
+  if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+    return undefined;
+  }
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
 /**
  * Recursively evaluates condition groups with AND, OR, NOT operators.
  */
 export function evaluateConditionGroup(group: RuleConditionGroup, context: ExecutionContext): boolean {
   if (!group || !group.conditions || group.conditions.length === 0) {
-    return true;
+    return group?.logical_operator !== 'OR';
   }
 
   const results = group.conditions.map((item) => {
@@ -146,6 +175,7 @@ export class RulesEngine {
     try {
       const timestamp = context.timestamp || new Date().toISOString();
       const currentEvalTime = new Date(timestamp).getTime();
+      if (!Number.isFinite(currentEvalTime)) throw new Error('Rule evaluation timestamp must be a valid ISO date.');
 
       // Deep clone product data to prevent side-effects
       const enrichedProduct: Record<string, any> = JSON.parse(JSON.stringify(context.product || {}));
@@ -180,11 +210,10 @@ export class RulesEngine {
         priority: number;
       }
       const candidatesByKey = new Map<string, ActionCandidate>();
-      const matchedRules: Rule[] = [];
 
       // Sort rules descending by priority so higher priorities are evaluated first,
       // but evaluate all to log conflicts accurately!
-      const sortedRules = [...rulesToEvaluate].sort((a, b) => b.priority - a.priority);
+      const sortedRules = [...rulesToEvaluate].sort((a, b) => b.priority - a.priority || a.id.localeCompare(b.id));
 
       for (const rule of sortedRules) {
         auditTrail.rules_evaluated++;
@@ -195,12 +224,32 @@ export class RulesEngine {
             rule_id: rule.id,
             rule_name: rule.name,
             priority: rule.priority,
-            trigger_matched: true,
+            trigger_matched: !context.trigger || (Array.isArray(context.trigger)
+              ? context.trigger.includes(rule.trigger)
+              : context.trigger === rule.trigger),
             time_valid: true,
             conditions_matched: false,
             applied: false,
             actions_count: rule.actions.length,
             details: 'Règle désactivée',
+          });
+          continue;
+        }
+
+        const triggerMatches = !context.trigger || (Array.isArray(context.trigger)
+          ? context.trigger.includes(rule.trigger)
+          : context.trigger === rule.trigger);
+        if (!triggerMatches) {
+          auditTrail.rule_logs.push({
+            rule_id: rule.id,
+            rule_name: rule.name,
+            priority: rule.priority,
+            trigger_matched: false,
+            time_valid: true,
+            conditions_matched: false,
+            applied: false,
+            actions_count: rule.actions.length,
+            details: `Trigger non correspondant (attendu: ${rule.trigger}, reçu: ${context.trigger})`,
           });
           continue;
         }
@@ -212,7 +261,7 @@ export class RulesEngine {
               rule_id: rule.id,
               rule_name: rule.name,
               priority: rule.priority,
-              trigger_matched: false,
+              trigger_matched: true,
               time_valid: true,
               conditions_matched: false,
               applied: false,
@@ -228,11 +277,11 @@ export class RulesEngine {
         if (rule.time_bound?.enabled) {
           if (rule.time_bound.start_time) {
             const startMs = new Date(rule.time_bound.start_time).getTime();
-            if (currentEvalTime < startMs) timeValid = false;
+            if (!Number.isFinite(startMs) || currentEvalTime < startMs) timeValid = false;
           }
           if (rule.time_bound.end_time) {
             const endMs = new Date(rule.time_bound.end_time).getTime();
-            if (currentEvalTime > endMs) timeValid = false;
+            if (!Number.isFinite(endMs) || currentEvalTime > endMs) timeValid = false;
           }
         }
 
@@ -269,7 +318,6 @@ export class RulesEngine {
         }
 
         // Rule Matched!
-        matchedRules.push(rule);
         auditTrail.rules_matched.push(rule.id);
 
         auditTrail.rule_logs.push({
@@ -279,7 +327,7 @@ export class RulesEngine {
           trigger_matched: true,
           time_valid: true,
           conditions_matched: true,
-          applied: true,
+          applied: false,
           actions_count: rule.actions.length,
           details: 'Conditions validées avec succès',
         });
@@ -321,11 +369,8 @@ export class RulesEngine {
       // 6. Execute winning actions
       for (const [conflictKey, candidate] of candidatesByKey.entries()) {
         const { action, rule } = candidate;
-        if (!auditTrail.rules_applied.includes(rule.id)) {
-          auditTrail.rules_applied.push(rule.id);
-        }
-
         const params = action.parameters || {};
+        let actionApplied = true;
 
         switch (action.type) {
           case 'enrich_data': {
@@ -364,6 +409,7 @@ export class RulesEngine {
               bg_color: params.bg_color,
               text_color: params.text_color,
               font_scale: params.scale_factor,
+              font_weight: params.font_weight,
             };
             break;
           }
@@ -384,16 +430,10 @@ export class RulesEngine {
                   visibility: 'hidden',
                 };
               }
-            } else if (context.device.type === 'print') {
-              // Print adapter: keep description visible!
-              const target = action.target_element_id || 'ITEMDESCRIPTION';
-              if (!layoutInstructions.visible_elements.includes(target)) {
-                layoutInstructions.visible_elements.push(target);
-              }
             } else {
-              const target = action.target_element_id;
-              if (target && !layoutInstructions.hidden_elements.includes(target)) {
-                layoutInstructions.hidden_elements.push(target);
+                const target = action.target_element_id || 'ITEMDESCRIPTION';
+                if (target && !layoutInstructions.hidden_elements.includes(target)) {
+                  layoutInstructions.hidden_elements.push(target);
               }
             }
             break;
@@ -481,6 +521,13 @@ export class RulesEngine {
                 repeat: 'infinite',
                 video_url: params.asset_url,
               });
+            } else {
+              actionApplied = false;
+              const log = auditTrail.rule_logs.find((entry) => entry.rule_id === rule.id);
+              if (log) {
+                const skipped = `Action inject_animation was skipped for unsupported device type '${context.device.type}'.`;
+                log.details = log.details ? `${log.details} ${skipped}` : skipped;
+              }
             }
             break;
           }
@@ -492,18 +539,14 @@ export class RulesEngine {
             break;
           }
         }
-      }
-
-      // 7. Multi-Device Adapter Final Normalization Pass
-      if (context.device.type === 'print') {
-        // High-res paper always ensures full description is visible and never inverted into pure red block unless requested
-        if (enrichedProduct.ITEMDESCRIPTION) {
-          layoutInstructions.hidden_elements = layoutInstructions.hidden_elements.filter(
-            (id) => id !== 'ITEMDESCRIPTION'
-          );
+        if (actionApplied) {
+          if (!auditTrail.rules_applied.includes(rule.id)) auditTrail.rules_applied.push(rule.id);
+          const log = auditTrail.rule_logs.find((entry) => entry.rule_id === rule.id);
+          if (log) log.applied = true;
         }
       }
 
+      // 7. Multi-Device Adapter Final Normalization Pass
       const endTime = performance.now();
       const executionTime = Number((endTime - startTime).toFixed(3));
       auditTrail.execution_time_ms = executionTime;

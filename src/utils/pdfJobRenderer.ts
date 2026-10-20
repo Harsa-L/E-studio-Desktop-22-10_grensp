@@ -6,7 +6,8 @@ import { drawPdfItem } from '../render/drawPdfItem';
 export function renderImposedPdfJob(
   template: LabelTemplate,
   products: ProductRecord[],
-  config: ImpositionConfig
+  config: ImpositionConfig,
+  productTemplates?: LabelTemplate[]
 ): jsPDF {
   const imposition = ImpositionCalculator.calculate(
     template.width_mm,
@@ -16,6 +17,7 @@ export function renderImposedPdfJob(
   );
   if (imposition.total_per_page < 1) throw new Error('The label does not fit on the selected page.');
   if (products.length === 0) throw new Error('The print job has no product snapshot to render.');
+  if (!Number.isFinite(imposition.total_per_page)) throw new Error('The selected imposition is invalid.');
 
   const format = config.page_size === 'CUSTOM'
     ? [config.custom_page_w_mm || imposition.page_w_mm, config.custom_page_h_mm || imposition.page_h_mm]
@@ -26,10 +28,8 @@ export function renderImposedPdfJob(
     format: format as any,
   });
   const labelsPerPage = imposition.total_per_page;
-  const startOffset = Math.max(0, Math.min(labelsPerPage - 1, config.start_offset_slot || 0));
+  const startOffset = Math.max(0, Math.min(labelsPerPage - 1, Math.floor(config.start_offset_slot || 0)));
   const totalPages = Math.max(1, Math.ceil((products.length + startOffset) / labelsPerPage));
-  const gapX = Math.max(0, config.gap_x_mm ?? config.gap_mm ?? 2);
-  const gapY = Math.max(0, config.gap_y_mm ?? config.gap_mm ?? 2);
   let productCursor = 0;
 
   for (let page = 0; page < totalPages; page++) {
@@ -38,35 +38,31 @@ export function renderImposedPdfJob(
       if (page === 0 && slot < startOffset) continue;
       if (productCursor >= products.length) break;
 
-      const product = products[productCursor++];
-      const column = slot % imposition.cols;
-      const row = Math.floor(slot / imposition.cols);
-      const nudge = config.slot_nudges?.[slot] || (config.slot_nudges as any)?.[String(slot)];
-      const x = imposition.horizontal_offset_mm + column * (imposition.label_total_w_mm + gapX)
-        + (nudge?.nudge_x_mm ?? (nudge as any)?.dx_mm ?? 0);
-      const y = imposition.vertical_offset_mm + row * (imposition.label_total_h_mm + gapY)
-        + (nudge?.nudge_y_mm ?? (nudge as any)?.dy_mm ?? 0);
+      const productIndex = productCursor++;
+      const product = products[productIndex];
+      const renderTemplate = productTemplates?.[productIndex] || template;
+      const { x_mm: x, y_mm: y } = ImpositionCalculator.getSlotPosition(imposition, config, slot);
 
-      if (template.bg_color && template.bg_color !== 'transparent') {
-        const hex = template.bg_color.replace('#', '');
+      if (renderTemplate.bg_color && renderTemplate.bg_color !== 'transparent') {
+        const hex = renderTemplate.bg_color.replace('#', '');
         doc.setFillColor(
           parseInt(hex.substring(0, 2), 16) || 255,
           parseInt(hex.substring(2, 4), 16) || 255,
           parseInt(hex.substring(4, 6), 16) || 255
         );
-        doc.rect(x, y, template.width_mm, template.height_mm, 'F');
+        doc.rect(x, y, renderTemplate.width_mm, renderTemplate.height_mm, 'F');
       }
-      if (template.background_image_path && template.background_image_in_output) {
-        doc.addImage(template.background_image_path, 'JPEG', x, y, template.width_mm, template.height_mm);
+      if (renderTemplate.background_image_path && renderTemplate.background_image_in_output) {
+        doc.addImage(renderTemplate.background_image_path, 'JPEG', x, y, renderTemplate.width_mm, renderTemplate.height_mm);
       }
       if (config.show_cut_marks) {
         doc.setDrawColor(180, 180, 180);
         doc.line(x - 1.5, y, x + 1.5, y);
         doc.line(x, y - 1.5, x, y + 1.5);
-        doc.line(x + template.width_mm - 1.5, y + template.height_mm, x + template.width_mm + 1.5, y + template.height_mm);
-        doc.line(x + template.width_mm, y + template.height_mm - 1.5, x + template.width_mm, y + template.height_mm + 1.5);
+        doc.line(x + renderTemplate.width_mm - 1.5, y + renderTemplate.height_mm, x + renderTemplate.width_mm + 1.5, y + renderTemplate.height_mm);
+        doc.line(x + renderTemplate.width_mm, y + renderTemplate.height_mm - 1.5, x + renderTemplate.width_mm, y + renderTemplate.height_mm + 1.5);
       }
-      template.items.forEach((item) => drawPdfItem(doc, item, x + item.x_mm, y + item.y_mm, product));
+      renderTemplate.items.forEach((item) => drawPdfItem(doc, item, x + item.x_mm, y + item.y_mm, product));
     }
   }
 

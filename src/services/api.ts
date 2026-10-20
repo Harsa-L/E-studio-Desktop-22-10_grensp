@@ -9,6 +9,19 @@ import {
   AuditRecord,
 } from '../types';
 
+export interface NativePrintCapabilities {
+  platform: string;
+  cups_supported: boolean;
+  raw_zpl_tcp_supported: boolean;
+  note: string;
+}
+
+export interface NativePrintQueue {
+  name: string;
+  state: string;
+  is_default: boolean;
+}
+
 export const isTauriEnvironment = (): boolean => {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 };
@@ -27,6 +40,48 @@ const inMemoryStore = {
 let auditIdCounter = 0;
 
 export const api = {
+  async printCapabilities(): Promise<NativePrintCapabilities> {
+    if (!isTauriEnvironment()) {
+      throw new Error('Physical printer integrations are available only in the native desktop application.');
+    }
+    return await invoke<NativePrintCapabilities>('print_capabilities');
+  },
+
+  async printListQueues(): Promise<NativePrintQueue[]> {
+    if (!isTauriEnvironment()) {
+      throw new Error('CUPS printer discovery requires the native desktop application.');
+    }
+    return await invoke<NativePrintQueue[]>('print_list_queues');
+  },
+
+  async printSubmitPdf(job: PrintJob, queue: string, pdfBytes: Uint8Array): Promise<PrintJob> {
+    if (!isTauriEnvironment()) {
+      throw new Error('PDF printer submission requires the native desktop application and an installed CUPS service.');
+    }
+    return await invoke<PrintJob>('print_submit_pdf', { job, queue, pdfBytes });
+  },
+
+  async printSubmitZpl(job: PrintJob, host: string, port: number, zplContent: string): Promise<PrintJob> {
+    if (!isTauriEnvironment()) {
+      throw new Error('ZPL printer submission requires the native desktop application.');
+    }
+    return await invoke<PrintJob>('print_submit_zpl', { job, host, port, zplContent });
+  },
+
+  async printRefreshJob(id: string): Promise<PrintJob> {
+    if (!isTauriEnvironment()) {
+      throw new Error('Print job tracking requires the native desktop application.');
+    }
+    return await invoke<PrintJob>('print_refresh_job', { id });
+  },
+
+  async printRetryJob(id: string): Promise<PrintJob> {
+    if (!isTauriEnvironment()) {
+      throw new Error('Print job retry requires the native desktop application.');
+    }
+    return await invoke<PrintJob>('print_retry_job', { id });
+  },
+
   async templateList(): Promise<TemplateSummary[]> {
     if (isTauriEnvironment()) {
       return await invoke<TemplateSummary[]>('template_list');
@@ -179,18 +234,6 @@ export const api = {
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
     return limit ? jobs.slice(0, limit) : jobs.slice(0, 100);
-  },
-
-  async jobSetStatus(id: string, status: string, error?: string | null): Promise<void> {
-    if (isTauriEnvironment()) {
-      await invoke('job_set_status', { id, status, error: error ?? null });
-      return;
-    }
-    const job = inMemoryStore.jobs.get(id);
-    if (job) {
-      job.status = status as any;
-      job.error = error ?? null;
-    }
   },
 
   async auditAppend(action: string, entityId: string | undefined, details: string): Promise<void> {
@@ -420,5 +463,3 @@ export const api = {
     return 'Base locale restaurée';
   },
 };
-
-

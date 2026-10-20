@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ImpositionConfig, PrintJob, PrintJobStatus, ProductRecord } from '../types';
+import { ImpositionConfig, PrintJob, ProductRecord } from '../types';
 import { api } from '../services/api';
 import { desktopFileService } from '../services/desktopFileService';
 import { ZplExporter } from '../utils/zplExporter';
@@ -7,9 +7,6 @@ import { renderImposedPdfJob } from '../utils/pdfJobRenderer';
 import {
   Printer,
   History,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
   X,
   RefreshCw,
   FileText,
@@ -37,9 +34,26 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
     setLoading(true);
     try {
       const list = await api.jobList();
-      setJobs(list);
+      const refreshed: PrintJob[] = [];
+      const trackingErrors: string[] = [];
+      for (const job of list) {
+        if (job.target_kind === 'cups' && job.native_job_id && job.status === 'queued') {
+          try {
+            refreshed.push(await api.printRefreshJob(job.id));
+          } catch (error) {
+            refreshed.push(job);
+            trackingErrors.push(`${job.id}: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        } else {
+          refreshed.push(job);
+        }
+      }
+      setJobs(refreshed);
+      if (trackingErrors.length > 0) {
+        setActionMessage(`État CUPS indisponible pour certains travaux : ${trackingErrors.join('; ')}`);
+      }
     } catch (err) {
-      console.error('Failed to load print jobs:', err);
+      setActionMessage(`Échec du chargement de l'historique : ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -58,19 +72,24 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
     if (filterStatus !== 'all' && j.status !== filterStatus) return false;
     return true;
   });
+  const actionMessageIsError = Boolean(actionMessage && (
+    actionMessage.startsWith('Échec') ||
+    actionMessage.includes('indisponible') ||
+    actionMessage.includes('failed')
+  ));
 
-  const handleUpdateStatus = async (jobId: string, newStatus: PrintJobStatus) => {
+  const handleRetry = async (job: PrintJob) => {
     try {
-      await api.jobSetStatus(jobId, newStatus);
-      setJobs((prev) =>
-        prev.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j))
+      const retried = await api.printRetryJob(job.id);
+      setJobs((previous) => previous.map((current) => current.id === retried.id ? retried : current));
+      if (selectedJob?.id === retried.id) setSelectedJob(retried);
+      setActionMessage(
+        retried.status === 'queued'
+          ? `CUPS a accepté la nouvelle soumission du travail ${job.id}.`
+          : `Flux renvoyé au socket de l'imprimante pour ${job.id}; sortie physique non confirmée.`
       );
-      if (selectedJob?.id === jobId) {
-        setSelectedJob((prev) => (prev ? { ...prev, status: newStatus } : null));
-      }
-      setActionMessage(`Statut du travail ${jobId} mis à jour : ${newStatus}`);
-    } catch (err: any) {
-      console.error('Failed to update job status:', err);
+    } catch (error) {
+      setActionMessage(`Échec de la nouvelle tentative : ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -79,10 +98,12 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
       const filename = `reexport_${job.id}.${job.format}`;
       if (job.format === 'pdf') {
         let artifact: Uint8Array | null = null;
+        let artifactReadWarning: string | null = null;
         try {
           if (job.target) artifact = await desktopFileService.readBinaryPath(job.target);
-        } catch {
+        } catch (error) {
           artifact = null;
+          artifactReadWarning = error instanceof Error ? error.message : String(error);
         }
 
         if (!artifact) {
@@ -101,7 +122,10 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
             throw new Error('Le travail ne contient pas de gabarit et de produits récupérables.');
           }
           const config = JSON.parse(job.imposition_json) as ImpositionConfig;
-          const doc = renderImposedPdfJob(template, products, config);
+          if (job.rule_template_snapshots && job.rule_template_snapshots.length !== products.length) {
+            throw new Error('The archived rule-processed templates do not match the product snapshot.');
+          }
+          const doc = renderImposedPdfJob(template, products, config, job.rule_template_snapshots);
           artifact = new Uint8Array(doc.output('arraybuffer'));
         }
 
@@ -111,8 +135,7 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
           [{ name: 'Document PDF', extensions: ['pdf'] }]
         );
         if (path) {
-          setActionMessage(`PDF original ré-exporté vers ${path}`);
-          await handleUpdateStatus(job.id, 'ready');
+          setActionMessage(`${artifactReadWarning ? `Fichier source inaccessible (${artifactReadWarning}); ` : ''}PDF ré-exporté vers ${path}. Le statut d'impression original reste inchangé.`);
         }
         return;
       }
@@ -136,20 +159,31 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
       }
 
       if (job.format === 'zpl') {
-        let content = '';
-        if (template && products && products.length > 0) {
-          content = ZplExporter.generateBatchZpl(template, products);
-        } else {
-          content = `^XA\n^FX E-STUDIO RE-SPOOL JOB ${job.id}\n^FO50,50^A0N,28,24^FDRe-export Job ${job.id}^FS\n^XZ`;
+        if (!template || !products?.length) {
+          throw new Error('The job does not contain an archived template and products; a placeholder print file will not be generated.');
         }
+        if (job.rule_template_snapshots && job.rule_template_snapshots.length !== products.length) {
+          throw new Error('The archived rule-processed templates do not match the product snapshot.');
+        }
+        const content = ZplExporter.generateBatchZpl(
+          template,
+          products,
+          {
+            dpi: job.zpl_dpi || 203,
+            quantity: 1,
+            printSpeed: 4,
+            darkness: 15,
+            includeComments: true,
+          },
+          job.rule_template_snapshots
+        );
         const path = await desktopFileService.saveText(
           filename,
           content,
           [{ name: 'Fichier ZPL', extensions: ['zpl', 'txt'] }]
         );
         if (path) {
-          setActionMessage(isFallback ? `⚠️ Ré-exporté (données actuelles) vers ${path}` : `Travail ré-exporté avec succès vers ${path}`);
-          await handleUpdateStatus(job.id, 'ready');
+          setActionMessage(`${isFallback ? 'Avertissement : reconstruction depuis les données disponibles. ' : ''}ZPL ré-exporté vers ${path}. Le statut d'impression original reste inchangé.`);
         }
       }
     } catch (err: any) {
@@ -218,7 +252,7 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
 
             <span className="text-slate-400 font-medium ml-2">Statut:</span>
             <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
-              {['all', 'ready', 'sent', 'failed'].map((st) => (
+              {['all', 'ready', 'queued', 'submitted_unconfirmed', 'spooler_completed', 'unknown', 'failed'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setFilterStatus(st)}
@@ -228,14 +262,24 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  {st === 'all' ? 'TOUS' : st.toUpperCase()}
+                  {st === 'all'
+                    ? 'TOUS'
+                    : st === 'submitted_unconfirmed'
+                      ? 'ENVOYÉ · NON CONFIRMÉ'
+                      : st === 'spooler_completed'
+                        ? 'SPOOLER TERMINÉ'
+                        : st.toUpperCase()}
                 </button>
               ))}
             </div>
           </div>
 
           {actionMessage && (
-            <span className="text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 px-3 py-1 rounded-lg truncate max-w-sm">
+            <span className={`text-xs px-3 py-1 rounded-lg truncate max-w-sm ${
+              actionMessageIsError
+                ? 'text-rose-300 bg-rose-950/40 border border-rose-800/60'
+                : 'text-emerald-400 bg-emerald-950/40 border border-emerald-800/60'
+            }`}>
               {actionMessage}
             </span>
           )}
@@ -278,16 +322,25 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
                       <span aria-hidden="true">·</span>
                       <span
                         className={
-                          job.status === 'ready'
+                          job.status === 'ready' || job.status === 'spooler_completed'
                             ? 'text-emerald-400'
-                            : job.status === 'sent'
-                            ? 'text-blue-400'
-                            : 'text-amber-400'
+                            : job.status === 'queued' || job.status === 'submitted_unconfirmed'
+                              ? 'text-blue-400'
+                              : job.status === 'failed'
+                                ? 'text-rose-400'
+                                : 'text-amber-400'
                         }
                       >
-                        {job.status.toUpperCase()}
+                        {job.status === 'submitted_unconfirmed'
+                          ? 'ENVOYÉ · NON CONFIRMÉ'
+                          : job.status === 'spooler_completed'
+                            ? 'SPOOLER TERMINÉ · SORTIE NON VÉRIFIÉE'
+                            : job.status.toUpperCase()}
                       </span>
                     </div>
+                    {job.status_detail && (
+                      <p className="text-[10px] text-slate-500 mt-1 max-w-2xl">{job.status_detail}</p>
+                    )}
                   </div>
                 </div>
 
@@ -304,32 +357,19 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
                     <span>Ré-exporter</span>
                   </button>
 
-                  {job.status === 'ready' && (
+                  {job.retry_allowed && job.status === 'failed' && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleUpdateStatus(job.id, 'sent');
+                        void handleRetry(job);
                       }}
                       className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition"
-                      title="Fichier déposé à l'imprimante"
+                      title="Nouvelle tentative avec l'artefact archivé"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Marquer comme déposé</span>
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Réessayer</span>
                     </button>
                   )}
-
-                  <select
-                    value={job.status}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      handleUpdateStatus(job.id, e.target.value as PrintJobStatus);
-                    }}
-                    className="bg-slate-950 border border-slate-800 text-slate-300 rounded-lg text-xs px-2 py-1"
-                  >
-                    <option value="ready">Prêt</option>
-                    <option value="sent">Envoyé</option>
-                    <option value="failed">Échec</option>
-                  </select>
                 </div>
               </div>
             ))

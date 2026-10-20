@@ -74,6 +74,36 @@ describe('PreFlightEngine Specification Tests', () => {
     expect(report.issues.some((i) => i.id.startsWith('ean_invalid_'))).toBe(true);
   });
 
+  it('validates the active export imposition and blocks visual-only finishing effects', () => {
+    const template: LabelTemplate = {
+      ...baseTemplate,
+      width_mm: 300,
+      items: [{
+        id: 'finish-only',
+        type: 'shape',
+        x_mm: 0,
+        y_mm: 0,
+        w_mm: 10,
+        h_mm: 10,
+        rotation: 0,
+        z_index: 0,
+        locked: false,
+        finish_effect: 'die_cut',
+      } as any],
+    };
+    const activeConfig = {
+      page_size: 'A4' as const,
+      orientation: 'portrait' as const,
+      gap_mm: 0,
+      show_cut_marks: false,
+    };
+
+    const report = PreFlightEngine.analyzeTemplate(template, sampleProduct, 'pdf', activeConfig);
+    expect(report.issues.map((issue) => issue.id)).toContain('imposition_page_overflow');
+    expect(report.issues.map((issue) => issue.id)).toContain('unsupported_finish_pdf_finish-only');
+    expect(report.passed).toBe(false);
+  });
+
   it('EAN de démo absent lors de l export', () => {
     const tpl: LabelTemplate = {
       ...baseTemplate,

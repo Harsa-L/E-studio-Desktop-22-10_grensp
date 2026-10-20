@@ -767,10 +767,13 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
               className="w-full mt-0.5 px-2 py-1.5 bg-slate-50 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:bg-white"
             >
               <option value="none">Standard (Impression quadrichromie)</option>
-              <option value="die_cut">Tracé de Découpe (Ligne rose magenta de forme)</option>
-              <option value="spot_varnish">Vernis Sélectif Brillant (Zone d'enduction UV)</option>
-              <option value="hot_foil">Dorure à Chaud (Marquage or métallisé)</option>
+              <option value="die_cut">Repère visuel de découpe (éditeur uniquement)</option>
+              <option value="spot_varnish">Repère visuel de vernis (éditeur uniquement)</option>
+              <option value="hot_foil">Repère visuel de dorure (éditeur uniquement)</option>
             </select>
+            <p className="mt-1 text-[10px] text-amber-700">
+              Ces effets ne créent pas de tracé, de séparation ni de calque dans les exports.
+            </p>
           </div>
         </div>
 

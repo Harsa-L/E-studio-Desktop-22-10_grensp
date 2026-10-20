@@ -53,4 +53,28 @@ describe('ImpositionCalculator Specification Tests', () => {
 
     expect(res.cols).toBe(3);
   });
+
+  it('applique les espaces, la calibration et le décalage de slot une seule fois', () => {
+    const config: ImpositionConfig = {
+      page_size: 'A4',
+      orientation: 'portrait',
+      gap_mm: 2,
+      gap_x_mm: 5,
+      gap_y_mm: 7,
+      margin_left_mm: 10,
+      margin_right_mm: 10,
+      margin_top_mm: 10,
+      margin_bottom_mm: 10,
+      calibration_x_mm: 1.25,
+      calibration_y_mm: -0.5,
+      slot_nudges: { 1: { nudge_x_mm: 0.2, nudge_y_mm: 0.3 } },
+      show_cut_marks: false,
+    };
+    const result = ImpositionCalculator.calculate(50, 30, { top: 0, bottom: 0, left: 0, right: 0 }, config);
+    const position = ImpositionCalculator.getSlotPosition(result, config, 1);
+
+    expect(result.horizontal_offset_mm).toBe(25);
+    expect(result.vertical_offset_mm).toBe(22.5);
+    expect(position).toEqual({ x_mm: 81.45, y_mm: 22.3 });
+  });
 });

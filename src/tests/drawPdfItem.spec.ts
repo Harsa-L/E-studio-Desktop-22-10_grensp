@@ -122,4 +122,33 @@ describe('drawPdfItem Specification Tests', () => {
     expect(doc.getNumberOfPages()).toBe(1);
     expect(doc.output()).toContain('12,50');
   });
+
+  it('rejects imposed PDF jobs when labels do not fit or no products are supplied', () => {
+    const template: LabelTemplate = {
+      id: 'oversized_template',
+      name: 'Oversized',
+      revision: 1,
+      schema_version: 1,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+      width_mm: 300,
+      height_mm: 50,
+      inner_margins_mm: { top: 0, bottom: 0, left: 0, right: 0 },
+      outer_margins_mm: { top: 0, bottom: 0, left: 0, right: 0 },
+      bg_color: '#ffffff',
+      bg_opacity: 1,
+      items: [],
+    };
+    const config: ImpositionConfig = {
+      page_size: 'A4',
+      orientation: 'portrait',
+      gap_mm: 0,
+      show_cut_marks: false,
+    };
+
+    expect(() => renderImposedPdfJob(template, [{ id: 'product', ITEMNAME: 'Product' }], config))
+      .toThrow('The label does not fit on the selected page.');
+    expect(() => renderImposedPdfJob({ ...template, width_mm: 40 }, [], config))
+      .toThrow('The print job has no product snapshot to render.');
+  });
 });

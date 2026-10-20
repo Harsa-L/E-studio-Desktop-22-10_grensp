@@ -1,4 +1,4 @@
-import { LabelTemplate, TemplateItem, ProductRecord } from '../types';
+import { ImpositionConfig, LabelTemplate, TemplateItem, ProductRecord } from '../types';
 import { PricingEngine, isPriceRelatedElement } from './pricingEngine';
 import { validateEAN13 } from './barcodeGenerator';
 import { ImpositionCalculator } from './impositionCalculator';
@@ -37,9 +37,10 @@ export class PreFlightEngine {
   static analyzeBatch(
     template: LabelTemplate,
     products: ProductRecord[],
-    target: PreFlightTarget
+    target: PreFlightTarget,
+    activeImpositionConfig?: ImpositionConfig
   ): BatchPreFlightReport {
-    const sampleReport = PreFlightEngine.analyzeTemplate(template, products[0], target);
+    const sampleReport = PreFlightEngine.analyzeTemplate(template, products[0], target, activeImpositionConfig);
     const isProductIssue = (id: string) =>
       id === 'product_missing_price' ||
       id === 'invalid_promo_start_date' ||
@@ -57,7 +58,7 @@ export class PreFlightEngine {
 
     const defectiveProducts = new Set<string>();
     uniqueProducts.forEach((product, key) => {
-      const productReport = PreFlightEngine.analyzeTemplate(template, product, target);
+      const productReport = PreFlightEngine.analyzeTemplate(template, product, target, activeImpositionConfig);
       productReport.issues
         .filter((issue) => isProductIssue(issue.id))
         .forEach((issue) => {
@@ -102,7 +103,8 @@ export class PreFlightEngine {
   static analyzeTemplate(
     template: LabelTemplate,
     sampleProduct?: ProductRecord,
-    target: PreFlightTarget = 'screen'
+    target: PreFlightTarget = 'screen',
+    activeImpositionConfig?: ImpositionConfig
   ): PreFlightReport {
     const issues: PreFlightIssue[] = [];
 
@@ -135,13 +137,14 @@ export class PreFlightEngine {
     }
 
     // Check if label fits on imposition sheet if default_imposition is configured
-    if (template.default_imposition) {
+    const impositionConfig = activeImpositionConfig || template.default_imposition;
+    if (impositionConfig && (target === 'pdf' || target === 'pptx')) {
       try {
         const calc = ImpositionCalculator.calculate(
           width,
           height,
           template.outer_margins_mm || { top: 0, bottom: 0, left: 0, right: 0 },
-          template.default_imposition
+          impositionConfig
         );
         if (calc.cols === 0 || calc.rows === 0 || !calc.fits_on_page) {
           issues.push({
@@ -456,6 +459,17 @@ export class PreFlightEngine {
             itemId: item.id,
           });
         }
+
+      }
+
+      if ((target === 'pdf' || target === 'pptx') && item.finish_effect && item.finish_effect !== 'none') {
+        issues.push({
+          id: `unsupported_finish_${target}_${item.id}`,
+          severity: 'error',
+          category: 'compatibility',
+          message: `La finition "${item.finish_effect}" est une annotation visuelle uniquement ; aucun tracé ou calque de production n'est exporté en ${target.toUpperCase()}.`,
+          itemId: item.id,
+        });
       }
 
       // Price field identification

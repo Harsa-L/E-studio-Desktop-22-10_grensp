@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod db;
+pub mod printing;
 
 use std::sync::Mutex;
 use tauri::Manager;
@@ -31,7 +32,6 @@ pub fn run() {
             commands::catalog_replace_all,
             commands::job_insert,
             commands::job_list,
-            commands::job_set_status,
             commands::audit_append,
             commands::audit_list,
             commands::prefs_get,
@@ -42,6 +42,12 @@ pub fn run() {
             commands::database_restore,
             commands::backup_db,
             commands::restore_db,
+            printing::print_capabilities,
+            printing::print_list_queues,
+            printing::print_submit_pdf,
+            printing::print_submit_zpl,
+            printing::print_refresh_job,
+            printing::print_retry_job,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -154,6 +154,19 @@ export class SemanticClusteringEngine {
     customOverrideName?: string
   ): ProductRecord {
     const master = candidate.items[0];
+    if (!master || candidate.items.length < 2) {
+      throw new Error('An assortment requires at least two member products.');
+    }
+    const {
+      PRODUCT_SCAN: _productScan,
+      scan: _scan,
+      barcode: _barcode,
+      PROMOPRICE: _promoPrice,
+      PROMO_LABEL: _promoLabel,
+      price_tiers: _priceTiers,
+      TIERS: _tiers,
+      ...masterFields
+    } = master;
 
     // Dynamic Text Substitution phrase
     let substitutionPhrase = '';
@@ -173,7 +186,7 @@ export class SemanticClusteringEngine {
     const effectiveName = customOverrideName?.trim() || defaultAssortmentName;
 
     const virtualItem: ProductRecord = {
-      ...master,
+      ...masterFields,
       id: `ASSORT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       ITEMNAME: effectiveName,
       ITEMDESCRIPTION: `Assortiment groupé de ${candidate.items.length} références : ${candidate.discriminators.join(', ') || 'Multiples'}`,
@@ -185,10 +198,9 @@ export class SemanticClusteringEngine {
       cluster_member_ids: candidate.items.map((i) => i.id),
       custom_name_override: customOverrideName,
       PARTNO: `ASSORT-${master.PARTNO || 'GRP'}`,
-      PRODUCT_SCAN: master.PRODUCT_SCAN || '3250399999999',
       SELLING_PRICE: candidate.sharedPrice,
-      PROMOPRICE: candidate.isPromoPrice ? candidate.sharedPrice : master.PROMOPRICE,
-      PROMO_LABEL: candidate.items.length > 2 ? `LOT ASSORTI (${candidate.items.length} RÉF.)` : master.PROMO_LABEL,
+      PROMOPRICE: undefined,
+      PROMO_LABEL: candidate.items.length > 2 ? `LOT ASSORTI (${candidate.items.length} RÉF.)` : undefined,
     };
 
     return virtualItem;
@@ -206,11 +218,28 @@ export class SemanticClusteringEngine {
     sharedTag: string = 'ASSORTIMENT_MANUEL'
   ): ProductRecord {
     const master = selectedItems[0];
-    const prices = selectedItems.map((it) => it.SELLING_PRICE);
-    const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+    if (selectedItems.length < 2) {
+      throw new Error('A manual assortment requires at least two member products.');
+    }
+    const {
+      PRODUCT_SCAN: _productScan,
+      scan: _scan,
+      barcode: _barcode,
+      SELLING_PRICE: _sellingPrice,
+      PROMOPRICE: _promoPrice,
+      price_tiers: _priceTiers,
+      TIERS: _tiers,
+      ...masterFields
+    } = master;
+    const sameBasePrice = selectedItems.every(
+      (item) => typeof item.SELLING_PRICE === 'number' && item.SELLING_PRICE === master.SELLING_PRICE
+    );
+    const samePromoPrice = selectedItems.every(
+      (item) => typeof item.PROMOPRICE === 'number' && item.PROMOPRICE === master.PROMOPRICE
+    );
 
     const virtualItem: ProductRecord = {
-      ...master,
+      ...masterFields,
       id: `MANUAL-ASSORT-${Date.now()}`,
       assortment_id: assortmentId,
       assortment_tag: sharedTag,
@@ -222,8 +251,8 @@ export class SemanticClusteringEngine {
       cluster_member_ids: selectedItems.map((i) => i.id),
       custom_name_override: overarchingName,
       PARTNO: `GRP-${assortmentId}`,
-      PRODUCT_SCAN: master.PRODUCT_SCAN || '3250398888888',
-      SELLING_PRICE: avgPrice,
+      SELLING_PRICE: sameBasePrice ? master.SELLING_PRICE : undefined,
+      PROMOPRICE: samePromoPrice ? master.PROMOPRICE : undefined,
       PROMO_LABEL: `GAMME GROUPÉE`,
     };
 

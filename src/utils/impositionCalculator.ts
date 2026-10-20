@@ -66,12 +66,9 @@ export class ImpositionCalculator {
     const used_w = cols > 0 ? cols * label_total_w_mm + Math.max(0, cols - 1) * gap_x : 0;
     const used_h = rows > 0 ? rows * label_total_h_mm + Math.max(0, rows - 1) * gap_y : 0;
 
-    const calibX = config.calibration_x_mm || 0;
-    const calibY = config.calibration_y_mm || 0;
-
     // Center within available margins or whole page
-    const horizontal_offset_mm = cols > 0 ? Math.max(0, marginLeft + (available_w - used_w) / 2 + calibX) : 0;
-    const vertical_offset_mm = rows > 0 ? Math.max(0, marginTop + (available_h - used_h) / 2 + calibY) : 0;
+    const horizontal_offset_mm = cols > 0 ? marginLeft + (available_w - used_w) / 2 : 0;
+    const vertical_offset_mm = rows > 0 ? marginTop + (available_h - used_h) / 2 : 0;
 
     return {
       page_w_mm: page_w,
@@ -85,6 +82,35 @@ export class ImpositionCalculator {
       label_total_h_mm,
       fits_on_page,
       overflow_warning,
+    };
+  }
+
+  static getSlotPosition(
+    imposition: ImpositionCalculation,
+    config: ImpositionConfig,
+    slotIndex: number
+  ): { x_mm: number; y_mm: number } {
+    if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= imposition.total_per_page) {
+      throw new RangeError(`Invalid imposition slot index: ${slotIndex}`);
+    }
+    const cols = imposition.cols;
+    const col = slotIndex % cols;
+    const row = Math.floor(slotIndex / cols);
+    const nudge = config.slot_nudges?.[slotIndex];
+    const gapX = Math.max(0, config.gap_x_mm ?? config.gap_mm ?? 0);
+    const gapY = Math.max(0, config.gap_y_mm ?? config.gap_mm ?? 0);
+
+    return {
+      x_mm:
+        imposition.horizontal_offset_mm +
+        col * (imposition.label_total_w_mm + gapX) +
+        (config.calibration_x_mm || 0) +
+        (nudge?.nudge_x_mm || 0),
+      y_mm:
+        imposition.vertical_offset_mm +
+        row * (imposition.label_total_h_mm + gapY) +
+        (config.calibration_y_mm || 0) +
+        (nudge?.nudge_y_mm || 0),
     };
   }
 }

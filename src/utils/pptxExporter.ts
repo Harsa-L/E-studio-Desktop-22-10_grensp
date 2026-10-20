@@ -5,6 +5,7 @@ import { PricingEngine } from './pricingEngine';
 import { renderBarcodeToDataUrl } from './barcodeGenerator';
 import { renderQrToDataUrl } from './qrGenerator';
 import { LabelResolutionEngine } from './labelResolutionEngine';
+import { ImpositionCalculator } from './impositionCalculator';
 
 /**
  * Converts mm to inches for pptxgenjs layout
@@ -20,8 +21,18 @@ export class PptxExporter {
     template: LabelTemplate,
     products: ProductRecord[],
     imposition: ImpositionCalculation,
-    impositionConfig: ImpositionConfig
+    impositionConfig: ImpositionConfig,
+    productTemplates?: LabelTemplate[]
   ) {
+    if (imposition.total_per_page < 1 || imposition.cols < 1 || !Number.isFinite(imposition.total_per_page)) {
+      throw new Error('The label does not fit on the selected page.');
+    }
+    if (products.length === 0) {
+      throw new Error('The print job has no product snapshot to render.');
+    }
+    if (productTemplates && productTemplates.length !== products.length) {
+      throw new Error('Each rule-processed product must have exactly one resolved template.');
+    }
     const pptx = new pptxgen();
 
     // Configure Slide Dimensions matching the paper page
@@ -36,30 +47,30 @@ export class PptxExporter {
     pptx.layout = 'CUSTOM_SHEET';
 
     const labelsPerPage = imposition.total_per_page;
-    const totalPages = Math.ceil(products.length / labelsPerPage);
+    const startOffset = Math.max(0, Math.min(labelsPerPage - 1, Math.floor(impositionConfig.start_offset_slot || 0)));
+    const totalPages = Math.ceil((products.length + startOffset) / labelsPerPage);
 
     for (let page = 0; page < totalPages; page++) {
       const slide = pptx.addSlide();
       slide.background = { color: 'FFFFFF' };
 
       for (let slot = 0; slot < labelsPerPage; slot++) {
-        const prodIndex = page * labelsPerPage + slot;
+        if (page === 0 && slot < startOffset) continue;
+        const prodIndex =
+          page === 0
+            ? slot - startOffset
+            : labelsPerPage - startOffset + (page - 1) * labelsPerPage + slot;
         if (prodIndex >= products.length) break;
         const prod = products[prodIndex];
+        const renderTemplate = productTemplates?.[prodIndex] || template;
 
-        const col = slot % imposition.cols;
-        const row = Math.floor(slot / imposition.cols);
-
-        // Calculate label origin in mm on sheet
-        const labelX_mm =
-          imposition.horizontal_offset_mm + col * (imposition.label_total_w_mm + impositionConfig.gap_mm);
-        const labelY_mm =
-          imposition.vertical_offset_mm + row * (imposition.label_total_h_mm + impositionConfig.gap_mm);
+        const { x_mm: labelX_mm, y_mm: labelY_mm } =
+          ImpositionCalculator.getSlotPosition(imposition, impositionConfig, slot);
 
         const labelX_in = mmToIn(labelX_mm);
         const labelY_in = mmToIn(labelY_mm);
-        const labelW_in = mmToIn(template.width_mm);
-        const labelH_in = mmToIn(template.height_mm);
+        const labelW_in = mmToIn(renderTemplate.width_mm);
+        const labelH_in = mmToIn(renderTemplate.height_mm);
 
         // Draw Label Background / Outline
         slide.addShape(pptx.ShapeType.rect, {
@@ -67,12 +78,12 @@ export class PptxExporter {
           y: labelY_in,
           w: labelW_in,
           h: labelH_in,
-          fill: { color: (template.bg_color || '#FFFFFF').replace('#', '') },
+          fill: { color: (renderTemplate.bg_color || '#FFFFFF').replace('#', '') },
           line: { color: 'CCCCCC', width: 0.5, dashType: 'dash' },
         });
 
         // Resolve label with single unified semantic model
-        const resolvedLabel = LabelResolutionEngine.resolveLabel(template, prod, 'pptx', { sample: false });
+        const resolvedLabel = LabelResolutionEngine.resolveLabel(renderTemplate, prod, 'pptx', { sample: false });
 
         // Add each template item to the slide
         for (const resolvedItem of resolvedLabel.items) {
@@ -97,8 +108,16 @@ export class PptxExporter {
                 h: itemH_in,
                 fontSize: Math.max(8, (item as any).integer_style?.font_size_pt || 24),
                 fontFace: (item as any).font_family || 'Calibri',
-                bold: true,
+                bold: item.integer_style?.font_weight === undefined
+                  ? true
+                  : ['600', 'bold', '800'].includes(item.integer_style.font_weight),
                 color: ((item as any).integer_style?.text_color || '#000000').replace('#', ''),
+                fill: item.fill_color && item.fill_color !== 'transparent'
+                  ? { color: item.fill_color.replace('#', '') }
+                  : undefined,
+                line: item.border_color && item.border_width
+                  ? { color: item.border_color.replace('#', ''), width: item.border_width }
+                  : undefined,
                 align: (item.alignment === 'justify' ? 'left' : item.alignment) || 'left',
                 valign: item.valign || 'top',
               });
@@ -116,7 +135,7 @@ export class PptxExporter {
                 h: itemH_in,
                 fontSize: Math.max(6, resolvedItem.fontSizePt),
                 fontFace: resolvedItem.fontFamily || 'Calibri',
-                bold: resolvedItem.fontWeight === 'bold' || resolvedItem.fontWeight === '800',
+                bold: resolvedItem.fontWeight === '600' || resolvedItem.fontWeight === 'bold' || resolvedItem.fontWeight === '800',
                 italic: resolvedItem.fontStyle === 'italic',
                 underline: resolvedItem.textDecoration === 'underline' ? { style: 'sng' } : undefined,
                 strike: resolvedItem.textDecoration === 'line-through',

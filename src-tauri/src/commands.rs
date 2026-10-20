@@ -487,45 +487,6 @@ pub fn job_list(state: State<'_, DbState>, limit: Option<usize>) -> Result<Vec<V
 }
 
 #[tauri::command]
-pub fn job_set_status(
-    state: State<'_, DbState>,
-    id: String,
-    status: String,
-    error: Option<String>,
-) -> Result<(), String> {
-    let conn = state.0.lock().map_err(|e| e.to_string())?;
-    let mut stmt = conn
-        .prepare("SELECT job_json FROM print_jobs WHERE id = ?1")
-        .map_err(|e| e.to_string())?;
-
-    let job_str: Option<String> = stmt
-        .query_row(params![id], |row| row.get(0))
-        .optional()
-        .map_err(|e| e.to_string())?;
-
-    if let Some(s) = job_str {
-        if let Ok(mut job) = serde_json::from_str::<Value>(&s) {
-            if let Some(obj) = job.as_object_mut() {
-                obj.insert("status".to_string(), Value::String(status));
-                if let Some(err) = error {
-                    obj.insert("error".to_string(), Value::String(err));
-                } else {
-                    obj.insert("error".to_string(), Value::Null);
-                }
-                let updated_json = serde_json::to_string(&job).map_err(|e| e.to_string())?;
-                conn.execute(
-                    "UPDATE print_jobs SET job_json = ?2 WHERE id = ?1",
-                    params![id, updated_json],
-                )
-                .map_err(|e| e.to_string())?;
-            }
-        }
-    }
-
-    Ok(())
-}
-
-#[tauri::command]
 pub fn audit_append(
     state: State<'_, DbState>,
     action: String,

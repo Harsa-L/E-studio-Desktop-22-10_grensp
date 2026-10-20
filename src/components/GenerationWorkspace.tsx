@@ -1,5 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { LabelTemplate, ProductRecord, ImpositionConfig, PdfExportConfig } from '../types';
+import { LabelTemplate, ProductRecord, ImpositionConfig, PrintJob } from '../types';
+import { Rule } from '../rulesEngine/types';
+import { DEFAULT_RULES } from '../rulesEngine/defaultRules';
+import {
+  prepareRuleProcessedLabels,
+  validateProductionRules,
+} from '../rulesEngine/productionPipeline';
 import { catalogRepository as databaseService } from '../services/catalogRepository';
 import { LabelRenderer } from './LabelRenderer';
 import { ImpositionCalculator } from '../utils/impositionCalculator';
@@ -28,6 +34,7 @@ import { api } from '../services/api';
 import { AuditLogService } from '../services/auditLogService';
 import { PrintJobHistoryModal } from './PrintJobHistoryModal';
 import { PreFlightEngine } from '../utils/preFlightEngine';
+import { renderImposedPdfJob } from '../utils/pdfJobRenderer';
 import {
   History,
   ChevronLeft,
@@ -63,6 +70,7 @@ import {
   CheckSquare,
   Square,
   Copy,
+  X,
 } from 'lucide-react';
 
 interface GenerationWorkspaceProps {
@@ -100,6 +108,174 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
   const [isDictionaryModalOpen, setIsDictionaryModalOpen] = useState(false);
   const [showJobHistory, setShowJobHistory] = useState(false);
   const [exportConfirmTarget, setExportConfirmTarget] = useState<'pdf' | 'zpl' | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [productionRules, setProductionRules] = useState<Rule[]>(DEFAULT_RULES);
+  const [rulesReady, setRulesReady] = useState(false);
+  const [rulesError, setRulesError] = useState<string | null>(null);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printFormat, setPrintFormat] = useState<'pdf' | 'zpl'>('pdf');
+  const [printBusy, setPrintBusy] = useState(false);
+  const [printMessage, setPrintMessage] = useState<string | null>(null);
+  const [printError, setPrintError] = useState<string | null>(null);
+  const [printQueues, setPrintQueues] = useState<{ name: string; state: string; is_default: boolean }[]>([]);
+  const [printQueueError, setPrintQueueError] = useState<string | null>(null);
+  const [printCapabilities, setPrintCapabilities] = useState<{
+    platform: string;
+    cups_supported: boolean;
+    raw_zpl_tcp_supported: boolean;
+    note: string;
+  } | null>(null);
+  const [printerConfig, setPrinterConfig] = useState({
+    cups_queue: '',
+    zpl_host: '',
+    zpl_port: 9100,
+    zpl_dpi: 203 as 203 | 300 | 600,
+  });
+  const [printerConfigReady, setPrinterConfigReady] = useState(false);
+
+  React.useEffect(() => {
+    let active = true;
+    api.prefsGet('estudio_rules_v1').then((saved) => {
+      if (!active) return;
+      if (!saved) {
+        setProductionRules(DEFAULT_RULES);
+        setRulesReady(true);
+        return;
+      }
+      try {
+        const parsed: unknown = JSON.parse(saved);
+        validateProductionRules(parsed);
+        setProductionRules(parsed);
+        setRulesReady(true);
+        setRulesError(null);
+      } catch (error) {
+        setRulesError(error instanceof Error ? error.message : String(error));
+        setRulesReady(true);
+      }
+    }).catch((error) => {
+      if (active) {
+        setRulesError(error instanceof Error ? error.message : String(error));
+        setRulesReady(true);
+      }
+    });
+    return () => { active = false; };
+  }, []);
+
+  const readCurrentProductionRules = async (): Promise<Rule[]> => {
+    let saved: string | null;
+    try {
+      saved = await api.prefsGet('estudio_rules_v1');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setRulesError(message);
+      throw new Error(`Production rules are unavailable: ${message}`);
+    }
+    if (!saved) {
+      setProductionRules(DEFAULT_RULES);
+      setRulesError(null);
+      return DEFAULT_RULES;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(saved);
+    } catch (error) {
+      throw new Error(`Saved production rules are invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    try {
+      validateProductionRules(parsed);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setRulesError(message);
+      throw error;
+    }
+    setProductionRules(parsed);
+    setRulesError(null);
+    return parsed;
+  };
+
+  const prepareProductionBatch = async (target: 'pdf' | 'zpl' | 'pptx', dpi: number) => {
+    const activeRules = await readCurrentProductionRules();
+    const cleanProducts = effectivePrintItems.map((product) => sanitizeRenderProduct(product));
+    const prepared = prepareRuleProcessedLabels(
+      template,
+      cleanProducts,
+      activeRules,
+      target,
+      dpi,
+      new Date().toISOString()
+    );
+    return {
+      products: prepared.map((label) => label.product),
+      templates: prepared.map((label) => label.template),
+      audits: prepared.map((label) => label.auditTrail),
+      rules: activeRules,
+    };
+  };
+
+  const openPrintModal = async (format: 'pdf' | 'zpl') => {
+    setPrintFormat(format);
+    setPrintMessage(null);
+    setPrintError(null);
+    setPrintQueueError(null);
+    setShowPrintModal(true);
+    setPrinterConfigReady(false);
+
+    const [capabilityResult, queueResult, preferenceResult] = await Promise.allSettled([
+      api.printCapabilities(),
+      api.printListQueues(),
+      api.prefsGet('estudio_printer_config_v1'),
+    ]);
+    if (capabilityResult.status === 'fulfilled') {
+      setPrintCapabilities(capabilityResult.value);
+    } else {
+      setPrintError(capabilityResult.reason instanceof Error
+        ? capabilityResult.reason.message
+        : String(capabilityResult.reason));
+    }
+    if (queueResult.status === 'fulfilled') {
+      setPrintQueues(queueResult.value);
+      setPrintQueueError(null);
+    } else {
+      setPrintQueues([]);
+      setPrintQueueError(queueResult.reason instanceof Error
+        ? queueResult.reason.message
+        : String(queueResult.reason));
+    }
+    if (preferenceResult.status === 'fulfilled' && preferenceResult.value) {
+      try {
+        const saved: unknown = JSON.parse(preferenceResult.value);
+        if (!saved || typeof saved !== 'object') throw new Error('Printer configuration must be an object.');
+        const config = saved as Record<string, unknown>;
+        const port = typeof config.zpl_port === 'number' && config.zpl_port >= 1 && config.zpl_port <= 65535
+          ? Math.floor(config.zpl_port)
+          : 9100;
+        setPrinterConfig({
+          cups_queue: typeof config.cups_queue === 'string'
+            ? config.cups_queue
+            : queueResult.status === 'fulfilled'
+              ? queueResult.value.find((queue) => queue.is_default)?.name || ''
+              : '',
+          zpl_host: typeof config.zpl_host === 'string' ? config.zpl_host : '',
+          zpl_port: port,
+          zpl_dpi: config.zpl_dpi === 300 || config.zpl_dpi === 600 ? config.zpl_dpi : 203,
+        });
+      } catch (error) {
+        setPrintError(`Saved printer configuration could not be read: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    } else if (preferenceResult.status === 'rejected') {
+      setPrintError(preferenceResult.reason instanceof Error
+        ? preferenceResult.reason.message
+        : String(preferenceResult.reason));
+    } else {
+      setPrinterConfig((previous) => ({
+        ...previous,
+        cups_queue: queueResult.status === 'fulfilled'
+          ? queueResult.value.find((queue) => queue.is_default)?.name || ''
+          : previous.cups_queue,
+      }));
+    }
+    setPrinterConfigReady(true);
+  };
 
   const handleUpdateSingleProduct = (updated: ProductRecord) => {
     setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
@@ -124,16 +300,6 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
       show_cut_marks: true,
       start_offset_slot: 0,
     };
-  });
-
-  // PDF Export Config
-  const [pdfConfig, setPdfConfig] = useState<PdfExportConfig>({
-    dpi: 300,
-    bleed_mm: 2.0,
-    show_crop_marks: true,
-    show_registration_marks: false,
-    include_calibration_layer: false,
-    color_mode: 'cmyk_sim',
   });
 
   // ZPL Config Modal
@@ -207,8 +373,91 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
   // Preflight diagnostics for rows
   const preFlightReport = useMemo(() => {
-    return PreFlightEngine.analyzeBatch(template, effectivePrintItems, exportConfirmTarget || 'screen');
-  }, [template, effectivePrintItems, exportConfirmTarget]);
+    const target = exportConfirmTarget || 'screen';
+    if (target === 'screen') {
+      return PreFlightEngine.analyzeBatch(template, effectivePrintItems, target);
+    }
+    if (!rulesReady || rulesError) {
+      const message = rulesError || 'Production rules are still loading.';
+      return {
+        status: 'draft' as const,
+        errorsCount: 1,
+        warningsCount: 0,
+        infosCount: 0,
+        issues: [{
+          id: 'production_rules_unavailable',
+          severity: 'error' as const,
+          category: 'compatibility' as const,
+          message,
+        }],
+        passed: false,
+        totalProductsChecked: effectivePrintItems.length,
+        defectiveProductsCount: effectivePrintItems.length,
+      };
+    }
+    if (effectivePrintItems.length === 0) {
+      return PreFlightEngine.analyzeBatch(
+        template,
+        [],
+        target,
+        target === 'pdf' ? impositionConfig : undefined
+      );
+    }
+    try {
+      const prepared = prepareRuleProcessedLabels(
+        template,
+        effectivePrintItems.map((product) => sanitizeRenderProduct(product)),
+        productionRules,
+        target,
+        target === 'zpl' ? zplDpi : 300
+      );
+      const reports = prepared.map((label, index) => PreFlightEngine.analyzeBatch(
+        label.template,
+        [label.product],
+        target,
+        target === 'pdf' ? impositionConfig : undefined
+      ).issues.map((issue) => ({ ...issue, id: `${issue.id}_${index}` })));
+      const issues = reports.flat();
+      const errorsCount = issues.filter((issue) => issue.severity === 'error').length;
+      const warningsCount = issues.filter((issue) => issue.severity === 'warning').length;
+      const infosCount = issues.filter((issue) => issue.severity === 'info').length;
+      return {
+        status: errorsCount > 0 ? 'draft' as const : warningsCount > 0 ? 'warning' as const : 'ready' as const,
+        errorsCount,
+        warningsCount,
+        infosCount,
+        issues,
+        passed: errorsCount === 0,
+        totalProductsChecked: effectivePrintItems.length,
+        defectiveProductsCount: errorsCount > 0 ? effectivePrintItems.length : 0,
+      };
+    } catch (error) {
+      return {
+        status: 'draft' as const,
+        errorsCount: 1,
+        warningsCount: 0,
+        infosCount: 0,
+        issues: [{
+          id: 'production_rules_rejected',
+          severity: 'error' as const,
+          category: 'compatibility' as const,
+          message: error instanceof Error ? error.message : String(error),
+        }],
+        passed: false,
+        totalProductsChecked: effectivePrintItems.length,
+        defectiveProductsCount: effectivePrintItems.length,
+      };
+    }
+  }, [
+    template,
+    effectivePrintItems,
+    exportConfirmTarget,
+    rulesReady,
+    rulesError,
+    productionRules,
+    zplDpi,
+    impositionConfig,
+  ]);
 
   const diagnostics = useMemo(() => {
     return products.map((record) => {
@@ -329,30 +578,61 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
   // PowerPoint (.pptx) Export
   const handleExportPptx = async () => {
-    if (!imposition) return;
+    setExportError(null);
     try {
-      await PptxExporter.exportToPptx(template, effectivePrintItems, imposition, impositionConfig);
+      if (!imposition) throw new Error('The current sheet imposition is invalid.');
+      const batch = await prepareProductionBatch('pptx', 300);
+      const reports = batch.templates.map((productTemplate, index) => PreFlightEngine.analyzeBatch(
+        productTemplate,
+        [batch.products[index]],
+        'pptx',
+        impositionConfig
+      ));
+      const issues = reports.flatMap((report) => report.issues);
+      if (issues.some((issue) => issue.severity === 'error')) {
+        throw new Error(issues.map((issue) => issue.message).join('\n'));
+      }
+      await PptxExporter.exportToPptx(
+        template,
+        batch.products,
+        imposition,
+        impositionConfig,
+        batch.templates
+      );
     } catch (err) {
       console.error("Erreur lors de l'export PowerPoint :", err);
+      setExportError(err instanceof Error ? err.message : String(err));
     }
   };
 
   // ZPL Direct Thermal Export
   const handleExportZpl = async () => {
-    const targetReport = PreFlightEngine.analyzeBatch(template, effectivePrintItems, 'zpl');
+    setExportError(null);
+    const targetReport = preFlightReport;
     if (!targetReport.passed) {
       console.warn("Export ZPL refusé : le gabarit contient des erreurs bloquantes.", targetReport.issues);
+      setExportError(targetReport.issues.map((issue) => issue.message).join('\n'));
       return;
     }
-    const cleanProducts = effectivePrintItems.map((p) => sanitizeRenderProduct(p));
+    const cleanProducts = effectivePrintItems.map((product) => sanitizeRenderProduct(product));
     try {
-      const zplContent = ZplExporter.generateBatchZpl(template, cleanProducts, {
+      const batch = await prepareProductionBatch('zpl', zplDpi);
+      const reports = batch.templates.map((productTemplate, index) => PreFlightEngine.analyzeBatch(
+        productTemplate,
+        [batch.products[index]],
+        'zpl'
+      ));
+      const failedIssues = reports.flatMap((report) => report.issues);
+      if (failedIssues.some((issue) => issue.severity === 'error')) {
+        throw new Error(failedIssues.map((issue) => issue.message).join('\n'));
+      }
+      const zplContent = ZplExporter.generateBatchZpl(template, batch.products, {
         dpi: zplDpi,
         quantity: 1,
         printSpeed: 4,
         darkness: 15,
         includeComments: true,
-      });
+      }, batch.templates);
       const filename = `thermique_${template.name.toLowerCase().replace(/\s+/g, '_')}_${zplDpi}dpi.zpl`;
       const savedPath = await ZplExporter.downloadZplFile(filename, zplContent);
       if (savedPath) {
@@ -369,8 +649,12 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
           error: null,
           created_at: new Date().toISOString(),
           template_snapshot: template,
-          products_snapshot: cleanProducts,
-          printed_products: cleanProducts.map((p) => ({
+          products_snapshot: batch.products,
+          rule_template_snapshots: batch.templates,
+          rule_audit_snapshot: batch.audits,
+          rules_snapshot: batch.rules,
+          zpl_dpi: zplDpi,
+          printed_products: batch.products.map((p) => ({
             id: p.id,
             ITEMNAME: p.ITEMNAME,
             SELLING_PRICE: p.SELLING_PRICE,
@@ -387,6 +671,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             template_revision: template.revision || 1,
             count: cleanProducts.length,
             dpi: zplDpi,
+            rules_applied: batch.audits.map((audit) => audit.rules_applied),
             items: cleanProducts.map((p) => ({
               product_id: p.id,
               fields: {
@@ -400,22 +685,29 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
       setShowZplModal(false);
     } catch (err: any) {
       console.error("Erreur lors de la génération ZPL :", err);
+      const initialError = err instanceof Error ? err.message : String(err);
       const failedJobId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `job_failed_${Date.now()}`;
       const errorMsg = err?.message || String(err);
-      await api.jobInsert({
-        id: failedJobId,
-        template_id: template.id || '',
-        template_revision: template.revision || 1,
-        product_ids: cleanProducts.map((p) => p.id || ''),
-        format: 'zpl',
-        imposition_json: JSON.stringify(impositionConfig),
-        target: '',
-        status: 'failed',
-        error: errorMsg,
-        created_at: new Date().toISOString(),
-        template_snapshot: template,
-        products_snapshot: cleanProducts,
-      }).catch(() => {});
+      let failureMessage = initialError;
+      try {
+        await api.jobInsert({
+          id: failedJobId,
+          template_id: template.id || '',
+          template_revision: template.revision || 1,
+          product_ids: cleanProducts.map((p) => p.id || ''),
+          format: 'zpl',
+          imposition_json: JSON.stringify(impositionConfig),
+          target: '',
+          status: 'failed',
+          error: errorMsg,
+          created_at: new Date().toISOString(),
+          template_snapshot: template,
+          products_snapshot: cleanProducts,
+        });
+      } catch (recordError) {
+        failureMessage += `\nCould not persist failed job history: ${recordError instanceof Error ? recordError.message : String(recordError)}`;
+      }
+      setExportError(failureMessage);
       AuditLogService.append({
         action: 'EXPORT_ZPL_FAILED',
         template_name: template.name,
@@ -424,6 +716,129 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
           template_revision: template.revision || 1,
         }),
       });
+    }
+  };
+
+  const handlePrintToConfiguredTarget = async () => {
+    setPrintBusy(true);
+    setPrintError(null);
+    setPrintMessage(null);
+    let jobId = '';
+    try {
+      if (!printerConfigReady) throw new Error('Printer configuration has not finished loading.');
+      if (!rulesReady || rulesError) {
+        throw new Error(rulesError || 'Production rules are still loading.');
+      }
+      if (effectivePrintItems.length === 0) throw new Error('No products are selected for printing.');
+
+      await api.prefsSet('estudio_printer_config_v1', JSON.stringify(printerConfig));
+      const batch = await prepareProductionBatch(printFormat, printerConfig.zpl_dpi);
+      const targetReports = batch.templates.map((productTemplate, index) => PreFlightEngine.analyzeBatch(
+        productTemplate,
+        [batch.products[index]],
+        printFormat,
+        printFormat === 'pdf' ? impositionConfig : undefined
+      ));
+      const issues = targetReports.flatMap((report) => report.issues);
+      if (issues.some((issue) => issue.severity === 'error')) {
+        throw new Error(issues.map((issue) => issue.message).join('\n'));
+      }
+
+      jobId = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `job_${printFormat}_${Date.now()}`;
+      const job: PrintJob = {
+        id: jobId,
+        template_id: template.id || '',
+        template_revision: template.revision || 1,
+        product_ids: batch.products.map((product) => product.id || ''),
+        format: printFormat,
+        imposition_json: JSON.stringify(impositionConfig),
+        target: printFormat === 'pdf'
+          ? printerConfig.cups_queue
+          : `${printerConfig.zpl_host}:${printerConfig.zpl_port}`,
+        status: 'submitting',
+        error: null,
+        created_at: new Date().toISOString(),
+        template_snapshot: template,
+        products_snapshot: batch.products,
+        rule_template_snapshots: batch.templates,
+        rule_audit_snapshot: batch.audits,
+        rules_snapshot: batch.rules,
+        ...(printFormat === 'zpl' ? { zpl_dpi: printerConfig.zpl_dpi } : {}),
+        printed_products: batch.products.map((product) => ({
+          id: product.id,
+          ITEMNAME: product.ITEMNAME,
+          SELLING_PRICE: product.SELLING_PRICE,
+          PROMOPRICE: product.PROMOPRICE,
+          PRODUCT_SCAN: product.PRODUCT_SCAN,
+          PARTNO: product.PARTNO,
+        })),
+        attempts: 1,
+      };
+
+      let submitted: PrintJob;
+      if (printFormat === 'pdf') {
+        if (!printerConfig.cups_queue) throw new Error('Choose an available CUPS printer queue.');
+        const pdf = renderImposedPdfJob(template, batch.products, impositionConfig, batch.templates);
+        submitted = await api.printSubmitPdf(
+          job,
+          printerConfig.cups_queue,
+          new Uint8Array(pdf.output('arraybuffer'))
+        );
+      } else {
+        if (!printerConfig.zpl_host.trim()) throw new Error('Enter the printer private-network IP address.');
+        const content = ZplExporter.generateBatchZpl(template, batch.products, {
+          dpi: printerConfig.zpl_dpi,
+          quantity: 1,
+          printSpeed: 4,
+          darkness: 15,
+          includeComments: true,
+        }, batch.templates);
+        submitted = await api.printSubmitZpl(
+          job,
+          printerConfig.zpl_host.trim(),
+          printerConfig.zpl_port,
+          content
+        );
+      }
+      await AuditLogService.append({
+        action: printFormat === 'pdf' ? 'PRINT_CUPS_SUBMITTED' : 'PRINT_ZPL_SOCKET_SENT',
+        template_name: template.name,
+        details: JSON.stringify({
+          job_id: submitted.id,
+          status: submitted.status,
+          target: submitted.target,
+          products: batch.products.length,
+          rules_applied: batch.audits.map((audit) => audit.rules_applied),
+          physical_completion_confirmed: submitted.device_completion_confirmed === true,
+        }),
+      });
+      setPrintMessage(submitted.status === 'queued'
+        ? `CUPS accepted job ${submitted.native_job_id || submitted.id} for queue "${submitted.target}". Physical completion is not yet confirmed.`
+        : `ZPL bytes were sent to ${submitted.target}. Printer acknowledgement and physical completion are not confirmed.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setPrintError(message);
+      if (jobId) {
+        try {
+          const jobs = await api.jobList();
+          const failedJob = jobs.find((job) => job.id === jobId);
+          if (failedJob?.status === 'queued') {
+            setPrintError(null);
+            setPrintMessage(`CUPS reports job ${failedJob.native_job_id || failedJob.id} queued for "${failedJob.target}". Physical completion is not confirmed.`);
+          } else if (failedJob?.status === 'submitted_unconfirmed') {
+            setPrintError(null);
+            setPrintMessage(`The job was written to the printer socket; physical completion is not confirmed. Job ${jobId}.`);
+          } else if (failedJob) {
+            setPrintError(`${message}\nJob ${jobId} status: ${failedJob.status}${failedJob.error ? ` — ${failedJob.error}` : ''}`);
+          }
+        } catch (historyError) {
+          setPrintError(`${message}\nPrint history lookup failed: ${historyError instanceof Error ? historyError.message : String(historyError)}`);
+        }
+      }
+    } finally {
+      setPrintBusy(false);
     }
   };
 
@@ -769,15 +1184,27 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
   // Generate and save Imposed PDF via native OS dialog
   const handleGeneratePdf = async () => {
-    const targetReport = PreFlightEngine.analyzeBatch(template, effectivePrintItems, 'pdf');
+    setExportError(null);
+    const targetReport = preFlightReport;
     if (!targetReport.passed) {
       console.warn("Export PDF refusé : le gabarit contient des erreurs bloquantes.", targetReport.issues);
+      setExportError(targetReport.issues.map((issue) => issue.message).join('\n'));
       return;
     }
-    const cleanProducts = effectivePrintItems.map((p) => sanitizeRenderProduct(p));
+    const cleanProducts = effectivePrintItems.map((product) => sanitizeRenderProduct(product));
     try {
-      const doc = buildPdfDocument();
-      if (!doc) return;
+      const batch = await prepareProductionBatch('pdf', 300);
+      const reports = batch.templates.map((productTemplate, index) => PreFlightEngine.analyzeBatch(
+        productTemplate,
+        [batch.products[index]],
+        'pdf',
+        impositionConfig
+      ));
+      const failedIssues = reports.flatMap((report) => report.issues);
+      if (failedIssues.some((issue) => issue.severity === 'error')) {
+        throw new Error(failedIssues.map((issue) => issue.message).join('\n'));
+      }
+      const doc = renderImposedPdfJob(template, batch.products, impositionConfig, batch.templates);
       const arrayBuffer = doc.output('arraybuffer');
       const filename = `etiquettes_imposees_${template.name.toLowerCase().replace(/\s+/g, '_')}.pdf`;
       const savedPath = await desktopFileService.saveBinary(
@@ -799,8 +1226,11 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
           error: null,
           created_at: new Date().toISOString(),
           template_snapshot: template,
-          products_snapshot: cleanProducts,
-          printed_products: cleanProducts.map((p) => ({
+          products_snapshot: batch.products,
+          rule_template_snapshots: batch.templates,
+          rule_audit_snapshot: batch.audits,
+          rules_snapshot: batch.rules,
+          printed_products: batch.products.map((p) => ({
             id: p.id,
             ITEMNAME: p.ITEMNAME,
             SELLING_PRICE: p.SELLING_PRICE,
@@ -816,6 +1246,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             saved_path: savedPath,
             template_revision: template.revision || 1,
             count: cleanProducts.length,
+            rules_applied: batch.audits.map((audit) => audit.rules_applied),
             items: cleanProducts.map((p) => ({
               product_id: p.id,
               fields: {
@@ -828,22 +1259,29 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
       }
     } catch (err: any) {
       console.error("Erreur lors de la génération PDF :", err);
+      const initialError = err instanceof Error ? err.message : String(err);
       const failedJobId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `job_failed_${Date.now()}`;
       const errorMsg = err?.message || String(err);
-      await api.jobInsert({
-        id: failedJobId,
-        template_id: template.id || '',
-        template_revision: template.revision || 1,
-        product_ids: cleanProducts.map((p) => p.id || ''),
-        format: 'pdf',
-        imposition_json: JSON.stringify(impositionConfig),
-        target: '',
-        status: 'failed',
-        error: errorMsg,
-        created_at: new Date().toISOString(),
-        template_snapshot: template,
-        products_snapshot: cleanProducts,
-      }).catch(() => {});
+      let failureMessage = initialError;
+      try {
+        await api.jobInsert({
+          id: failedJobId,
+          template_id: template.id || '',
+          template_revision: template.revision || 1,
+          product_ids: cleanProducts.map((p) => p.id || ''),
+          format: 'pdf',
+          imposition_json: JSON.stringify(impositionConfig),
+          target: '',
+          status: 'failed',
+          error: errorMsg,
+          created_at: new Date().toISOString(),
+          template_snapshot: template,
+          products_snapshot: cleanProducts,
+        });
+      } catch (recordError) {
+        failureMessage += `\nCould not persist failed job history: ${recordError instanceof Error ? recordError.message : String(recordError)}`;
+      }
+      setExportError(failureMessage);
       AuditLogService.append({
         action: 'EXPORT_PDF_FAILED',
         template_name: template.name,
@@ -965,6 +1403,32 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                       <div>
                         <div className="font-semibold">Zebra / TSC (.zpl)</div>
                         <div className="text-[10px] text-slate-400">Flux thermique direct industriel</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setExportDropdownOpen(false);
+                        void openPrintModal('pdf');
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-900 rounded-lg flex items-center gap-2.5 transition"
+                    >
+                      <Printer className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div>
+                        <div className="font-semibold">Imprimer le PDF via CUPS</div>
+                        <div className="text-[10px] text-slate-400">Soumission au spooler OS (Linux/macOS)</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setExportDropdownOpen(false);
+                        void openPrintModal('zpl');
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 rounded-lg flex items-center gap-2.5 transition"
+                    >
+                      <Cpu className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <div className="font-semibold">Envoyer ZPL au réseau</div>
+                        <div className="text-[10px] text-slate-400">TCP privé vers imprimante configurée</div>
                       </div>
                     </button>
                     <button
@@ -1184,6 +1648,21 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
           </div>
         </div>
       </header>
+
+      {exportError && (
+        <div role="alert" className="shrink-0 border-b border-rose-300 bg-rose-50 px-4 py-3 text-xs text-rose-900">
+          <div className="flex items-start justify-between gap-3">
+            <div className="whitespace-pre-line">{exportError}</div>
+            <button
+              type="button"
+              onClick={() => setExportError(null)}
+              className="shrink-0 font-semibold text-rose-700 hover:text-rose-900"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Global Print & Preview Scope Control Bar */}
       <div className="bg-slate-900 text-white border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 z-20 shadow-xs">
@@ -1685,36 +2164,14 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               <div className="flex items-center justify-between">
                 <label className="font-semibold text-slate-700 text-xs flex items-center gap-1">
                   <Settings2 className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Résolution & Finition PDF</span>
+                  <span>Limites de l'export PDF</span>
                 </label>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Résolution (DPI)</span>
-                  <select
-                    value={pdfConfig.dpi}
-                    onChange={(e) => setPdfConfig({ ...pdfConfig, dpi: parseInt(e.target.value) as any })}
-                    className="w-full px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs"
-                  >
-                    <option value={150}>150 DPI (Brouillon)</option>
-                    <option value={300}>300 DPI (HD Print)</option>
-                    <option value={600}>600 DPI (Ultra Pro)</option>
-                  </select>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Fond Perdu (Bleed)</span>
-                  <select
-                    value={pdfConfig.bleed_mm}
-                    onChange={(e) => setPdfConfig({ ...pdfConfig, bleed_mm: parseFloat(e.target.value) })}
-                    className="w-full px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs font-mono"
-                  >
-                    <option value={0}>0 mm</option>
-                    <option value={1}>1.0 mm</option>
-                    <option value={2}>2.0 mm</option>
-                    <option value={3}>3.0 mm</option>
-                  </select>
-                </div>
-              </div>
+              <p className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-[11px] leading-relaxed text-amber-900">
+                L'export PDF actuel est vectoriel RGB : il ne produit pas de résolution DPI configurable,
+                de fond perdu ni de séparations CMJN. Ces réglages sont masqués pour éviter de présenter
+                une simulation comme une finition prépresse.
+              </p>
             </div>
 
             {/* Print Calibration Offset Controls */}
@@ -1806,15 +2263,11 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               >
                 {/* Visual grid of labels */}
                 {Array.from({ length: imposition.total_per_page }).map((_, slotIdx) => {
-                  const col = slotIdx % imposition.cols;
-                  const row = Math.floor(slotIdx / imposition.cols);
                   const startOffset = impositionConfig.start_offset_slot || 0;
                   const isSkipped = slotIdx < startOffset;
                   const prodIndex = slotIdx - startOffset;
                   const prod = prodIndex >= 0 ? effectivePrintItems[prodIndex] : undefined;
-
-                  const x = imposition.horizontal_offset_mm + col * (imposition.label_total_w_mm + impositionConfig.gap_mm);
-                  const y = imposition.vertical_offset_mm + row * (imposition.label_total_h_mm + impositionConfig.gap_mm);
+                  const { x_mm: x, y_mm: y } = ImpositionCalculator.getSlotPosition(imposition, impositionConfig, slotIdx);
 
                   return (
                     <div
@@ -2138,6 +2591,206 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                 <Download className="w-3.5 h-3.5" />
                 <span>Télécharger fichier .ZPL</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPrintModal && (
+        <div className="fixed inset-0 z-[70] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden">
+            <div className="px-5 py-4 bg-slate-950 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center justify-center">
+                  <Printer className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold">
+                    {printFormat === 'pdf' ? 'Impression via spooler CUPS' : 'Envoi réseau ZPL'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {printFormat === 'pdf' ? 'Soumission PDF à une file OS installée' : 'Flux ZPL direct vers une IP privée configurée'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPrintModal(false)}
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
+                aria-label="Fermer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs max-h-[70vh] overflow-y-auto">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setPrintFormat('pdf'); setPrintError(null); setPrintMessage(null); }}
+                  className={`flex-1 rounded-lg border px-3 py-2 font-semibold ${printFormat === 'pdf' ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-slate-200 text-slate-600'}`}
+                >
+                  PDF / CUPS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setPrintFormat('zpl'); setPrintError(null); setPrintMessage(null); }}
+                  className={`flex-1 rounded-lg border px-3 py-2 font-semibold ${printFormat === 'zpl' ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 text-slate-600'}`}
+                >
+                  ZPL / TCP
+                </button>
+              </div>
+
+              {printCapabilities && (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 space-y-1">
+                  <p className="font-semibold text-slate-800">Plateforme native : {printCapabilities.platform}</p>
+                  <p>{printCapabilities.note}</p>
+                </div>
+              )}
+
+              {printFormat === 'pdf' ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="cups-queue" className="font-semibold text-slate-700">File d'impression CUPS</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        api.printListQueues().then((queues) => {
+                          setPrintQueues(queues);
+                          setPrintQueueError(null);
+                          if (!printerConfig.cups_queue) {
+                            setPrinterConfig((previous) => ({
+                              ...previous,
+                              cups_queue: queues.find((queue) => queue.is_default)?.name || '',
+                            }));
+                          }
+                        }).catch((error) => setPrintQueueError(error instanceof Error ? error.message : String(error)));
+                      }}
+                      className="text-blue-700 hover:underline"
+                    >
+                      Rechercher les files
+                    </button>
+                  </div>
+                  <select
+                    id="cups-queue"
+                    value={printerConfig.cups_queue}
+                    onChange={(event) => setPrinterConfig((previous) => ({ ...previous, cups_queue: event.target.value }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white"
+                    disabled={!printerConfigReady}
+                  >
+                    <option value="">Sélectionner une imprimante CUPS</option>
+                    {printQueues.map((queue) => (
+                      <option key={queue.name} value={queue.name}>
+                        {queue.name}{queue.is_default ? ' (par défaut)' : ''} — {queue.state}
+                      </option>
+                    ))}
+                  </select>
+                  {printQueueError && <p className="text-rose-700">{printQueueError}</p>}
+                  {printQueues.length === 0 && !printQueueError && (
+                    <p className="text-amber-700">Aucune file CUPS n'est installée ou découverte.</p>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="space-y-1">
+                    <span className="block font-semibold text-slate-700">Adresse IP privée</span>
+                    <input
+                      type="text"
+                      value={printerConfig.zpl_host}
+                      onChange={(event) => setPrinterConfig((previous) => ({ ...previous, zpl_host: event.target.value }))}
+                      placeholder="192.168.1.50"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="block font-semibold text-slate-700">Port TCP</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={65535}
+                      value={printerConfig.zpl_port}
+                      onChange={(event) => setPrinterConfig((previous) => ({
+                        ...previous,
+                        zpl_port: Number.parseInt(event.target.value, 10) || 0,
+                      }))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </label>
+                  <label className="space-y-1 col-span-2">
+                    <span className="block font-semibold text-slate-700">Résolution ZPL</span>
+                    <select
+                      value={printerConfig.zpl_dpi}
+                      onChange={(event) => setPrinterConfig((previous) => ({
+                        ...previous,
+                        zpl_dpi: Number(event.target.value) as 203 | 300 | 600,
+                      }))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white"
+                    >
+                      <option value={203}>203 DPI</option>
+                      <option value={300}>300 DPI</option>
+                      <option value={600}>600 DPI</option>
+                    </select>
+                  </label>
+                  <p className="col-span-2 text-[11px] text-amber-800">
+                    Le flux brut ne fournit aucun accusé matériel. L'état « envoyé non confirmé » signifie seulement que les octets ont été écrits sur le socket; une impression physique ne peut pas être certifiée.
+                  </p>
+                </div>
+              )}
+
+              {rulesError && (
+                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800">
+                  Les règles de production ne peuvent pas être chargées : {rulesError}
+                </div>
+              )}
+              {printError && (
+                <div role="alert" className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 whitespace-pre-wrap">
+                  Échec de l'impression : {printError}
+                </div>
+              )}
+              {printMessage && (
+                <div role="status" className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 whitespace-pre-wrap">
+                  {printMessage}
+                </div>
+              )}
+            </div>
+
+            <div className="px-5 py-3 border-t border-slate-200 flex items-center justify-between gap-3">
+              <span className="text-[10px] text-slate-500">
+                {effectivePrintItems.length} exemplaire(s) • règles appliquées avant rendu • matériel réel requis
+              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowPrintModal(false)}
+                  className="px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                >
+                  Fermer
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrintToConfiguredTarget}
+                  disabled={
+                    printBusy ||
+                    !printerConfigReady ||
+                    !rulesReady ||
+                    (printFormat === 'pdf' && (
+                      !printCapabilities?.cups_supported ||
+                      !printerConfig.cups_queue ||
+                      !printQueues.some((queue) => queue.name === printerConfig.cups_queue && !queue.state.includes('disabled'))
+                    )) ||
+                    (printFormat === 'zpl' && (
+                      !printCapabilities?.raw_zpl_tcp_supported ||
+                      !printerConfig.zpl_host.trim() ||
+                      printerConfig.zpl_port < 1 ||
+                      printerConfig.zpl_port > 65535
+                    ))
+                  }
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {printBusy ? 'Soumission…' : printFormat === 'pdf' ? 'Envoyer à CUPS' : 'Envoyer le flux ZPL'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

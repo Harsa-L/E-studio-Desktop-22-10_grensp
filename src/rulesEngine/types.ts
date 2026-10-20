@@ -40,6 +40,7 @@ export interface ExecutionContext {
   product: Record<string, any>;
   store: StoreContext;
   device: DeviceProfile;
+  trigger?: TriggerType | TriggerType[];
   timestamp?: string; // ISO 8601 string, defaults to current time
 }
 
@@ -110,6 +111,7 @@ export interface RuleAction {
     animation_duration_ms?: number;
     max_chars?: number;
     scale_factor?: number;
+    font_weight?: 'normal' | '500' | '600' | 'bold' | '800';
     fallback_template_id?: string;
     description?: string;
   };
