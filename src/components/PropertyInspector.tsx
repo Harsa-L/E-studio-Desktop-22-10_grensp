@@ -1006,6 +1006,33 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                   ))}
                 </div>
               </div>
+
+              <div className="pt-2 border-t border-slate-200 space-y-2">
+                <h4 className="font-bold text-slate-900 uppercase text-[10px] tracking-wider text-slate-400">
+                  Transparence
+                </h4>
+                {([
+                  ['background_opacity', 'Arrière-plan'],
+                  ['foreground_opacity', 'Objet / premier plan'],
+                  ['text_opacity', 'Texte'],
+                ] as const).map(([key, label]) => (
+                  <label key={key} className="grid grid-cols-[1fr_auto] items-center gap-2 text-[11px] text-slate-600">
+                    <span>{label}</span>
+                    <span className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={selectedItem[key] ?? 1}
+                        onChange={(event) => update({ [key]: parseFloat(event.target.value) })}
+                        className="w-24"
+                      />
+                      <span className="w-8 text-right font-mono">{Math.round((selectedItem[key] ?? 1) * 100)}%</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -1914,11 +1941,15 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             <div>
               <label className="text-[11px] text-slate-500">Type de Code-barres</label>
               <select
-                value={selectedItem.barcode_type || 'ean13'}
+                value={selectedItem.barcode_type || 'auto'}
                 onChange={(e) => update({ barcode_type: e.target.value as any })}
                 className="w-full mt-0.5 px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs"
               >
-                <option value="ean13">EAN-13 (Standard grande distribution)</option>
+                <option value="auto">Automatique (EAN-8 / EAN-13 selon le code)</option>
+                <option value="ean8">EAN-8 (petits emballages)</option>
+                <option value="ean13">EAN-13 (commerce de détail)</option>
+                <option value="gtin14">GTIN-14 / ITF-14 (cartons)</option>
+                <option value="gs1_128">GS1-128 (logistique, données GS1)</option>
                 <option value="code128">Code 128 (Logistique & Alphanumérique)</option>
               </select>
             </div>
@@ -2364,6 +2395,421 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             </h4>
 
             <div className="grid grid-cols-2 gap-2">
+              {(['prefix_text', 'suffix_text'] as const).map((key) => (
+                <label key={key} className="text-[11px] text-slate-500">
+                  {key === 'prefix_text' ? 'Préfixe du prix' : 'Suffixe du prix'}
+                  <input
+                    type="text"
+                    value={(selectedItem as PriceBlockItemProperties)[key] || ''}
+                    onChange={(event) => update({ [key]: event.target.value || undefined })}
+                    className="w-full mt-0.5 px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs"
+                  />
+                </label>
+              ))}
+            </div>
+
+            <label className="flex items-center gap-2 text-[11px] text-slate-700">
+              <input
+                type="checkbox"
+                checked={Boolean((selectedItem as PriceBlockItemProperties).promo_takes_hero_style)}
+                onChange={(event) => update({ promo_takes_hero_style: event.target.checked })}
+                className="rounded text-blue-600"
+              />
+              Promo active : remplacer le prix principal et conserver son style
+            </label>
+            <label className="block text-[11px] text-slate-500">
+              Champ prix de comparaison (optionnel)
+              <input
+                type="text"
+                value={(selectedItem as PriceBlockItemProperties).compare_at_binding_key || ''}
+                onChange={(event) => update({ compare_at_binding_key: event.target.value.trim() || undefined })}
+                placeholder="SELLING_PRICE ou LAST_SELLING_PRICE"
+                className="w-full mt-0.5 px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs font-mono"
+              />
+            </label>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-700">Segments additionnels du prix</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const current = (selectedItem as PriceBlockItemProperties).extensions || [];
+                    update({
+                      extensions: [
+                        ...current,
+                        {
+                          id: `price_extension_${Date.now()}`,
+                          role: 'custom',
+                          anchor: 'above',
+                          fallback: 'hide',
+                          style: { font_size_pt: 8, font_weight: 'normal', text_color: '#000000' },
+                        },
+                      ],
+                    });
+                  }}
+                  className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-[10px] font-semibold"
+                >
+                  + Ajouter
+                </button>
+              </div>
+              {((selectedItem as PriceBlockItemProperties).extensions || []).map((extension, index) => (
+                <div key={extension.id} className="p-2 bg-slate-50 border border-slate-200 rounded space-y-2">
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={extension.role}
+                      onChange={(event) => {
+                        const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                        const role = event.target.value as typeof extension.role;
+                        extensions[index] = {
+                          ...extension,
+                          role,
+                          tier_config: role === 'tier_price'
+                            ? { ...extension.tier_config, primary_tier: extension.tier_config?.primary_tier || 1 }
+                            : extension.tier_config,
+                        };
+                        update({ extensions });
+                      }}
+                      className="flex-1 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                    >
+                      <option value="promo_price">Prix promotionnel</option>
+                      <option value="compare_at">Ancien prix barré</option>
+                      <option value="discount_pct">Pourcentage de remise</option>
+                      <option value="unit_price">Prix unitaire / kg / L</option>
+                      <option value="tier_price">Prix de palier</option>
+                      <option value="custom">Champ personnalisé</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => update({
+                        extensions: ((selectedItem as PriceBlockItemProperties).extensions || []).filter((_, itemIndex) => itemIndex !== index),
+                      })}
+                      className="p-1 text-slate-400 hover:text-rose-600"
+                      aria-label="Supprimer le segment"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="text-[10px] text-slate-500">
+                      Ancrage
+                      <select
+                        value={extension.anchor}
+                        onChange={(event) => {
+                          const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                          extensions[index] = { ...extension, anchor: event.target.value as typeof extension.anchor };
+                          update({ extensions });
+                        }}
+                        className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                      >
+                        {['before', 'after', 'above', 'below', 'beside', 'corner'].map((anchor) => (
+                          <option key={anchor} value={anchor}>{anchor}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="text-[10px] text-slate-500">
+                      Champ lié
+                      <input
+                        type="text"
+                        value={extension.binding_key || ''}
+                        onChange={(event) => {
+                          const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                          extensions[index] = { ...extension, binding_key: event.target.value || undefined };
+                          update({ extensions });
+                        }}
+                        className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                      />
+                    </label>
+                  </div>
+                  {['promo_price', 'compare_at', 'discount_pct'].includes(extension.role) && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <label className="text-[10px] text-slate-500">
+                        Devise
+                        <input
+                          type="text"
+                          value={extension.currency_symbol || ''}
+                          onChange={(event) => {
+                            const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                            extensions[index] = { ...extension, currency_symbol: event.target.value || undefined };
+                            update({ extensions });
+                          }}
+                          className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                        />
+                      </label>
+                      <label className="text-[10px] text-slate-500">
+                        Décimales
+                        <input
+                          type="number"
+                          min="0"
+                          max="4"
+                          value={extension.decimals ?? ''}
+                          onChange={(event) => {
+                            const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                            extensions[index] = { ...extension, decimals: event.target.value ? parseInt(event.target.value, 10) : undefined };
+                            update({ extensions });
+                          }}
+                          className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                        />
+                      </label>
+                      <label className="text-[10px] text-slate-500">
+                        Devise
+                        <select
+                          value={extension.currency_position || 'after'}
+                          onChange={(event) => {
+                            const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                            extensions[index] = { ...extension, currency_position: event.target.value as typeof extension.currency_position };
+                            update({ extensions });
+                          }}
+                          className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                        >
+                          <option value="before">Avant</option>
+                          <option value="after">Après</option>
+                          <option value="superscript">Exposant</option>
+                          <option value="subscript">Indice</option>
+                        </select>
+                      </label>
+                    </div>
+                  )}
+                  <label className="block text-[10px] text-slate-500">
+                    Format (facultatif)
+                    <input
+                      type="text"
+                      value={extension.format_pattern || ''}
+                      onChange={(event) => {
+                        const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                        extensions[index] = { ...extension, format_pattern: event.target.value || undefined };
+                        update({ extensions });
+                      }}
+                      placeholder="{price}, {amount}, {currency}"
+                      className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                    />
+                  </label>
+                  {extension.role === 'tier_price' && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                      <label className="text-[10px] text-slate-500">
+                        Palier
+                        <input
+                          type="number"
+                          min="1"
+                          value={extension.tier_config?.primary_tier || 1}
+                          onChange={(event) => {
+                            const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                            extensions[index] = {
+                              ...extension,
+                              tier_config: { ...extension.tier_config, primary_tier: parseInt(event.target.value, 10) || 1 },
+                            };
+                            update({ extensions });
+                          }}
+                          className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                        />
+                      </label>
+                      <label className="text-[10px] text-slate-500">
+                        Stratégie
+                        <select
+                          value={extension.tier_config?.pricing_strategy || 'flat'}
+                          onChange={(event) => {
+                            const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                            extensions[index] = {
+                              ...extension,
+                              tier_config: {
+                                ...extension.tier_config,
+                                primary_tier: extension.tier_config?.primary_tier || 1,
+                                pricing_strategy: event.target.value as 'flat' | 'graduated',
+                              },
+                            };
+                            update({ extensions });
+                          }}
+                          className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                        >
+                          <option value="flat">Flat</option>
+                          <option value="graduated">Graduated</option>
+                        </select>
+                      </label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['prefix_text', 'unit_label'] as const).map((key) => (
+                          <label key={key} className="text-[10px] text-slate-500">
+                            {key === 'prefix_text' ? 'Préfixe palier' : 'Unité'}
+                            <input
+                              type="text"
+                              value={extension.tier_config?.[key] || ''}
+                              onChange={(event) => {
+                                const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                                extensions[index] = {
+                                  ...extension,
+                                  tier_config: {
+                                    ...extension.tier_config,
+                                    primary_tier: extension.tier_config?.primary_tier || 1,
+                                    [key]: event.target.value || undefined,
+                                  },
+                                };
+                                update({ extensions });
+                              }}
+                              className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {([
+                          ['strict_required', 'Palier obligatoire'],
+                          ['fallback_to_base_price', 'Repli prix de base'],
+                        ] as const).map(([key, label]) => (
+                          <label key={key} className="flex items-center gap-1 text-[10px] text-slate-600">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(extension.tier_config?.[key])}
+                              onChange={(event) => {
+                                const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                                extensions[index] = {
+                                  ...extension,
+                                  tier_config: {
+                                    ...extension.tier_config,
+                                    primary_tier: extension.tier_config?.primary_tier || 1,
+                                    [key]: event.target.checked,
+                                  },
+                                };
+                                update({ extensions });
+                              }}
+                            />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(extension.role === 'custom' || extension.role === 'unit_price') && (
+                    <label className="block text-[10px] text-slate-500">
+                      Texte statique (facultatif)
+                      <input
+                        type="text"
+                        value={extension.text || ''}
+                        onChange={(event) => {
+                          const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                          extensions[index] = { ...extension, text: event.target.value || undefined };
+                          update({ extensions });
+                        }}
+                        className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                      />
+                    </label>
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="text-[10px] text-slate-500">
+                      Condition
+                      <select
+                        value={extension.condition?.rule || 'always'}
+                        onChange={(event) => {
+                          const rule = event.target.value as ConditionalDisplayConfig['rule'];
+                          const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                          extensions[index] = {
+                            ...extension,
+                            condition: { enabled: rule !== 'always', rule, field_key: extension.binding_key },
+                          };
+                          update({ extensions });
+                        }}
+                        className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                      >
+                        {['always', 'has_promo', 'has_tiers', 'field_gt_zero', 'field_not_empty'].map((rule) => (
+                          <option key={rule} value={rule}>{rule}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="text-[10px] text-slate-500">
+                      Repli
+                      <select
+                        value={extension.fallback === 'hide' || !extension.fallback ? 'hide' : 'literal'}
+                        onChange={(event) => {
+                          const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                          extensions[index] = { ...extension, fallback: event.target.value === 'literal' ? { literal: '' } : 'hide' };
+                          update({ extensions });
+                        }}
+                        className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                      >
+                        <option value="hide">Masquer si absent</option>
+                        <option value="literal">Texte de remplacement</option>
+                      </select>
+                    </label>
+                  </div>
+                  {extension.fallback && typeof extension.fallback === 'object' && (
+                    <label className="block text-[10px] text-slate-500">
+                      Texte de remplacement
+                      <input
+                        type="text"
+                        value={extension.fallback.literal}
+                        onChange={(event) => {
+                          const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                          extensions[index] = { ...extension, fallback: { literal: event.target.value } };
+                          update({ extensions });
+                        }}
+                        className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                      />
+                    </label>
+                  )}
+                  <div className="grid grid-cols-3 gap-2">
+                    <label className="text-[10px] text-slate-500">
+                      Taille (pt)
+                      <input
+                        type="number"
+                        min="4"
+                        max="96"
+                        value={extension.style?.font_size_pt ?? 8}
+                        onChange={(event) => {
+                          const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                          extensions[index] = { ...extension, style: { ...extension.style, font_size_pt: parseFloat(event.target.value) || 8 } };
+                          update({ extensions });
+                        }}
+                        className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                      />
+                    </label>
+                    <label className="text-[10px] text-slate-500">
+                      Couleur
+                      <input
+                        type="color"
+                        value={extension.style?.text_color || '#000000'}
+                        onChange={(event) => {
+                          const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                          extensions[index] = { ...extension, style: { ...extension.style, text_color: event.target.value } };
+                          update({ extensions });
+                        }}
+                        className="w-full mt-0.5 h-7"
+                      />
+                    </label>
+                    <label className="flex items-center gap-1 text-[10px] text-slate-600 pt-4">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(extension.strikethrough)}
+                        onChange={(event) => {
+                          const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                          extensions[index] = { ...extension, strikethrough: event.target.checked };
+                          update({ extensions });
+                        }}
+                      />
+                      Barré
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['prefix_text', 'suffix_text'] as const).map((key) => (
+                      <label key={key} className="text-[10px] text-slate-500">
+                        {key === 'prefix_text' ? 'Préfixe' : 'Suffixe'}
+                        <input
+                          type="text"
+                          value={extension[key] || ''}
+                          onChange={(event) => {
+                            const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                            extensions[index] = { ...extension, [key]: event.target.value || undefined };
+                            update({ extensions });
+                          }}
+                          className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-[11px] text-slate-500">Prix Test / Fallback</label>
                 <input
@@ -2408,8 +2854,135 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                   <option value="after">Après les centimes (29,99 €)</option>
                   <option value="before">Avant le prix (€ 29,99)</option>
                   <option value="superscript">En exposant haut (29,99 €^)</option>
+                  <option value="subscript">En indice bas (29,99 €)</option>
                 </select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              {([
+                { key: 'integer_style', label: 'Entier' },
+                { key: 'decimal_style', label: 'Décimales' },
+                { key: 'currency_style', label: 'Devise' },
+                { key: 'prefix_style', label: 'Préfixe' },
+                { key: 'suffix_style', label: 'Suffixe' },
+              ] as const).map((segment) => {
+                const priceItem = selectedItem as PriceBlockItemProperties;
+                const style = priceItem[segment.key] || {};
+                const changeStyle = (key: string, value: string | number | undefined) => {
+                  update({
+                    [segment.key]: { ...style, [key]: value },
+                  } as any);
+                };
+                return (
+                  <div key={segment.key} className="p-2 bg-white border border-slate-200 rounded space-y-2">
+                    <span className="text-[10px] font-bold text-slate-600">{segment.label}</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="text-[10px] text-slate-500">
+                        Police
+                        <input
+                          type="text"
+                          value={style.font_family || ''}
+                          onChange={(event) => changeStyle('font_family', event.target.value || undefined)}
+                          placeholder={priceItem.font_family || 'Héritée'}
+                          className="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-xs"
+                        />
+                      </label>
+                      <label className="text-[10px] text-slate-500">
+                        Taille (pt)
+                        <input
+                          type="number"
+                          min="4"
+                          max="144"
+                          value={style.font_size_pt ?? ''}
+                          onChange={(event) => changeStyle('font_size_pt', event.target.value ? parseFloat(event.target.value) : undefined)}
+                          className="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-xs"
+                        />
+                      </label>
+                      <label className="text-[10px] text-slate-500">
+                        Graisse
+                        <select
+                          value={style.font_weight || ''}
+                          onChange={(event) => changeStyle('font_weight', event.target.value || undefined)}
+                          className="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-xs"
+                        >
+                          <option value="">Héritée</option>
+                          <option value="normal">Normal</option>
+                          <option value="500">500</option>
+                          <option value="600">600</option>
+                          <option value="bold">Gras</option>
+                          <option value="800">800</option>
+                        </select>
+                      </label>
+                      <label className="text-[10px] text-slate-500">
+                        Style
+                        <select
+                          value={style.font_style || ''}
+                          onChange={(event) => changeStyle('font_style', event.target.value || undefined)}
+                          className="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-xs"
+                        >
+                          <option value="">Hérité</option>
+                          <option value="normal">Normal</option>
+                          <option value="italic">Italique</option>
+                        </select>
+                      </label>
+                      <label className="text-[10px] text-slate-500">
+                        Couleur
+                        <input
+                          type="color"
+                          value={style.text_color || '#000000'}
+                          onChange={(event) => changeStyle('text_color', event.target.value)}
+                          className="w-full mt-0.5 h-7"
+                        />
+                      </label>
+                      <label className="text-[10px] text-slate-500">
+                        Espacement (pt)
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={style.letter_spacing_pt ?? ''}
+                          onChange={(event) => changeStyle('letter_spacing_pt', event.target.value ? parseFloat(event.target.value) : undefined)}
+                          className="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-xs"
+                        />
+                      </label>
+                      <label className="text-[10px] text-slate-500">
+                        Ligne de base
+                        <select
+                          value={style.baseline_shift || 'normal'}
+                          onChange={(event) => changeStyle('baseline_shift', event.target.value)}
+                          className="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-xs"
+                        >
+                          <option value="normal">Normale</option>
+                          <option value="superscript">Exposant</option>
+                          <option value="subscript">Indice</option>
+                        </select>
+                      </label>
+                      <label className="text-[10px] text-slate-500">
+                        Décoration
+                        <select
+                          value={style.text_decoration || 'none'}
+                          onChange={(event) => changeStyle('text_decoration', event.target.value)}
+                          className="w-full mt-0.5 px-2 py-1 border border-slate-300 rounded text-xs"
+                        >
+                          <option value="none">Aucune</option>
+                          <option value="line-through">Barré</option>
+                        </select>
+                      </label>
+                    </div>
+                    {style.text_decoration === 'line-through' && (
+                      <label className="block text-[10px] text-slate-500">
+                        Couleur du barré
+                        <input
+                          type="color"
+                          value={style.strikethrough_color || style.text_color || '#000000'}
+                          onChange={(event) => changeStyle('strikethrough_color', event.target.value)}
+                          className="w-full mt-0.5 h-7"
+                        />
+                      </label>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Integer Part Styling */}

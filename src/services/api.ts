@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api/core';
-import { normalizeCatalogProduct } from '../utils/catalogImport';
 import {
   LabelTemplate,
   ProductRecord,
@@ -385,6 +384,7 @@ export const api = {
       }
       return template as LabelTemplate;
     });
+    const { normalizeCatalogProduct } = await import('../utils/catalogImport');
     const products = backup.products.map((product: any) => {
       if (!product || typeof product !== 'object') throw new Error('Backup contains an invalid product.');
       return normalizeCatalogProduct(product as ProductRecord);

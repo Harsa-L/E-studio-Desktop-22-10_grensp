@@ -85,11 +85,24 @@ export class TierEngine {
     if (Array.isArray(record.price_tiers) && record.price_tiers.length > 0) {
       tiers = record.price_tiers.map((t) => ({
         qty: t.min_qty,
+        max_qty: t.max_qty,
         unit_price: t.unit_price,
         label: t.label,
       }));
     } else if (Array.isArray(record.TIERS) && record.TIERS.length > 0) {
       tiers = record.TIERS;
+    }
+
+    if (record.tier_anomaly?.has_error) {
+      return {
+        unit_price: 0,
+        qty: 0,
+        text_qty: 'Structure de paliers à vérifier',
+        formatted_price: '—',
+        is_fallback: false,
+        strategy,
+        error: record.tier_anomaly.issues.join('; '),
+      };
     }
 
     // Helper to calculate graduated price

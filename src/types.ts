@@ -77,6 +77,10 @@ export interface BaseItemProperties {
   group_id?: string;
   binding_key?: string;
   conditional_display?: ConditionalDisplayConfig;
+  opacity?: number;
+  background_opacity?: number;
+  foreground_opacity?: number;
+  text_opacity?: number;
   finish_effect?: 'none' | 'die_cut' | 'spot_varnish' | 'hot_foil';
   semantic_snap?: SemanticSnapConfig;
 }
@@ -234,16 +238,47 @@ export interface QRCodeItemProperties extends BaseItemProperties {
 export interface BarcodeItemProperties extends BaseItemProperties {
   type: 'barcode';
   code: string;
-  barcode_type: 'code128' | 'ean13';
+  barcode_type: 'auto' | 'code128' | 'ean8' | 'ean13' | 'gtin14' | 'gs1_128';
   show_text: boolean;
   bar_color: string;
 }
 
 export interface PriceSubStyle {
+  font_family?: string;
   font_size_pt?: number;
   font_weight?: 'normal' | '500' | '600' | 'bold' | '800';
+  font_style?: 'normal' | 'italic';
   text_color?: string;
+  letter_spacing_pt?: number;
   baseline_shift?: 'normal' | 'superscript' | 'subscript';
+  text_decoration?: 'none' | 'line-through';
+  strikethrough_color?: string;
+}
+
+export interface PriceBlockExtension {
+  id: string;
+  role: 'promo_price' | 'compare_at' | 'discount_pct' | 'unit_price' | 'tier_price' | 'custom';
+  binding_key?: string;
+  anchor: 'before' | 'after' | 'above' | 'below' | 'beside' | 'corner';
+  condition?: ConditionalDisplayConfig;
+  fallback?: 'hide' | { literal: string };
+  prefix_text?: string;
+  suffix_text?: string;
+  currency_symbol?: string;
+  currency_position?: 'before' | 'after' | 'superscript' | 'subscript';
+  decimals?: number;
+  format_pattern?: string;
+  text?: string;
+  style?: PriceSubStyle;
+  strikethrough?: boolean;
+  tier_config?: {
+    primary_tier: number;
+    prefix_text?: string;
+    unit_label?: string;
+    strict_required?: boolean;
+    fallback_to_base_price?: boolean;
+    pricing_strategy?: 'flat' | 'graduated';
+  };
 }
 
 export interface PriceBlockItemProperties extends BaseItemProperties {
@@ -253,11 +288,19 @@ export interface PriceBlockItemProperties extends BaseItemProperties {
   border_color?: string;
   border_width?: number;
   currency_symbol?: string; // e.g. "€", "FCFA", "$"
-  currency_position?: 'after' | 'before' | 'superscript';
+  currency_position?: 'after' | 'before' | 'superscript' | 'subscript';
   decimal_separator?: '.' | ',';
   integer_style: PriceSubStyle;
   decimal_style: PriceSubStyle;
   currency_style?: PriceSubStyle;
+  prefix_style?: PriceSubStyle;
+  suffix_style?: PriceSubStyle;
+  prefix_text?: string;
+  suffix_text?: string;
+  promo_takes_hero_style?: boolean;
+  compare_at_binding_key?: string;
+  extensions?: PriceBlockExtension[];
+  strikethrough_color?: string;
   font_family?: string;
   alignment?: 'left' | 'center' | 'right';
   valign?: 'top' | 'middle' | 'bottom';
@@ -534,12 +577,14 @@ export interface DomainField {
 
 export interface PriceTier {
   qty: number;
+  max_qty?: number;
   unit_price: number;
   label?: string;
 }
 
 export interface PriceTierBreak {
   min_qty: number;
+  max_qty?: number;
   unit_price: number;
   label?: string;
   is_base?: boolean;

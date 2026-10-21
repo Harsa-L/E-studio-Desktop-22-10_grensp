@@ -1,6 +1,6 @@
 import { ImpositionConfig, LabelTemplate, TemplateItem, ProductRecord } from '../types';
 import { PricingEngine, isPriceRelatedElement } from './pricingEngine';
-import { validateEAN13 } from './barcodeGenerator';
+import { generateBarcodeBars, resolveBarcodeSymbology } from './barcodeGenerator';
 import { ImpositionCalculator } from './impositionCalculator';
 import { TierEngine } from './tierEngine';
 
@@ -47,6 +47,7 @@ export class PreFlightEngine {
       id === 'invalid_promo_end_date' ||
       id.startsWith('empty_barcode_') ||
       id.startsWith('ean_invalid_') ||
+      id.startsWith('barcode_invalid_') ||
       id.startsWith('strict_tier_missing_');
     const issues = sampleReport.issues.filter((issue) => !isProductIssue(issue.id));
     const uniqueProducts = new Map<string, ProductRecord>();
@@ -169,6 +170,21 @@ export class PreFlightEngine {
 
     template.items?.forEach((item: TemplateItem) => {
       const label = item.type;
+
+      if (target === 'zpl' && [
+        item.opacity,
+        item.background_opacity,
+        item.foreground_opacity,
+        item.text_opacity,
+      ].some((opacity) => opacity !== undefined && opacity < 1)) {
+        issues.push({
+          id: `zpl_transparency_${item.id}`,
+          severity: 'warning',
+          category: 'compatibility',
+          message: 'ZPL ne représente pas la transparence ; cet élément sera imprimé opaque.',
+          itemId: item.id,
+        });
+      }
 
       // Check zero or negative dimensions
       if (item.w_mm <= 0 || item.h_mm <= 0) {
@@ -315,13 +331,35 @@ export class PreFlightEngine {
             itemId: item.id,
           });
         }
+        if (sampleProduct) {
+          const resolved = PricingEngine.resolvePriceBlock(item, sampleProduct);
+          if (resolved.status === 'invalid') {
+            issues.push({
+              id: `price_invalid_${item.id}`,
+              severity: 'error',
+              category: 'data',
+              message: `Prix principal invalide pour l'élément ${item.id}.`,
+              itemId: item.id,
+            });
+          }
+          resolved.diagnostics.forEach((diagnostic, index) => {
+            issues.push({
+              id: `price_diagnostic_${item.id}_${index}`,
+              severity: 'error',
+              category: 'data',
+              message: diagnostic,
+              itemId: item.id,
+            });
+          });
+        }
       }
 
       // Barcode checks: contrast, width, and valid checksum
       if (item.type === 'barcode') {
-        const barcodeType = (item as any).barcode_type || 'ean13';
+        const requestedType = (item as any).barcode_type || 'auto';
         const isSample = target === 'screen';
         const rawBarcode = PricingEngine.resolveBarcodeValue(item, sampleProduct, { sample: isSample });
+        const barcodeType = resolveBarcodeSymbology(rawBarcode, requestedType);
 
         // Barcode contrast: bars must be strictly black
         const barColor = String((item as any).bar_color || '#000000').toLowerCase().trim();
@@ -336,7 +374,7 @@ export class PreFlightEngine {
           });
         }
 
-        // Minimal width for EAN-13 (nominal 37.29 mm at 100%, minimum 80% = 29.83 mm)
+        // Keep retail EAN symbologies above their minimum module-width thresholds.
         if (barcodeType === 'ean13' && item.w_mm < 29.83) {
           issues.push({
             id: `barcode_min_width_${item.id}`,
@@ -357,14 +395,17 @@ export class PreFlightEngine {
               itemId: item.id,
             });
           }
-        } else if (barcodeType === 'ean13') {
-          const validation = validateEAN13(rawBarcode);
-          if (!validation.valid) {
+        } else {
+          const validation = generateBarcodeBars(rawBarcode, requestedType);
+          if (validation.error) {
+            const invalidBarcodePrefix = barcodeType === 'ean8' || barcodeType === 'ean13'
+              ? 'ean_invalid_'
+              : 'barcode_invalid_';
             issues.push({
-              id: `ean_invalid_${item.id}`,
+              id: `${invalidBarcodePrefix}${item.id}`,
               severity: 'error',
               category: 'barcode',
-              message: `Code EAN-13 invalide : ${validation.reason}`,
+              message: `Code-barres invalide (${barcodeType}) : ${validation.error}`,
               itemId: item.id,
             });
           }

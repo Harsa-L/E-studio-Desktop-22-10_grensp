@@ -17,6 +17,11 @@ describe('prepareCatalogImport', () => {
     expect(() => normalizeCatalogProduct({ id: 'p3', ITEMNAME: 'Negative', SELLING_PRICE: -1 })).toThrow(/invalid SELLING_PRICE/);
   });
 
+  it('falls back to a barcode or part number when the product id is blank', () => {
+    expect(normalizeCatalogProduct({ id: '   ', ITEMNAME: 'Product', PRODUCT_SCAN: '00123' }).id).toBe('scan:00123');
+    expect(normalizeCatalogProduct({ id: '', ITEMNAME: 'Product', PARTNO: 'SKU-1' }).id).toBe('part:SKU-1');
+  });
+
   it('parses locale currency prices and preserves matched product identity', () => {
     const existing = [{ id: 'existing-1', ITEMNAME: 'Old name', PRODUCT_SCAN: '00123', PARTNO: 'SKU-1', SELLING_PRICE: 10 }];
     const result = prepareCatalogImport(headers, [['New name', '00123', 'SKU-1', '12,50 €', '9,99 €']], mappings, existing);
@@ -28,6 +33,27 @@ describe('prepareCatalogImport', () => {
       PROMOPRICE: 9.99,
     });
     expect(result.collisions[0].id).toBe('existing-1');
+  });
+
+  it('collapses mapped repeated quantity and price rows into one product with price tiers', () => {
+    const headersWithQty = [...headers, 'Quantité palier'];
+    const mappingsWithQty = { ...mappings, TIER_QTY: 'Quantité palier' };
+    const result = prepareCatalogImport(
+      headersWithQty,
+      [
+        ['Product', '00123', 'SKU-1', '10,00 €', '', '1'],
+        ['Product', '00123', 'SKU-1', '8,50 €', '', '5'],
+      ],
+      mappingsWithQty,
+      []
+    );
+
+    expect(result.issues).toEqual([]);
+    expect(result.products).toHaveLength(1);
+    expect(result.products[0].price_tiers).toMatchObject([
+      { min_qty: 1, unit_price: 10 },
+      { min_qty: 5, unit_price: 8.5 },
+    ]);
   });
 
   it('namespaces new barcode and part-number identities and rejects conflicting existing matches', () => {

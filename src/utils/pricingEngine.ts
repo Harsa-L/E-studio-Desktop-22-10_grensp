@@ -1,7 +1,28 @@
-import { ProductRecord, TextItemProperties, TemplateItem } from '../types';
+import { PriceBlockExtension, PriceBlockItemProperties, ProductRecord, TextItemProperties, TemplateItem } from '../types';
 import { resolveCanonicalKey } from './mappingDictionary';
 import { parsePriceValue, type PriceParseResult } from './priceParser';
+import { TierEngine } from './tierEngine';
 export type { PriceParseResult, PriceParseStatus } from './priceParser';
+
+export interface ResolvedPriceBlockExtension {
+  id: string;
+  role: PriceBlockExtension['role'];
+  anchor: PriceBlockExtension['anchor'];
+  text: string;
+  amount?: number;
+  style?: PriceBlockExtension['style'];
+  baselineShift?: 'normal' | 'superscript' | 'subscript';
+  strikethrough: boolean;
+  strikethroughColor?: string;
+}
+
+export interface ResolvedPriceBlock {
+  status: PriceParseResult['status'];
+  heroAmount?: number;
+  compareAtAmount?: number;
+  extensions: ResolvedPriceBlockExtension[];
+  diagnostics: string[];
+}
 
 /**
  * Advanced Retail & Pricing Engine for E-Studio
@@ -206,6 +227,178 @@ export class PricingEngine {
   static getSellingPrice(record: ProductRecord | null | undefined): number {
     const res = PricingEngine.resolveSellingPrice(record);
     return res.status === 'valid' ? (res.amount ?? 0) : 0;
+  }
+
+  static resolvePriceBlock(
+    item: PriceBlockItemProperties,
+    record?: ProductRecord | null
+  ): ResolvedPriceBlock {
+    const diagnostics: string[] = [];
+    let principal: PriceParseResult;
+    if (!record) {
+      principal = parsePriceValue(item.fallback_price ?? 29.99);
+    } else if (item.binding_key === 'SELLING_PRICE') {
+      principal = PricingEngine.resolveSellingPrice(record);
+    } else if (item.binding_key === 'PROMOPRICE' || item.binding_key === 'PROMO_PRICE') {
+      principal = PricingEngine.resolvePromoPrice(record);
+    } else {
+      principal = parsePriceValue(PricingEngine.getProductFieldValue(record, item.binding_key));
+    }
+
+    const activePromo = Boolean(record && item.promo_takes_hero_style)
+      ? PricingEngine.resolvePromoPrice(record)
+      : { status: 'missing' as const };
+    if (activePromo.status === 'invalid') diagnostics.push('Active promo amount is invalid.');
+    if (principal.status === 'invalid') diagnostics.push('Principal price is invalid.');
+    const swapApplied = activePromo.status === 'valid' && activePromo.amount !== undefined;
+    const heroAmount = swapApplied ? activePromo.amount : principal.amount;
+    const compareBinding = item.compare_at_binding_key ||
+      (item.binding_key === 'SELLING_PRICE' ? 'SELLING_PRICE' : undefined);
+    const compareAt = swapApplied && compareBinding && record
+      ? parsePriceValue(PricingEngine.getProductFieldValue(record, compareBinding))
+      : undefined;
+    const compareAtAmount = compareAt?.status === 'valid' ? compareAt.amount : undefined;
+    const extensions: ResolvedPriceBlockExtension[] = [];
+
+    for (const extension of item.extensions || []) {
+      if (extension.condition?.enabled &&
+          !PricingEngine.shouldDisplayItem({ ...item, conditional_display: extension.condition }, record)) {
+        continue;
+      }
+
+      let text = '';
+      let amount: number | undefined;
+      switch (extension.role) {
+        case 'promo_price': {
+          const promo = record ? PricingEngine.resolvePromoPrice(record) : { status: 'missing' as const };
+          if (promo.status === 'valid') amount = promo.amount;
+          else if (promo.status === 'invalid') diagnostics.push(`${extension.id}: promo amount is invalid.`);
+          break;
+        }
+        case 'compare_at': {
+          const promo = record ? PricingEngine.resolvePromoPrice(record) : { status: 'missing' as const };
+          if (promo.status !== 'valid') break;
+          const binding = extension.binding_key || item.compare_at_binding_key ||
+            (swapApplied && item.binding_key === 'SELLING_PRICE' ? 'SELLING_PRICE' : undefined);
+          if (binding && record) {
+            const result = parsePriceValue(PricingEngine.getProductFieldValue(record, binding));
+            if (result.status === 'valid') amount = result.amount;
+            else if (result.status === 'invalid') diagnostics.push(`${extension.id}: compare-at value is invalid.`);
+          } else if (swapApplied) {
+            amount = principal.amount;
+          }
+          break;
+        }
+        case 'discount_pct': {
+          if (!record || !PricingEngine.isPromoActive(record)) break;
+          const promo = PricingEngine.resolvePromoPrice(record);
+          if (promo.status !== 'valid') break;
+          const explicit = PricingEngine.getProductFieldValue(record, extension.binding_key || 'DISCOUNT_PCT');
+          const parsedExplicit = explicit === undefined ? { status: 'missing' as const } : parsePriceValue(explicit);
+          const standard = PricingEngine.resolveSellingPrice(record);
+          if (parsedExplicit.status === 'invalid') {
+            diagnostics.push(`${extension.id}: discount percentage is invalid.`);
+            break;
+          }
+          if (parsedExplicit.status === 'valid' && promo.status === 'valid' &&
+              standard.status === 'valid' && (standard.amount ?? 0) > 0) {
+            const derived = Math.round(((standard.amount! - promo.amount!) / standard.amount!) * 100);
+            if (Math.abs((parsedExplicit.amount ?? 0) - derived) > 1) {
+              diagnostics.push(`${extension.id}: explicit discount percentage conflicts with promo and selling prices.`);
+              break;
+            }
+          }
+          if (parsedExplicit.status === 'valid') amount = parsedExplicit.amount;
+          else if (promo.status === 'valid' && standard.status === 'valid' &&
+                   (standard.amount ?? 0) > 0 && promo.amount! < standard.amount!) {
+            amount = Math.round(((standard.amount! - promo.amount!) / standard.amount!) * 100);
+          }
+          if (amount !== undefined) text = `-${Math.round(amount)}%`;
+          break;
+        }
+        case 'unit_price':
+        case 'custom': {
+          const binding = extension.binding_key ||
+            (extension.role === 'unit_price' ? 'UNIT_PRICE_TEXT' : undefined);
+          if (binding && record) {
+            const value = PricingEngine.getProductFieldValue(record, binding);
+            if (value !== undefined && value !== null && String(value).trim() !== '') text = String(value);
+          }
+          if (extension.text) text = extension.text;
+          break;
+        }
+        case 'tier_price': {
+          if (!record || !extension.tier_config) break;
+          const tier = TierEngine.resolve({
+            primary_index: Math.max(0, extension.tier_config.primary_tier - 1),
+            keyword_prefix: extension.tier_config.prefix_text,
+            unit_label: extension.tier_config.unit_label,
+            strict_required: extension.tier_config.strict_required,
+            fallback_to_base_price: extension.tier_config.fallback_to_base_price,
+            pricing_strategy: extension.tier_config.pricing_strategy,
+          }, record);
+          if (tier?.error) diagnostics.push(`${extension.id}: ${tier.error}`);
+          else if (tier) text = tier.formatted_price;
+          break;
+        }
+      }
+
+      if (amount !== undefined) {
+        const currency = extension.currency_symbol || item.currency_symbol || '';
+        const decimals = extension.decimals ?? PricingEngine.getDecimalsForCurrency(currency);
+        const formattedAmount = amount.toLocaleString('fr-FR', {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals,
+        });
+        const currencyPart = currency
+          ? extension.currency_position === 'before' ? `${currency} ` : ` ${currency}`
+          : '';
+        const formattedPrice = extension.currency_position === 'before'
+          ? `${currencyPart}${formattedAmount}`
+          : `${formattedAmount}${currencyPart}`;
+        text = extension.format_pattern
+          ? extension.format_pattern
+            .replace('{price}', formattedPrice)
+            .replace('{amount}', formattedAmount)
+            .replace('{currency}', currency)
+            .replace('{prefix}', extension.prefix_text || '')
+            .replace('{suffix}', extension.suffix_text || '')
+          : `${extension.prefix_text || ''}${formattedPrice}${extension.suffix_text || ''}`;
+      } else if (text) {
+        text = `${extension.prefix_text || ''}${text}${extension.suffix_text || ''}`;
+      }
+
+      if (!text && extension.fallback && typeof extension.fallback === 'object') {
+        text = extension.fallback.literal;
+      }
+      if (!text) continue;
+      extensions.push({
+        id: extension.id,
+        role: extension.role,
+        anchor: extension.anchor,
+        text,
+        amount,
+        style: extension.style,
+        baselineShift: extension.currency_position === 'superscript' || extension.currency_position === 'subscript'
+          ? extension.currency_position
+          : extension.style?.baseline_shift,
+        strikethrough: extension.strikethrough || extension.role === 'compare_at',
+        strikethroughColor: extension.style?.strikethrough_color || item.strikethrough_color,
+      });
+    }
+
+    if (swapApplied && compareAtAmount !== undefined &&
+        !(item.extensions || []).some((extension) => extension.role === 'compare_at')) {
+      diagnostics.push('Promo hero swap has no compare-at extension configured.');
+    }
+
+    return {
+      status: heroAmount !== undefined ? 'valid' : principal.status,
+      heroAmount,
+      compareAtAmount,
+      extensions,
+      diagnostics,
+    };
   }
 
   /**
@@ -720,4 +913,3 @@ export function sanitizeRenderProduct(product: ProductRecord): ProductRecord {
   delete sanitized.TOTAL_STOCK_COST_EXCL_TAX;
   return sanitized;
 }
-

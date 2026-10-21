@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import { TemplateItem, ProductRecord, TextItemProperties, PriceBlockItemProperties, TierPriceItemProperties, RichTextItemProperties } from '../types';
 import { PricingEngine } from '../utils/pricingEngine';
 import { TierEngine } from '../utils/tierEngine';
-import { generateEAN13Bars, generateCode128Bars } from '../utils/barcodeGenerator';
+import { generateBarcodeBars } from '../utils/barcodeGenerator';
 import { generateQrMatrix } from '../utils/qrGenerator';
 import { drawPictogramPdf } from './pictograms';
 
@@ -23,6 +23,20 @@ export function hexToRgb(hex: string): [number, number, number] {
 
 function isBoldFontWeight(weight?: string): boolean {
   return weight === '600' || weight === 'bold' || weight === '800';
+}
+
+function withPdfOpacity(doc: jsPDF, opacity: number | undefined, draw: () => void): void {
+  if (opacity === undefined || opacity >= 1) {
+    draw();
+    return;
+  }
+  doc.saveGraphicsState();
+  try {
+    doc.setGState(doc.GState({ opacity: Math.max(0, opacity) }));
+    draw();
+  } finally {
+    doc.restoreGraphicsState();
+  }
 }
 
 /**
@@ -48,6 +62,10 @@ export function drawPdfItem(
   const w = item.w_mm;
   const h = item.h_mm;
 
+  doc.saveGraphicsState();
+  try {
+  const foregroundOpacity = item.foreground_opacity ?? item.opacity ?? 1;
+  if (foregroundOpacity < 1) doc.setGState(doc.GState({ opacity: Math.max(0, foregroundOpacity) }));
   switch (item.type) {
     case 'text': {
       const textItem = item as TextItemProperties;
@@ -58,14 +76,16 @@ export function drawPdfItem(
       if (textItem.fill_color && textItem.fill_color !== 'transparent') {
         const [r, g, b] = hexToRgb(textItem.fill_color);
         doc.setFillColor(r, g, b);
-        if (textItem.border_width && textItem.border_width > 0 && textItem.border_color) {
-          const [br, bg, bb] = hexToRgb(textItem.border_color);
-          doc.setDrawColor(br, bg, bb);
-          doc.setLineWidth(textItem.border_width * 0.35);
-          doc.rect(itemX, itemY, w, h, 'FD');
-        } else {
-          doc.rect(itemX, itemY, w, h, 'F');
-        }
+        withPdfOpacity(doc, textItem.background_opacity, () => {
+          if (textItem.border_width && textItem.border_width > 0 && textItem.border_color) {
+            const [br, bg, bb] = hexToRgb(textItem.border_color);
+            doc.setDrawColor(br, bg, bb);
+            doc.setLineWidth(textItem.border_width * 0.35);
+            doc.rect(itemX, itemY, w, h, 'FD');
+          } else {
+            doc.rect(itemX, itemY, w, h, 'F');
+          }
+        });
       } else if (textItem.border_width && textItem.border_width > 0 && textItem.border_color) {
         const [br, bg, bb] = hexToRgb(textItem.border_color);
         doc.setDrawColor(br, bg, bb);
@@ -105,43 +125,37 @@ export function drawPdfItem(
         else if (pos === 'before') finalText = `${textItem.currency_symbol} ${text}`;
       }
 
-      doc.text(finalText, textX, textY, { align: textItem.alignment as any });
+      withPdfOpacity(doc, textItem.text_opacity, () => {
+        doc.text(finalText, textX, textY, { align: textItem.alignment as any });
+      });
       break;
     }
 
     case 'price_block': {
       const priceItem = item as PriceBlockItemProperties;
+      const resolvedPrice = PricingEngine.resolvePriceBlock(priceItem, record);
       if (priceItem.fill_color && priceItem.fill_color !== 'transparent') {
         const [r, g, b] = hexToRgb(priceItem.fill_color);
         doc.setFillColor(r, g, b);
-        if (priceItem.border_color && priceItem.border_width) {
-          const [br, bg, bb] = hexToRgb(priceItem.border_color);
-          doc.setDrawColor(br, bg, bb);
-          doc.setLineWidth(priceItem.border_width * 0.35);
-          doc.rect(itemX, itemY, w, h, 'FD');
-        } else {
-          doc.rect(itemX, itemY, w, h, 'F');
-        }
+        withPdfOpacity(doc, priceItem.background_opacity, () => {
+          if (priceItem.border_color && priceItem.border_width) {
+            const [br, bg, bb] = hexToRgb(priceItem.border_color);
+            doc.setDrawColor(br, bg, bb);
+            doc.setLineWidth(priceItem.border_width * 0.35);
+            doc.rect(itemX, itemY, w, h, 'FD');
+          } else {
+            doc.rect(itemX, itemY, w, h, 'F');
+          }
+        });
       }
-      let rawPrice: any = undefined;
-      if (record) {
-        if (priceItem.binding_key) {
-          rawPrice = PricingEngine.getProductFieldValue(record, priceItem.binding_key);
-        } else {
-          rawPrice = PricingEngine.getSellingPrice(record);
-        }
-      } else {
-        rawPrice = typeof priceItem.fallback_price === 'number' ? priceItem.fallback_price : 29.99;
-      }
-
-      if (rawPrice === undefined || rawPrice === null || rawPrice === '') {
+      if (resolvedPrice.heroAmount === undefined) {
         return;
       }
 
       const currencySym = priceItem.currency_symbol || '€';
-      const decimals = /FCFA|CFA|GNF|XOF|XAF/i.test(currencySym) ? 0 : 2;
+      const decimals = PricingEngine.getDecimalsForCurrency(currencySym);
       const separator = priceItem.decimal_separator ?? ',';
-      const { integerPart, decimalPart, hasDecimals } = PricingEngine.splitPrice(rawPrice, separator, decimals);
+      const { integerPart, decimalPart, hasDecimals } = PricingEngine.splitPrice(resolvedPrice.heroAmount, separator, decimals);
 
       const intFontSizePt = priceItem.integer_style?.font_size_pt || 24;
       const decFontSizePt = priceItem.decimal_style?.font_size_pt || Math.max(8, Math.round(intFontSizePt * 0.52));
@@ -169,6 +183,7 @@ export function drawPdfItem(
         } else {
           priceStr = `${priceStr} ${currencySym}`;
         }
+        priceStr = `${priceItem.prefix_text || ''}${priceStr}${priceItem.suffix_text || ''}`;
       }
 
       let textX = itemX;
@@ -182,7 +197,44 @@ export function drawPdfItem(
         textY = itemY + h - 0.5;
       }
 
-      doc.text(priceStr, textX, textY, { align: align as any });
+      withPdfOpacity(doc, priceItem.text_opacity, () => {
+        doc.text(priceStr, textX, textY, { align: align as any });
+      });
+      for (const extension of resolvedPrice.extensions) {
+        const style = extension.style;
+        const fontSize = Math.max(4, style?.font_size_pt || 8);
+        const extensionFont = style?.font_family?.toLowerCase().includes('mono') ? 'courier' : 'helvetica';
+        const extensionStyle = isBoldFontWeight(style?.font_weight)
+          ? (style?.font_style === 'italic' ? 'bolditalic' : 'bold')
+          : (style?.font_style === 'italic' ? 'italic' : 'normal');
+        doc.setFont(extensionFont, extensionStyle);
+        doc.setFontSize(fontSize);
+        const [er, eg, eb] = hexToRgb(style?.text_color || '#000000');
+        doc.setTextColor(er, eg, eb);
+        let extensionX = itemX;
+        let extensionY = textY;
+        if (extension.anchor === 'after' || extension.anchor === 'beside' || extension.anchor === 'corner') {
+          extensionX += w;
+          if (extension.anchor === 'beside') extensionY = itemY + h / 2;
+        } else if (extension.anchor === 'above') {
+          extensionY = itemY + fontSize * 0.35;
+        } else if (extension.anchor === 'below') {
+          extensionY = itemY + h - 0.5;
+        }
+        if (extension.baselineShift === 'superscript') extensionY -= fontSize * 0.35;
+        if (extension.baselineShift === 'subscript') extensionY += fontSize * 0.15;
+        withPdfOpacity(doc, priceItem.text_opacity, () => {
+          doc.text(extension.text, extensionX, extensionY, {
+            align: extension.anchor === 'after' || extension.anchor === 'beside' || extension.anchor === 'corner' ? 'right' : 'left',
+          });
+        });
+        if (extension.strikethrough) {
+          const strikeColor = hexToRgb(extension.strikethroughColor || style?.text_color || '#000000');
+          doc.setDrawColor(...strikeColor);
+          const lineWidth = doc.getTextWidth(extension.text);
+          doc.line(extensionX - lineWidth, extensionY - fontSize * 0.3, extensionX, extensionY - fontSize * 0.3);
+        }
+      }
       break;
     }
 
@@ -270,25 +322,15 @@ export function drawPdfItem(
     }
 
     case 'barcode': {
-      const barcodeType = (item as any).barcode_type || 'ean13';
+      const barcodeType = (item as any).barcode_type || 'auto';
       const rawBarcode = PricingEngine.resolveBarcodeValue(item, record, { sample: false });
       if (!rawBarcode || rawBarcode.trim() === '') return;
 
       const [barR, barG, barB] = hexToRgb((item as any).bar_color || '#000000');
-      let bars: boolean[] = [];
-      let textToShow = rawBarcode;
-
-      if (barcodeType === 'ean13') {
-        try {
-          const res = generateEAN13Bars(rawBarcode);
-          bars = res.bars;
-          textToShow = res.formattedCode;
-        } catch {
-          bars = generateCode128Bars(rawBarcode);
-        }
-      } else {
-        bars = generateCode128Bars(rawBarcode);
-      }
+      const barcode = generateBarcodeBars(rawBarcode, barcodeType);
+      if (barcode.error) return;
+      const bars = barcode.bars;
+      const textToShow = barcode.formattedCode;
 
       const showText = Boolean((item as any).show_text);
       const textMarginMm = showText ? 3.0 : 0;
@@ -298,7 +340,7 @@ export function drawPdfItem(
 
       // Draw clean white background for high barcode contrast
       doc.setFillColor(255, 255, 255);
-      doc.rect(itemX, itemY, w, h, 'F');
+      withPdfOpacity(doc, (item as any).background_opacity, () => doc.rect(itemX, itemY, w, h, 'F'));
 
       doc.setFillColor(barR, barG, barB);
       let startIdx: number | null = null;
@@ -380,11 +422,13 @@ export function drawPdfItem(
       }
 
       const style = isFilled && hasBorder ? 'FD' : isFilled ? 'F' : 'S';
-      if (shape.corner_radius && shape.corner_radius > 0) {
-        doc.roundedRect(itemX, itemY, w, h, shape.corner_radius, shape.corner_radius, style);
-      } else {
-        doc.rect(itemX, itemY, w, h, style);
-      }
+      withPdfOpacity(doc, shape.background_opacity, () => {
+        if (shape.corner_radius && shape.corner_radius > 0) {
+          doc.roundedRect(itemX, itemY, w, h, shape.corner_radius, shape.corner_radius, style);
+        } else {
+          doc.rect(itemX, itemY, w, h, style);
+        }
+      });
       break;
     }
 
@@ -406,7 +450,7 @@ export function drawPdfItem(
       const style = isFilled && hasBorder ? 'FD' : isFilled ? 'F' : 'S';
       const rx = w / 2;
       const ry = h / 2;
-      doc.ellipse(itemX + rx, itemY + ry, rx, ry, style);
+      withPdfOpacity(doc, el.background_opacity, () => doc.ellipse(itemX + rx, itemY + ry, rx, ry, style));
       break;
     }
 
@@ -445,5 +489,8 @@ export function drawPdfItem(
 
     default:
       throw new Error(`[drawPdfItem] Type non supporté : ${(item as any).type}`);
+  }
+  } finally {
+    doc.restoreGraphicsState();
   }
 }

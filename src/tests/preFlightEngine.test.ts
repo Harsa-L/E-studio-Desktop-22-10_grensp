@@ -258,6 +258,23 @@ describe('PreFlightEngine Unit Tests', () => {
     expect(report.issues.some((i) => i.id.startsWith('zpl_unsupported_'))).toBe(true);
   });
 
+  it('warns that ZPL output will ignore item transparency', () => {
+    const transparentTemplate: LabelTemplate = {
+      ...baseTemplate,
+      items: [
+        { ...baseTemplate.items[0], id: 'transparent_price', foreground_opacity: 0.5 },
+      ],
+    };
+
+    const report = PreFlightEngine.analyzeTemplate(transparentTemplate, sampleProduct, 'zpl');
+    expect(report.issues).toContainEqual(expect.objectContaining({
+      id: 'zpl_transparency_transparent_price',
+      severity: 'warning',
+      category: 'compatibility',
+    }));
+    expect(report.passed).toBe(true);
+  });
+
   it('warns when secondary currency conversion has no exchange rate', () => {
     const templateSecCurr: LabelTemplate = {
       ...baseTemplate,

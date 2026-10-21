@@ -1,5 +1,6 @@
 import { ProductRecord } from '../types';
 import { parsePriceValue } from './priceParser';
+import { TierDetectionEngine } from './tierDetectionEngine';
 
 export interface CatalogImportCollision {
   id: string;
@@ -20,12 +21,10 @@ export interface CatalogImportPreparation {
 const normalizeIdentifier = (value: unknown): string => String(value ?? '').trim().toUpperCase();
 
 export function normalizeCatalogProduct(product: ProductRecord): ProductRecord {
-  const id = String(
-    product.id ||
+  const id = String(product.id ?? '').trim() ||
     (product.PRODUCT_SCAN && `scan:${normalizeIdentifier(product.PRODUCT_SCAN)}`) ||
     (product.PARTNO && `part:${normalizeIdentifier(product.PARTNO)}`) ||
-    ''
-  ).trim();
+    '';
   if (!id) throw new Error('Every catalog product must have an id, part number, or barcode.');
 
   const normalized: ProductRecord = { ...product, id };
@@ -57,6 +56,14 @@ export function prepareCatalogImport(
   const partIndex = column('PARTNO');
   const priceIndex = column('SELLING_PRICE');
   const promoIndex = column('PROMOPRICE');
+  const tierQuantityHeader = mappings.TIER_QTY || mappings.MIN_QTY;
+  const tierQuantityIndex = tierQuantityHeader ? headers.indexOf(tierQuantityHeader) : -1;
+  const hasMappedImplicitTiers = tierQuantityIndex >= 0 && priceIndex >= 0;
+  const explicitTierFieldMap = Object.entries(mappings).reduce<Record<string, string>>((result, [field, header]) => {
+    const match = field.toLowerCase().match(/(?:^|_)tier_(\d+)_(qty|min_qty|up_to_qty|max_qty|price)$/);
+    if (match) result[`tier_${match[1]}_${match[2]}`] = header;
+    return result;
+  }, {});
   const scanMap = new Map<string, ProductRecord>();
   const partMap = new Map<string, ProductRecord>();
 
@@ -88,7 +95,7 @@ export function prepareCatalogImport(
       barcode && `scan:${normalizeIdentifier(barcode)}`,
       partNumber && `part:${normalizeIdentifier(partNumber)}`,
     ].filter((value): value is string => Boolean(value));
-    if (identifiers.some((identifier) => seenIdentifiers.has(identifier))) {
+    if (!hasMappedImplicitTiers && identifiers.some((identifier) => seenIdentifiers.has(identifier))) {
       issues.push(`Ligne ${line}: Code-barres ou référence en doublon dans le fichier`);
     }
     identifiers.forEach((identifier) => seenIdentifiers.add(identifier));
@@ -131,6 +138,21 @@ export function prepareCatalogImport(
     if (scanIndex >= 0 && barcode) product.PRODUCT_SCAN = barcode;
     if (partIndex >= 0 && partNumber) product.PARTNO = partNumber;
     if (parsedPrice.status === 'valid') product.SELLING_PRICE = parsedPrice.amount;
+    if (hasMappedImplicitTiers) product.TIER_QTY = row[tierQuantityIndex];
+    if (Object.keys(explicitTierFieldMap).length > 0) {
+      const rawTierColumns = Object.values(explicitTierFieldMap).reduce<Record<string, unknown>>((values, header) => {
+        const index = headers.indexOf(header);
+        if (index >= 0) values[header] = row[index];
+        return values;
+      }, {});
+      const normalized = TierDetectionEngine.normalizeSingleRow(
+        { ...product, ...rawTierColumns },
+        explicitTierFieldMap
+      );
+      product.price_tiers = normalized.price_tiers;
+      product.TIERS = normalized.TIERS;
+      product.tier_anomaly = normalized.tier_anomaly;
+    }
     if (parsedPromo.status === 'valid') product.PROMOPRICE = parsedPromo.amount;
     const departmentIndex = column('DEPT_NAME');
     if (departmentIndex >= 0) product.DEPT_NAME = String(row[departmentIndex] ?? '').trim() || undefined;
@@ -139,7 +161,13 @@ export function prepareCatalogImport(
     products.push(product);
   });
 
-  return { products, collisions, issues };
+  return {
+    products: hasMappedImplicitTiers && Object.keys(explicitTierFieldMap).length === 0
+      ? TierDetectionEngine.aggregateImplicitMultiRows(products)
+      : products,
+    collisions,
+    issues,
+  };
 }
 
 export function applyCatalogImport(

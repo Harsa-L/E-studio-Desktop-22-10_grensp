@@ -1,6 +1,6 @@
 import { LabelTemplate, TemplateItem, ProductRecord, ItemType } from '../types';
 import { PricingEngine, PriceParseResult } from './pricingEngine';
-import { validateEAN13 } from './barcodeGenerator';
+import { generateBarcodeBars, resolveBarcodeSymbology, type BarcodeSymbology } from './barcodeGenerator';
 import { TierEngine, ResolvedTierResult } from './tierEngine';
 
 export interface ResolvedPriceData {
@@ -19,7 +19,7 @@ export interface ResolvedPriceData {
 export interface ResolvedBarcodeData {
   status: 'valid' | 'missing' | 'invalid';
   value: string;
-  barcodeType: 'ean13' | 'code128' | 'upca';
+  barcodeType: Exclude<BarcodeSymbology, 'auto'>;
   showText: boolean;
   reason?: string;
 }
@@ -318,9 +318,10 @@ export class LabelResolutionEngine {
 
         case 'barcode': {
           const item = rawItem as any;
-          const barcodeType: 'ean13' | 'code128' | 'upca' = item.barcode_type || 'ean13';
+          const requestedType: BarcodeSymbology = item.barcode_type || 'auto';
           const showText = item.show_text ?? true;
           const rawCode = PricingEngine.resolveBarcodeValue(item, product, { sample: isSample });
+          const barcodeType = resolveBarcodeSymbology(rawCode, requestedType);
 
           let barcodeStatus: 'valid' | 'missing' | 'invalid' = 'valid';
           let failureReason: string | undefined = undefined;
@@ -328,11 +329,11 @@ export class LabelResolutionEngine {
           if (!rawCode || rawCode.trim().length === 0) {
             barcodeStatus = 'missing';
             failureReason = 'Code-barres absent';
-          } else if (barcodeType === 'ean13') {
-            const eanVal = validateEAN13(rawCode);
-            if (!eanVal.valid) {
+          } else {
+            const result = generateBarcodeBars(rawCode, requestedType);
+            if (result.error) {
               barcodeStatus = 'invalid';
-              failureReason = eanVal.reason;
+              failureReason = result.error;
             }
           }
 
@@ -351,7 +352,7 @@ export class LabelResolutionEngine {
               severity: 'error',
               category: 'barcode',
               message: barcodeStatus === 'invalid'
-                ? `Code EAN-13 invalide ("${rawCode}") pour l'article ${prodName}: ${failureReason}`
+                ? `Code-barres invalide ("${rawCode}") pour l'article ${prodName}: ${failureReason}`
                 : `Code-barres manquant pour l'article ${prodName}.`,
               productIdentifier: prodId,
             });

@@ -1,6 +1,7 @@
 import { TemplateItem, ProductRecord, TextItemProperties, PriceBlockItemProperties, TierPriceItemProperties } from '../types';
 import { PricingEngine } from '../utils/pricingEngine';
 import { TierEngine } from '../utils/tierEngine';
+import { generateBarcodeBars, normalizeGs1Data, resolveBarcodeSymbology } from '../utils/barcodeGenerator';
 
 export function mmToDots(mm: number, dpi: 203 | 300 | 600): number {
   const dotsPerMm = dpi === 203 ? 8 : dpi === 300 ? 11.811 : 23.622;
@@ -64,30 +65,19 @@ export function drawZplItem(
 
     case 'price_block': {
       const priceItem = item as PriceBlockItemProperties;
-      let rawPrice: any = undefined;
-      if (record) {
-        if (priceItem.binding_key) {
-          rawPrice = PricingEngine.getProductFieldValue(record, priceItem.binding_key);
-        } else {
-          rawPrice = PricingEngine.getSellingPrice(record);
-        }
-      } else {
-        rawPrice = typeof priceItem.fallback_price === 'number' ? priceItem.fallback_price : 29.99;
-      }
-
-      if (rawPrice === undefined || rawPrice === null || rawPrice === '') {
-        return [];
-      }
+      const resolvedPrice = PricingEngine.resolvePriceBlock(priceItem, record);
+      if (resolvedPrice.heroAmount === undefined) return [];
 
       const currencySym = priceItem.currency_symbol || '€';
-      const decimals = /FCFA|CFA|GNF|XOF|XAF/i.test(currencySym) ? 0 : 2;
+      const decimals = PricingEngine.getDecimalsForCurrency(currencySym);
       const separator = priceItem.decimal_separator ?? ',';
-      const { integerPart, decimalPart, hasDecimals } = PricingEngine.splitPrice(rawPrice, separator, decimals);
+      const { integerPart, decimalPart, hasDecimals } = PricingEngine.splitPrice(resolvedPrice.heroAmount, separator, decimals);
 
       let priceStr = integerPart;
       if (hasDecimals && decimalPart) {
         priceStr += `${separator}${decimalPart}`;
       }
+      priceStr = `${priceItem.prefix_text || ''}${priceStr}${priceItem.suffix_text || ''}`;
       if (currencySym) {
         const currPos = priceItem.currency_position || 'after';
         if (currPos === 'before') {
@@ -103,6 +93,28 @@ export function drawZplItem(
       const escaped = escapeZplText(priceStr);
 
       lines.push(`^FO${x},${y}^A0N,${fontHeightDots},${fontWidthDots}^FH^FD${escaped}^FS`);
+      for (const extension of resolvedPrice.extensions) {
+        const extHeight = Math.max(12, Math.round((extension.style?.font_size_pt || 8) * (dpi / 72) * 0.85));
+        let extX = x;
+        let extY = y;
+        if (extension.anchor === 'after' || extension.anchor === 'beside' || extension.anchor === 'corner') {
+          extX += w;
+          if (extension.anchor === 'beside') extY += Math.round(h / 2);
+        } else if (extension.anchor === 'above') {
+          extY += extHeight;
+        } else if (extension.anchor === 'below') {
+          extY += h - extHeight;
+        }
+        if (extension.baselineShift === 'superscript') extY -= Math.round(extHeight * 0.35);
+        if (extension.baselineShift === 'subscript') extY += Math.round(extHeight * 0.15);
+        const extensionText = escapeZplText(extension.text);
+        const fontWidth = Math.round(extHeight * 0.65);
+        lines.push(`^FO${extX},${extY}^A0N,${extHeight},${fontWidth}^FH^FD${extensionText}^FS`);
+        if (extension.strikethrough) {
+          const strikeY = extY + Math.round(extHeight / 2);
+          lines.push(`^FO${extX},${strikeY}^GB${Math.max(fontWidth, extension.text.length * fontWidth * 0.55)},1,1^FS`);
+        }
+      }
       return lines;
     }
 
@@ -136,9 +148,11 @@ export function drawZplItem(
     }
 
     case 'barcode': {
-      const barcodeType = (item as any).barcode_type || 'ean13';
       const rawBarcode = PricingEngine.resolveBarcodeValue(item, record, { sample: false });
       if (!rawBarcode || rawBarcode.trim() === '') return [];
+      const barcodeType = resolveBarcodeSymbology(rawBarcode, (item as any).barcode_type || 'auto');
+      const validation = generateBarcodeBars(rawBarcode, (item as any).barcode_type || 'auto');
+      if (validation.error) return [];
 
       const cleanCode = rawBarcode.replace(/\D/g, '');
       const showText = Boolean((item as any).show_text);
@@ -147,6 +161,15 @@ export function drawZplItem(
       if (barcodeType === 'ean13') {
         // Preflight already guarantees valid 12 or 13 digit EAN-13 code
         lines.push(`^FO${x},${y}^BEN,${barcodeH},${showText ? 'Y' : 'N'},N^FD${cleanCode}^FS`);
+      } else if (barcodeType === 'ean8') {
+        lines.push(`^FO${x},${y}^B8N,${barcodeH},${showText ? 'Y' : 'N'},N,N^FD${cleanCode}^FS`);
+      } else if (barcodeType === 'gtin14') {
+        lines.push(`^FO${x},${y}^B2N,${barcodeH},${showText ? 'Y' : 'N'},N,N^FD${cleanCode}^FS`);
+      } else if (barcodeType === 'gs1_128') {
+        const payload = normalizeGs1Data(rawBarcode);
+        if (!payload) return [];
+        const gs1Payload = escapeZplText(payload).replace(/\x1d/g, '_1D');
+        lines.push(`^FO${x},${y}^BCN,${barcodeH},${showText ? 'Y' : 'N'},N,N^FH_^FD>;${gs1Payload}^FS`);
       } else {
         const escapedCode = escapeZplText(rawBarcode);
         lines.push(`^FO${x},${y}^BY2,3,${barcodeH}^BCN,${barcodeH},${showText ? 'Y' : 'N'},N,N^FH^FD>:${escapedCode}^FS`);

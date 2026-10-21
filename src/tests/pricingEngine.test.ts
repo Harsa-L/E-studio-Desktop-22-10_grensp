@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PricingEngine } from '../utils/pricingEngine';
-import { ProductRecord, TextItemProperties } from '../types';
+import { PriceBlockItemProperties, ProductRecord, TextItemProperties } from '../types';
+import { parsePriceValue } from '../utils/priceParser';
 
 describe('PricingEngine Unit Tests', () => {
   it('does not force FCFA when price > 500; respects item.currency_symbol', () => {
@@ -85,6 +86,107 @@ describe('PricingEngine Unit Tests', () => {
     const resFcfa = PricingEngine.splitPrice(15000.45, ',', 0);
     expect(resFcfa.decimalPart).toBe('');
     expect(resFcfa.hasDecimals).toBe(false);
+  });
+
+  it('preserves default price-block resolution and does not turn missing or invalid prices into zero', () => {
+    const item: PriceBlockItemProperties = {
+      id: 'price',
+      type: 'price_block',
+      x_mm: 1,
+      y_mm: 1,
+      w_mm: 30,
+      h_mm: 10,
+      rotation: 0,
+      z_index: 1,
+      locked: false,
+      binding_key: 'SELLING_PRICE',
+      currency_symbol: '€',
+      integer_style: { font_size_pt: 28 },
+      decimal_style: { font_size_pt: 14 },
+    };
+
+    const valid = PricingEngine.resolvePriceBlock(item, { id: 'p', ITEMNAME: 'Product', SELLING_PRICE: 12.5 });
+    expect(valid.status).toBe('valid');
+    expect(valid.heroAmount).toBe(12.5);
+    expect(valid.extensions).toEqual([]);
+    expect(PricingEngine.resolvePriceBlock(item, { id: 'missing', ITEMNAME: 'Missing' }).heroAmount).toBeUndefined();
+    expect(PricingEngine.resolvePriceBlock(item, { id: 'invalid', ITEMNAME: 'Invalid', SELLING_PRICE: 'N/A' as any }).heroAmount).toBeUndefined();
+    expect(parsePriceValue('12,50 €').amount).toBe(12.5);
+  });
+
+  it('moves an active promo into the hero style and resolves the configured compare-at extension without mutating the template', () => {
+    const item: PriceBlockItemProperties = {
+      id: 'price',
+      type: 'price_block',
+      x_mm: 1,
+      y_mm: 2,
+      w_mm: 30,
+      h_mm: 10,
+      rotation: 0,
+      z_index: 1,
+      locked: false,
+      binding_key: 'SELLING_PRICE',
+      currency_symbol: '€',
+      integer_style: { font_size_pt: 28 },
+      decimal_style: { font_size_pt: 14 },
+      promo_takes_hero_style: true,
+      extensions: [{
+        id: 'was-price',
+        role: 'compare_at',
+        anchor: 'above',
+        binding_key: 'LAST_SELLING_PRICE',
+        style: { font_size_pt: 8, text_color: '#555555' },
+      }],
+    };
+    const snapshot = JSON.stringify(item);
+    const record: ProductRecord = {
+      id: 'promo',
+      ITEMNAME: 'Promo product',
+      SELLING_PRICE: 10,
+      PROMOPRICE: 8,
+      LAST_SELLING_PRICE: 12,
+    };
+
+    const resolved = PricingEngine.resolvePriceBlock(item, record);
+    expect(resolved.heroAmount).toBe(8);
+    expect(resolved.extensions).toMatchObject([
+      { id: 'was-price', anchor: 'above', amount: 12, strikethrough: true },
+    ]);
+    expect(JSON.stringify(item)).toBe(snapshot);
+
+    const inactive = PricingEngine.resolvePriceBlock(item, {
+      ...record,
+      PROMO_END_DATE: '2000-01-01',
+    });
+    expect(inactive.heroAmount).toBe(10);
+    expect(inactive.extensions).toEqual([]);
+  });
+
+  it('hides a discount extension when the explicit percent conflicts with the active promo amount', () => {
+    const resolved = PricingEngine.resolvePriceBlock({
+      id: 'price',
+      type: 'price_block',
+      x_mm: 1,
+      y_mm: 2,
+      w_mm: 30,
+      h_mm: 10,
+      rotation: 0,
+      z_index: 1,
+      locked: false,
+      binding_key: 'SELLING_PRICE',
+      integer_style: {},
+      decimal_style: {},
+      extensions: [{ id: 'discount', role: 'discount_pct', anchor: 'corner' }],
+    }, {
+      id: 'promo',
+      ITEMNAME: 'Promo product',
+      SELLING_PRICE: 10,
+      PROMOPRICE: 8,
+      DISCOUNT_PCT: 50,
+    });
+
+    expect(resolved.extensions).toEqual([]);
+    expect(resolved.diagnostics).toContain('discount: explicit discount percentage conflicts with promo and selling prices.');
   });
 
   it('calculates unit price with custom_multiplier and format_pattern', () => {

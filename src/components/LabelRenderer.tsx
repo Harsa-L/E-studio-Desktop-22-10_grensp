@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { LabelTemplate, ProductRecord, TemplateItem, RotationHandleType } from '../types';
 import { TierEngine } from '../utils/tierEngine';
 import { PricingEngine, isPriceRelatedElement } from '../utils/pricingEngine';
-import { generateCode128Bars, generateEAN13Bars, getBarcodeSvgPath } from '../utils/barcodeGenerator';
+import { generateBarcodeBars, getBarcodeSvgPath } from '../utils/barcodeGenerator';
 import { generateQrMatrix, getQrSvgPath } from '../utils/qrGenerator';
 import { SmartGuideLine } from '../utils/smartGuides';
 import { PictogramRenderer } from './PictogramRenderer';
@@ -217,7 +217,9 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
           <div
             className={`w-full h-full flex flex-col ${vAlignClass} overflow-hidden p-0.5`}
             style={{
-              backgroundColor: item.fill_color || 'transparent',
+              backgroundColor: item.fill_color && item.background_opacity !== undefined
+                ? `color-mix(in srgb, ${item.fill_color} ${Math.max(0, Math.min(1, item.background_opacity)) * 100}%, transparent)`
+                : item.fill_color || 'transparent',
               border: item.border_width && item.border_width > 0 ? `${item.border_width * zoom}px solid ${item.border_color || '#000'}` : 'none',
               borderRadius: item.corner_radius ? `${item.corner_radius * pxPerMm}px` : undefined,
             }}
@@ -227,6 +229,7 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
               style={{
                 fontFamily: item.font_family,
                 fontSize: `${isSub || isSuper ? fontSizePx * 0.75 : fontSizePx}px`,
+                opacity: item.text_opacity ?? 1,
                 fontWeight: item.font_weight || 'normal',
                 fontStyle: item.font_style || 'normal',
                 textDecoration: item.text_decoration || 'none',
@@ -285,6 +288,7 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
                 lineHeight: item.line_height_multiplier ? `${item.line_height_multiplier}` : '1.25',
                 whiteSpace: item.wrap !== false ? 'normal' : 'nowrap',
                 wordBreak: 'break-word',
+                opacity: item.text_opacity ?? 1,
               }}
             >
               {runs.map((run, idx) => {
@@ -329,6 +333,7 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
       }
 
       case 'price_block': {
+        const resolvedPrice = PricingEngine.resolvePriceBlock(item, record);
         const vAlignClass =
           item.valign === 'bottom'
             ? 'justify-end'
@@ -343,28 +348,14 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
             ? 'justify-end text-right'
             : 'justify-start text-left';
 
-        // Resolve raw price: do not invent fallback_price when a real product record is passed
-        let rawPrice: any = !record ? (item.fallback_price ?? 29.99) : undefined;
-        if (record) {
-          if (item.binding_key) {
-            const val = PricingEngine.getProductFieldValue(record, item.binding_key);
-            if (val !== undefined && val !== null && val !== '') {
-              rawPrice = val;
-            }
-          } else {
-            rawPrice = PricingEngine.getSellingPrice(record);
-          }
-        }
-
-        // If product record exists but has no price bound or price is empty, do not display fake 0,00
-        if (record && (rawPrice === undefined || rawPrice === null || rawPrice === '')) {
+        if (resolvedPrice.heroAmount === undefined) {
           return null;
         }
 
         const currencySym = item.currency_symbol || '€';
-        const decimals = /FCFA|CFA|GNF|XOF|XAF/i.test(currencySym) ? 0 : 2;
+        const decimals = PricingEngine.getDecimalsForCurrency(currencySym);
         const separator = item.decimal_separator ?? ',';
-        const { integerPart, decimalPart } = PricingEngine.splitPrice(rawPrice, separator, decimals);
+        const { integerPart, decimalPart } = PricingEngine.splitPrice(resolvedPrice.heroAmount, separator, decimals);
 
         const intSizePt = item.integer_style?.font_size_pt || 28;
         const decSizePt = item.decimal_style?.font_size_pt || Math.max(9, Math.round(intSizePt * 0.52));
@@ -389,11 +380,34 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
         const currSizePx = Math.max(6, Math.round(baseCurrSizePx * priceScale));
 
         return (
-          <div className={`w-full h-full flex flex-col ${vAlignClass} overflow-hidden p-0.5 select-none`}>
+          <div
+            className={`w-full h-full relative flex flex-col ${vAlignClass} overflow-hidden p-0.5 select-none`}
+            style={{
+              backgroundColor: item.fill_color && item.background_opacity !== undefined
+                ? `color-mix(in srgb, ${item.fill_color} ${Math.max(0, Math.min(1, item.background_opacity)) * 100}%, transparent)`
+                : item.fill_color || 'transparent',
+            }}
+          >
             <div
               className={`w-full flex items-baseline leading-none flex-nowrap whitespace-nowrap ${textAlignClass}`}
-              style={{ fontFamily: item.font_family || 'Plus Jakarta Sans' }}
+              style={{
+                fontFamily: item.font_family || 'Plus Jakarta Sans',
+                opacity: item.text_opacity ?? 1,
+              }}
             >
+              {item.prefix_text && (
+                <span style={{
+                  fontFamily: item.prefix_style?.font_family || item.font_family,
+                  fontSize: item.prefix_style?.font_size_pt ? `${item.prefix_style.font_size_pt * 1.333 * zoom}px` : undefined,
+                  fontWeight: item.prefix_style?.font_weight,
+                  fontStyle: item.prefix_style?.font_style,
+                  color: item.prefix_style?.text_color || item.integer_style?.text_color,
+                  letterSpacing: item.prefix_style?.letter_spacing_pt ? `${item.prefix_style.letter_spacing_pt * 1.333 * zoom}px` : undefined,
+                  verticalAlign: item.prefix_style?.baseline_shift === 'superscript' ? 'super' : item.prefix_style?.baseline_shift === 'subscript' ? 'sub' : 'baseline',
+                  textDecoration: item.prefix_style?.text_decoration,
+                  textDecorationColor: item.prefix_style?.strikethrough_color,
+                }}>{item.prefix_text}</span>
+              )}
               {/* Currency Before */}
               {currencySym && currPos === 'before' && (
                 <span
@@ -401,7 +415,13 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
                   style={{
                     fontSize: `${currSizePx}px`,
                     fontWeight: item.currency_style?.font_weight || 'bold',
+                    fontStyle: item.currency_style?.font_style || 'normal',
+                    fontFamily: item.currency_style?.font_family || item.font_family,
                     color: item.currency_style?.text_color || item.integer_style?.text_color || '#000000',
+                    letterSpacing: item.currency_style?.letter_spacing_pt ? `${item.currency_style.letter_spacing_pt * 1.333 * zoom}px` : undefined,
+                    verticalAlign: item.currency_style?.baseline_shift === 'superscript'
+                      ? 'super'
+                      : item.currency_style?.baseline_shift === 'subscript' ? 'sub' : 'baseline',
                   }}
                 >
                   {currencySym}
@@ -414,8 +434,17 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
                 style={{
                   fontSize: `${intSizePx}px`,
                   fontWeight: item.integer_style?.font_weight || 'bold',
+                  fontStyle: item.integer_style?.font_style || 'normal',
+                  fontFamily: item.integer_style?.font_family || item.font_family,
                   color: item.integer_style?.text_color || '#000000',
-                  letterSpacing: '-0.03em',
+                  verticalAlign: item.integer_style?.baseline_shift === 'superscript'
+                    ? 'super'
+                    : item.integer_style?.baseline_shift === 'subscript' ? 'sub' : 'baseline',
+                  letterSpacing: item.integer_style?.letter_spacing_pt !== undefined
+                    ? `${item.integer_style.letter_spacing_pt * 1.333 * zoom}px`
+                    : '-0.03em',
+                  textDecoration: item.integer_style?.text_decoration || 'none',
+                  textDecorationColor: item.integer_style?.strikethrough_color || item.strikethrough_color,
                 }}
               >
                 {integerPart}
@@ -425,15 +454,19 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
               <div
                 className="inline-flex items-baseline font-mono ml-0.5"
                 style={{
-                  alignSelf: decShift === 'superscript' ? 'flex-start' : 'baseline',
-                  transform: decShift === 'superscript' ? 'translateY(12%)' : undefined,
+                  verticalAlign: decShift === 'superscript' ? 'super' : decShift === 'subscript' ? 'sub' : 'baseline',
                 }}
               >
                 <span
                   style={{
                     fontSize: `${decSizePx}px`,
                     fontWeight: item.decimal_style?.font_weight || 'bold',
+                    fontStyle: item.decimal_style?.font_style || 'normal',
+                    fontFamily: item.decimal_style?.font_family || item.font_family,
                     color: item.decimal_style?.text_color || item.integer_style?.text_color || '#000000',
+                    letterSpacing: item.decimal_style?.letter_spacing_pt ? `${item.decimal_style.letter_spacing_pt * 1.333 * zoom}px` : undefined,
+                    textDecoration: item.decimal_style?.text_decoration || 'none',
+                    textDecorationColor: item.decimal_style?.strikethrough_color || item.strikethrough_color,
                   }}
                 >
                   {separator}
@@ -442,7 +475,12 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
                   style={{
                     fontSize: `${decSizePx}px`,
                     fontWeight: item.decimal_style?.font_weight || 'bold',
+                    fontStyle: item.decimal_style?.font_style || 'normal',
+                    fontFamily: item.decimal_style?.font_family || item.font_family,
                     color: item.decimal_style?.text_color || item.integer_style?.text_color || '#000000',
+                    letterSpacing: item.decimal_style?.letter_spacing_pt ? `${item.decimal_style.letter_spacing_pt * 1.333 * zoom}px` : undefined,
+                    textDecoration: item.decimal_style?.text_decoration || 'none',
+                    textDecorationColor: item.decimal_style?.strikethrough_color || item.strikethrough_color,
                   }}
                 >
                   {decimalPart}
@@ -450,21 +488,90 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
               </div>
 
               {/* Currency After / Superscript */}
-              {currencySym && (currPos === 'after' || currPos === 'superscript') && (
+              {currencySym && (currPos === 'after' || currPos === 'superscript' || currPos === 'subscript') && (
                 <span
                   className="ml-1 inline-block"
                   style={{
                     fontSize: `${currSizePx}px`,
                     fontWeight: item.currency_style?.font_weight || 'bold',
+                    fontStyle: item.currency_style?.font_style || 'normal',
+                    fontFamily: item.currency_style?.font_family || item.font_family,
                     color: item.currency_style?.text_color || item.integer_style?.text_color || '#000000',
-                    alignSelf: currPos === 'superscript' ? 'flex-start' : 'baseline',
-                    transform: currPos === 'superscript' ? 'translateY(8%)' : undefined,
+                    letterSpacing: item.currency_style?.letter_spacing_pt ? `${item.currency_style.letter_spacing_pt * 1.333 * zoom}px` : undefined,
+                    verticalAlign: item.currency_style?.baseline_shift === 'superscript'
+                      ? 'super'
+                      : item.currency_style?.baseline_shift === 'subscript'
+                        ? 'sub'
+                        : currPos === 'superscript' ? 'super' : currPos === 'subscript' ? 'sub' : 'baseline',
+                    textDecoration: item.currency_style?.text_decoration || 'none',
+                    textDecorationColor: item.currency_style?.strikethrough_color || item.strikethrough_color,
                   }}
                 >
                   {currencySym}
                 </span>
               )}
+              {item.suffix_text && (
+                <span style={{
+                  fontFamily: item.suffix_style?.font_family || item.font_family,
+                  fontSize: item.suffix_style?.font_size_pt ? `${item.suffix_style.font_size_pt * 1.333 * zoom}px` : undefined,
+                  fontWeight: item.suffix_style?.font_weight,
+                  fontStyle: item.suffix_style?.font_style,
+                  color: item.suffix_style?.text_color || item.integer_style?.text_color,
+                  letterSpacing: item.suffix_style?.letter_spacing_pt ? `${item.suffix_style.letter_spacing_pt * 1.333 * zoom}px` : undefined,
+                  verticalAlign: item.suffix_style?.baseline_shift === 'superscript' ? 'super' : item.suffix_style?.baseline_shift === 'subscript' ? 'sub' : 'baseline',
+                  textDecoration: item.suffix_style?.text_decoration,
+                  textDecorationColor: item.suffix_style?.strikethrough_color,
+                }}>{item.suffix_text}</span>
+              )}
             </div>
+            {resolvedPrice.extensions.filter((extension) => !['before', 'after'].includes(extension.anchor)).map((extension) => (
+              <span
+                key={extension.id}
+                className="absolute whitespace-nowrap"
+                style={{
+                  fontFamily: extension.style?.font_family || item.font_family,
+                  fontSize: `${(extension.style?.font_size_pt || 9) * 1.333 * zoom}px`,
+                  fontWeight: extension.style?.font_weight || 'normal',
+                  fontStyle: extension.style?.font_style || 'normal',
+                  color: extension.style?.text_color || item.integer_style?.text_color || '#000000',
+                  letterSpacing: extension.style?.letter_spacing_pt ? `${extension.style.letter_spacing_pt * 1.333 * zoom}px` : undefined,
+                  verticalAlign: extension.baselineShift === 'superscript' ? 'super' : extension.baselineShift === 'subscript' ? 'sub' : 'baseline',
+                  textDecoration: extension.strikethrough ? 'line-through' : extension.style?.text_decoration || 'none',
+                  textDecorationColor: extension.strikethroughColor || extension.style?.text_color || '#000000',
+                  opacity: item.text_opacity ?? 1,
+                  top: extension.anchor === 'above' || extension.anchor === 'corner' ? 0 : extension.anchor === 'below' ? undefined : '50%',
+                  bottom: extension.anchor === 'below' ? 0 : undefined,
+                  left: extension.anchor === 'beside' ? undefined : extension.anchor === 'corner' ? undefined : 0,
+                  right: extension.anchor === 'beside' || extension.anchor === 'corner' ? 0 : undefined,
+                }}
+              >
+                {extension.text}
+              </span>
+            ))}
+            {resolvedPrice.extensions.filter((extension) => ['before', 'after'].includes(extension.anchor)).map((extension) => (
+              <span
+                key={extension.id}
+                className="absolute whitespace-nowrap"
+                style={{
+                  fontFamily: extension.style?.font_family || item.font_family,
+                  fontSize: `${(extension.style?.font_size_pt || 9) * 1.333 * zoom}px`,
+                  fontWeight: extension.style?.font_weight || 'normal',
+                  fontStyle: extension.style?.font_style || 'normal',
+                  color: extension.style?.text_color || item.integer_style?.text_color || '#000000',
+                  letterSpacing: extension.style?.letter_spacing_pt ? `${extension.style.letter_spacing_pt * 1.333 * zoom}px` : undefined,
+                  verticalAlign: extension.baselineShift === 'superscript' ? 'super' : extension.baselineShift === 'subscript' ? 'sub' : 'baseline',
+                  textDecoration: extension.strikethrough ? 'line-through' : extension.style?.text_decoration || 'none',
+                  textDecorationColor: extension.strikethroughColor || extension.style?.text_color || '#000000',
+                  opacity: item.text_opacity ?? 1,
+                  left: extension.anchor === 'before' ? 0 : undefined,
+                  right: extension.anchor === 'after' ? 0 : undefined,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                }}
+              >
+                {extension.text}
+              </span>
+            ))}
           </div>
         );
       }
@@ -514,7 +621,9 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
           <div
             className="w-full h-full"
             style={{
-              backgroundColor: item.fill_color || '#FFFFFF',
+              backgroundColor: item.fill_color && item.background_opacity !== undefined
+                ? `color-mix(in srgb, ${item.fill_color} ${Math.max(0, Math.min(1, item.background_opacity)) * 100}%, transparent)`
+                : item.fill_color || '#FFFFFF',
               border: `${Math.max(1, (item.border_width || 1) * zoom)}px solid ${item.border_color || '#000000'}`,
               borderRadius: item.corner_radius ? `${item.corner_radius * pxPerMm}px` : '0px',
             }}
@@ -527,7 +636,9 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
           <div
             className="w-full h-full rounded-full"
             style={{
-              backgroundColor: item.fill_color || 'transparent',
+              backgroundColor: item.fill_color && item.background_opacity !== undefined
+                ? `color-mix(in srgb, ${item.fill_color} ${Math.max(0, Math.min(1, item.background_opacity)) * 100}%, transparent)`
+                : item.fill_color || 'transparent',
               border: `${Math.max(1, (item.border_width || 1) * zoom)}px solid ${item.border_color || '#000000'}`,
             }}
           />
@@ -542,7 +653,9 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
               className="w-full"
               style={{
                 height: `${strokeW}px`,
-                backgroundColor: item.style === 'solid' ? item.color : 'transparent',
+                backgroundColor: item.style === 'solid' && item.background_opacity !== undefined
+                  ? `color-mix(in srgb, ${item.color} ${Math.max(0, Math.min(1, item.background_opacity)) * 100}%, transparent)`
+                  : item.style === 'solid' ? item.color : 'transparent',
                 borderTop: item.style !== 'solid' ? `${strokeW}px ${item.style} ${item.color}` : 'none',
               }}
             />
@@ -552,81 +665,39 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
 
       case 'barcode': {
         const code = PricingEngine.resolveBarcodeValue(item, record, { sample: !record });
-        const isEan13 = item.barcode_type === 'ean13';
-        let barElements: React.ReactNode = null;
-
-        try {
-          if (isEan13) {
-            let res;
-            try {
-              res = generateEAN13Bars(code);
-            } catch {
-              res = { bars: generateCode128Bars(code), formattedCode: code };
-            }
-            const { bars, formattedCode } = res;
-            const totalBars = bars.length;
-            const barW = itemW / totalBars;
-            const barH = item.show_text ? Math.max(10, itemH - 12 * zoom) : itemH;
-
-            barElements = (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-white px-1 py-0.5 select-none">
-                <svg
-                  width={itemW}
-                  height={barH}
-                  viewBox={`0 0 ${totalBars} 100`}
-                  preserveAspectRatio="none"
-                  className="w-full"
-                  shapeRendering="crispEdges"
-                >
-                  <path d={getBarcodeSvgPath(bars, 100)} fill={item.bar_color || '#000000'} />
-                </svg>
-                {item.show_text && (
-                  <span
-                    className="font-mono tracking-widest text-slate-800 leading-none pt-0.5"
-                    style={{ fontSize: `${Math.max(8, 8.5 * zoom)}px` }}
-                  >
-                    {formattedCode}
-                  </span>
-                )}
-              </div>
-            );
-          } else {
-            const bars = generateCode128Bars(code);
-            const totalBars = bars.length;
-            const barH = item.show_text ? Math.max(10, itemH - 12 * zoom) : itemH;
-
-            barElements = (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-white px-1 py-0.5 select-none">
-                <svg
-                  width={itemW}
-                  height={barH}
-                  viewBox={`0 0 ${totalBars} 100`}
-                  preserveAspectRatio="none"
-                  className="w-full"
-                  shapeRendering="crispEdges"
-                >
-                  <path d={getBarcodeSvgPath(bars, 100)} fill={item.bar_color || '#000000'} />
-                </svg>
-                {item.show_text && (
-                  <span
-                    className="font-mono tracking-wider text-slate-800 leading-none pt-0.5"
-                    style={{ fontSize: `${Math.max(8, 8.5 * zoom)}px` }}
-                  >
-                    {code}
-                  </span>
-                )}
-              </div>
-            );
-          }
-        } catch {
-          barElements = (
+        const result = generateBarcodeBars(code, item.barcode_type || 'auto');
+        if (result.error) {
+          return (
             <div className="w-full h-full flex items-center justify-center bg-amber-50 text-amber-800 border border-amber-300 text-xs text-center p-1">
-              [Code-barres: {code}]
+              [Code-barres invalide: {result.error}]
             </div>
           );
         }
-
-        return barElements;
+        const bars = result.bars;
+        const totalBars = bars.length;
+        const barH = item.show_text ? Math.max(10, itemH - 12 * zoom) : itemH;
+        return (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-white px-1 py-0.5 select-none">
+            <svg
+              width={itemW}
+              height={barH}
+              viewBox={`0 0 ${totalBars} 100`}
+              preserveAspectRatio="none"
+              className="w-full"
+              shapeRendering="crispEdges"
+            >
+              <path d={getBarcodeSvgPath(bars, 100)} fill={item.bar_color || '#000000'} />
+            </svg>
+            {item.show_text && (
+              <span
+                className="font-mono tracking-widest text-slate-800 leading-none pt-0.5"
+                style={{ fontSize: `${Math.max(8, 8.5 * zoom)}px` }}
+              >
+                {result.formattedCode}
+              </span>
+            )}
+          </div>
+        );
       }
 
       case 'qrcode': {
@@ -636,7 +707,11 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
         return (
           <div
             className="w-full h-full flex items-center justify-center p-1"
-            style={{ backgroundColor: item.background_color || '#FFFFFF' }}
+            style={{
+              backgroundColor: item.background_color && item.background_opacity !== undefined
+                ? `color-mix(in srgb, ${item.background_color} ${Math.max(0, Math.min(1, item.background_opacity)) * 100}%, transparent)`
+                : item.background_color || '#FFFFFF',
+            }}
           >
             <svg
               viewBox="0 0 100 100"
@@ -794,6 +869,7 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
                   lineHeight: lineHeightStyle,
                   textTransform: textTransform as any,
                   textShadow: textShadowStyle,
+                  opacity: item.text_opacity ?? 1,
                   backgroundColor: item.highlight_color && item.highlight_color !== 'transparent' ? item.highlight_color : undefined,
                   padding: item.highlight_color && item.highlight_color !== 'transparent' ? '0 2px' : undefined,
                   borderRadius: '2px',
@@ -948,6 +1024,9 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
                 transform: item.rotation ? `rotate(${item.rotation}deg)` : undefined,
                 transformOrigin: 'center center',
                 zIndex: isSelected ? 50 : item.z_index || 1,
+                opacity: item.type === 'restricted_area' || item.type === 'image'
+                  ? undefined
+                  : item.foreground_opacity ?? item.opacity ?? 1,
               }}
             >
               {renderItemContent(item)}

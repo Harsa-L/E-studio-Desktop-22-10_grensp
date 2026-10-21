@@ -33,6 +33,10 @@ export const DOMAIN_FIELDS: ExtendedDomainField[] = [
   { key: 'PROMO_LABEL', label: 'Libellé Promo (BOGO / Flash)', value_type: 'promo', aliases: ['OFFRE', 'PROMO_TEXT', 'PROMOTION', 'TYPE_PROMO', 'MESSAGE_PROMO', 'BADGE'], category: 'pricing' },
   { key: 'UNIT_PRICE_TEXT', label: 'Prix au Kg / Litre', value_type: 'text', aliases: ['PRIX_KILO', 'PRIX_LITRE', 'PRIX_POIDS', 'PRIX_MESURE', 'UNIT_PRICE'], category: 'pricing' },
   { key: 'ECO_TAX', label: 'Éco-participation (ECO_TAX)', value_type: 'text', aliases: ['ECO_PART', 'ECO_TAXE', 'DEEE', 'TAXE_ECO'], category: 'pricing' },
+  { key: 'MIN_QTY', label: 'Quantité minimale (MIN_QTY)', value_type: 'number', aliases: ['MINIMUM_QTY', 'MOQ', 'MINIMUM_ORDER_QTY', 'QUANTITE_MIN', 'MIN_QTE'], numeric: true, category: 'pricing' },
+  { key: 'UP_TO_QTY', label: 'Quantité maximale (UP_TO_QTY)', value_type: 'number', aliases: ['MAX_QTY', 'MAXIMUM_QTY', 'UPTO_QTY', 'QUANTITE_MAX', 'MAX_QTE'], numeric: true, category: 'pricing' },
+  { key: 'TIER_QTY', label: 'Quantité de palier (TIER_QTY)', value_type: 'number', aliases: ['TIER_QTY', 'QTY', 'QUANTITY', 'QTE', 'QTY_TIER'], numeric: true, category: 'pricing' },
+  { key: 'TIER_PRICE', label: 'Prix de palier (TIER_PRICE)', value_type: 'currency', aliases: ['PRICE_TIER', 'PRIX_TIER', 'PALIER_PRIX'], numeric: true, category: 'pricing' },
 
   // 4. Logistics, Packaging & Vendor
   { key: 'PACK_UNIT', label: 'Conditionnement (PACK UNIT)', value_type: 'text', aliases: ['PACK', 'CONDITIONNEMENT', 'FORMAT', 'CONTENANCE', 'PACK_SIZE'], category: 'logistics' },

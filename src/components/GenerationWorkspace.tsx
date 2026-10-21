@@ -14,7 +14,7 @@ import { PricingEngine } from '../utils/pricingEngine';
 import { DataMappingModal } from './DataMappingModal';
 import { PptxExporter } from '../utils/pptxExporter';
 import { ZplExporter } from '../utils/zplExporter';
-import { generateCode128Bars, generateEAN13Bars } from '../utils/barcodeGenerator';
+import { generateBarcodeBars } from '../utils/barcodeGenerator';
 import { generateQrMatrix } from '../utils/qrGenerator';
 import { AVERY_STANDARD_CATALOG } from '../utils/averyCatalog';
 import { DEFAULT_TEMPLATES } from '../defaultTemplates';
@@ -1018,26 +1018,15 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             }
           } else if (item.type === 'barcode') {
             const rawCode = PricingEngine.resolveBarcodeValue(item as any, prod);
-            const isEan13 = (item as any).barcode_type === 'ean13';
+            const barcodeType = (item as any).barcode_type || 'auto';
             const barColorHex = ((item as any).bar_color || '#000000').replace('#', '');
             const barR = parseInt(barColorHex.substring(0, 2), 16) || 0;
             const barG = parseInt(barColorHex.substring(2, 4), 16) || 0;
             const barB = parseInt(barColorHex.substring(4, 6), 16) || 0;
 
-            let bars: boolean[] = [];
-            let textToShow = rawCode;
-
-            if (isEan13) {
-              try {
-                const res = generateEAN13Bars(rawCode);
-                bars = res.bars;
-                textToShow = res.formattedCode;
-              } catch {
-                bars = generateCode128Bars(rawCode);
-              }
-            } else {
-              bars = generateCode128Bars(rawCode);
-            }
+            const barcodeResult = generateBarcodeBars(rawCode, barcodeType);
+            const bars = barcodeResult.bars;
+            const textToShow = barcodeResult.formattedCode;
 
             const showText = Boolean((item as any).show_text);
             const textMarginMm = showText ? 3.0 : 0;

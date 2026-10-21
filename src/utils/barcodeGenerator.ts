@@ -35,7 +35,197 @@ const EAN_PARITY = [
 // Runtime Memoization Caches
 const code128Cache = new Map<string, boolean[]>();
 const ean13Cache = new Map<string, { bars: boolean[]; formattedCode: string; error?: string }>();
+const ean8Cache = new Map<string, { bars: boolean[]; formattedCode: string; error?: string }>();
+const gtin14Cache = new Map<string, { bars: boolean[]; formattedCode: string; error?: string }>();
 const svgPathCache = new Map<string, string>();
+
+function calculateGtinCheckDigit(body: string): string {
+  const sum = body.split('').reverse().reduce((total, digit, index) => {
+    return total + Number(digit) * (index % 2 === 0 ? 3 : 1);
+  }, 0);
+  return String((10 - (sum % 10)) % 10);
+}
+
+function validateGtin(code: string, bodyLength: number): { normalizedCode?: string; reason?: string } {
+  const digits = String(code || '').trim();
+  if (!new RegExp(`^\\d{${bodyLength}}(?:\\d)?$`).test(digits)) {
+    return { reason: `Longueur GTIN invalide : ${digits.length} chiffres.` };
+  }
+  if (digits.length === bodyLength) return { normalizedCode: digits + calculateGtinCheckDigit(digits) };
+  if (calculateGtinCheckDigit(digits.slice(0, bodyLength)) !== digits[bodyLength]) {
+    return { reason: 'Clé de contrôle GTIN invalide.' };
+  }
+  return { normalizedCode: digits };
+}
+
+const EAN8_L = [
+  '0001101', '0011001', '0010011', '0111101', '0100011',
+  '0110001', '0101111', '0111011', '0110111', '0001011',
+];
+const EAN8_R = [
+  '1110010', '1100110', '1101100', '1000010', '1011100',
+  '1001110', '1010000', '1000100', '1001000', '1110100',
+];
+
+function encodeEan8(code: string): { bars: boolean[]; formattedCode: string; error?: string } {
+  const validation = validateGtin(code, 7);
+  if (!validation.normalizedCode) return { bars: [], formattedCode: code, error: validation.reason };
+  const digits = validation.normalizedCode;
+  const bits = `101${digits.slice(0, 4).split('').map((d) => EAN8_L[Number(d)]).join('')}01010${digits.slice(4).split('').map((d) => EAN8_R[Number(d)]).join('')}101`;
+  return { bars: [...bits].map((bit) => bit === '1'), formattedCode: digits };
+}
+
+const ITF_DIGITS = [
+  '00110', '10001', '01001', '11000', '00101',
+  '10100', '01100', '00011', '10010', '01010',
+];
+
+function encodeItf14(code: string): { bars: boolean[]; formattedCode: string; error?: string } {
+  const validation = validateGtin(code, 13);
+  if (!validation.normalizedCode) return { bars: [], formattedCode: code, error: validation.reason };
+  const digits = validation.normalizedCode;
+  const bits: boolean[] = [true, false, true, false];
+  for (let i = 0; i < digits.length; i += 2) {
+    const bars = ITF_DIGITS[Number(digits[i])];
+    const spaces = ITF_DIGITS[Number(digits[i + 1])];
+    for (let j = 0; j < 5; j++) {
+      bits.push(bars[j] === '1', spaces[j] === '1');
+    }
+  }
+  bits.push(true, true, false);
+  return { bars: bits, formattedCode: digits };
+}
+
+function code128FromValues(values: number[]): boolean[] {
+  const codes = [104, ...values];
+  let checksum = codes[0];
+  for (let i = 1; i < codes.length; i++) checksum += codes[i] * i;
+  codes.push(checksum % 103, 106);
+  const bars: boolean[] = [];
+  for (const code of codes) {
+    const pattern = CODE128_PATTERNS[code] || CODE128_PATTERNS[0];
+    let isBar = true;
+    for (const widthText of pattern) {
+      for (let width = 0; width < Number(widthText); width++) bars.push(isBar);
+      isBar = !isBar;
+    }
+  }
+  bars.push(true, true);
+  return bars;
+}
+
+function gs1Values(input: string): number[] | null {
+  const text = input.trim().replace(/^\]C1/, '');
+  const values: number[] = [102];
+  if (!text.includes('(')) {
+    for (let i = 0; i < text.length; i++) {
+      if (text.charCodeAt(i) === 29) values.push(102);
+      else {
+        const value = text.charCodeAt(i) - 32;
+        if (value < 0 || value > 95) return null;
+        values.push(value);
+      }
+    }
+    return values;
+  }
+
+  const fields = [...text.matchAll(/\((\d{2,4})\)([^()]*)/g)];
+  if (!fields.length || fields.map((field) => field[0]).join('') !== text) return null;
+  const variableLengthAis = new Set(['10', '21', '22', '30', '37', '240', '241', '250', '251', '400', '401', '420', '421']);
+  let valid = true;
+  fields.forEach((field, index) => {
+    const ai = field[1];
+    const data = field[2];
+    const fixedLength = ai === '00' ? 18 : ai === '01' ? 14 : ['11', '12', '13', '15', '16', '17'].includes(ai) ? 6 : ai === '20' ? 2 : /^310\d$/.test(ai) ? 6 : undefined;
+    if (fixedLength !== undefined && data.length !== fixedLength) {
+      valid = false;
+      return;
+    }
+    if (!data || /[^\x20-\x7e]/.test(data)) {
+      valid = false;
+      return;
+    }
+    for (const char of `${ai}${data}`) values.push(char.charCodeAt(0) - 32);
+    if (index < fields.length - 1 && (fixedLength === undefined || variableLengthAis.has(ai))) values.push(102);
+  });
+  return valid && values.length ? values : null;
+}
+
+export function normalizeGs1Data(input: string): string | null {
+  if (!gs1Values(input)) return null;
+  const text = input.trim().replace(/^\]C1/, '');
+  if (!text.includes('(')) return text;
+  const fields = [...text.matchAll(/\((\d{2,4})\)([^()]*)/g)];
+  const variableLengthAis = new Set(['10', '21', '22', '30', '37', '240', '241', '250', '251', '400', '401', '420', '421']);
+  return fields.map((field, index) => {
+    const ai = field[1];
+    const data = field[2];
+    const fixedLength = ai === '00' ? 18 : ai === '01' ? 14 : ['11', '12', '13', '15', '16', '17'].includes(ai) ? 6 : ai === '20' ? 2 : /^310\d$/.test(ai) ? 6 : undefined;
+    const separator = index < fields.length - 1 && (fixedLength === undefined || variableLengthAis.has(ai)) ? '\x1d' : '';
+    return `${ai}${data}${separator}`;
+  }).join('');
+}
+
+export function generateGs1Code128Bars(input: string): { bars: boolean[]; formattedCode: string; error?: string } {
+  if (!input?.trim()) return { bars: [], formattedCode: input || '', error: 'Code GS1-128 vide.' };
+  const values = gs1Values(input);
+  if (!values) return { bars: [], formattedCode: input, error: 'Données GS1-128 mal formées.' };
+  return { bars: code128FromValues(values), formattedCode: input };
+}
+
+export function generateEan8Bars(code: string): { bars: boolean[]; formattedCode: string; error?: string } {
+  const cached = ean8Cache.get(code);
+  if (cached) return cached;
+  const result = encodeEan8(code);
+  if (ean8Cache.size > 2000) ean8Cache.clear();
+  ean8Cache.set(code, result);
+  return result;
+}
+
+export function generateGtin14Bars(code: string): { bars: boolean[]; formattedCode: string; error?: string } {
+  const cached = gtin14Cache.get(code);
+  if (cached) return cached;
+  const result = encodeItf14(code);
+  if (gtin14Cache.size > 2000) gtin14Cache.clear();
+  gtin14Cache.set(code, result);
+  return result;
+}
+
+export function inferBarcodeType(code: string): 'ean8' | 'ean13' | 'code128' {
+  const digits = String(code || '').trim();
+  if (/^\d{8}$/.test(digits)) return 'ean8';
+  if (/^\d{12,13}$/.test(digits)) return 'ean13';
+  return 'code128';
+}
+
+export type BarcodeSymbology = 'auto' | 'code128' | 'ean8' | 'ean13' | 'gtin14' | 'gs1_128';
+
+export function resolveBarcodeSymbology(code: string, requested: BarcodeSymbology = 'auto'): Exclude<BarcodeSymbology, 'auto'> {
+  if (requested !== 'auto') return requested;
+  const inferred = inferBarcodeType(code);
+  return inferred;
+}
+
+export function generateBarcodeBars(
+  code: string,
+  requested: BarcodeSymbology = 'auto'
+): { bars: boolean[]; formattedCode: string; error?: string } {
+  const symbology = resolveBarcodeSymbology(code, requested);
+  switch (symbology) {
+    case 'ean8':
+      return generateEan8Bars(code);
+    case 'ean13':
+      return generateEAN13Bars(code);
+    case 'gtin14':
+      return generateGtin14Bars(code);
+    case 'gs1_128':
+      return generateGs1Code128Bars(code);
+    case 'code128':
+    default:
+      if (!code?.trim()) return { bars: [], formattedCode: code || '', error: 'Code-barres vide.' };
+      return { bars: generateCode128Bars(code), formattedCode: code };
+  }
+}
 
 /**
  * Validates whether a given string is a strictly compliant EAN-13 or 12-digit UPC code.

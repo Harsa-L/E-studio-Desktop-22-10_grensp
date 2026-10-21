@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { TierEngine } from '../utils/tierEngine';
 import { PricingEngine } from '../utils/pricingEngine';
+import { TierDetectionEngine } from '../utils/tierDetectionEngine';
 import { ProductRecord, TextItemProperties } from '../types';
 
 describe('TierEngine Unit Tests', () => {
@@ -44,6 +45,35 @@ describe('TierEngine Unit Tests', () => {
     expect(resolved).not.toBeNull();
     expect(resolved?.qty).toBe(3);
     expect(resolved?.unit_price).toBe(4.8);
+  });
+
+  it('detects explicitly mapped quantity, upper-bound, and price columns', () => {
+    const product = TierDetectionEngine.normalizeSingleRow({
+      id: 'mapped-tier',
+      minimum_batch: '1',
+      upper_limit: '5',
+      bulk_amount: '8.50',
+    }, {
+      tier_1_min_qty: 'minimum_batch',
+      tier_1_up_to_qty: 'upper_limit',
+      tier_1_price: 'bulk_amount',
+    });
+
+    expect(product.price_tiers).toMatchObject([
+      { min_qty: 1, max_qty: 5, unit_price: 8.5 },
+    ]);
+  });
+
+  it('keeps conflicting implicit-tier prices anomalous and prevents choosing one silently', () => {
+    const [product] = TierDetectionEngine.aggregateImplicitMultiRows([
+      { id: 'row-1', PRODUCT_SCAN: '00123', QTY: 1, SELLING_PRICE: 10 },
+      { id: 'row-2', PRODUCT_SCAN: '00123', QTY: 5, SELLING_PRICE: 8 },
+      { id: 'row-3', PRODUCT_SCAN: '00123', QTY: 5, SELLING_PRICE: 7 },
+    ]);
+
+    expect(product.tier_anomaly?.has_error).toBe(true);
+    expect(product.tier_anomaly?.issues.join(' ')).toContain('plusieurs prix différents');
+    expect(TierEngine.resolve(spec, product)?.error).toContain('plusieurs prix différents');
   });
 
   it('pricingEngine has_tiers evaluates to true if either price_tiers or TIERS is present', () => {

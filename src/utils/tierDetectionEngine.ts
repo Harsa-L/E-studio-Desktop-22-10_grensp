@@ -1,4 +1,6 @@
 import { ProductRecord, PriceTierBreak, StructureValidationError } from '../types';
+import { resolveCanonicalKey } from './mappingDictionary';
+import { parsePriceValue } from './priceParser';
 
 export class TierDetectionEngine {
   /**
@@ -6,7 +8,7 @@ export class TierDetectionEngine {
    * 1. Explicit structure (single-row with tier_1_qty, tier_1_price, etc. or TIERS array)
    * 2. Already populated price_tiers
    */
-  static normalizeSingleRow(row: any): ProductRecord {
+  static normalizeSingleRow(row: any, fieldMap?: Record<string, string>): ProductRecord {
     const product: ProductRecord = { ...row };
 
     const detectedTiers: PriceTierBreak[] = [];
@@ -14,28 +16,64 @@ export class TierDetectionEngine {
     // Check if explicit tier fields exist: tier_1_qty, tier_1_price, tier_2_qty...
     // or tier_qty_1, tier_price_1, etc.
     let index = 1;
+    let previousMaximum = 0;
     while (index <= 10) {
       const q =
+        (fieldMap?.[`tier_${index}_qty`] ? row[fieldMap[`tier_${index}_qty`]] : undefined) ??
         row[`tier_${index}_qty`] ??
         row[`tier_qty_${index}`] ??
         row[`qty_tier_${index}`] ??
         row[`palier_${index}_qte`];
       const p =
+        (fieldMap?.[`tier_${index}_price`] ? row[fieldMap[`tier_${index}_price`]] : undefined) ??
         row[`tier_${index}_price`] ??
         row[`tier_price_${index}`] ??
         row[`price_tier_${index}`] ??
         row[`palier_${index}_prix`];
+      const mappedMinimum = fieldMap?.[`tier_${index}_min_qty`]
+        ? row[fieldMap[`tier_${index}_min_qty`]]
+        : undefined;
+      const mappedMaximum = fieldMap?.[`tier_${index}_up_to_qty`]
+        ? row[fieldMap[`tier_${index}_up_to_qty`]]
+        : undefined;
+      const canonicalFields = Object.keys(row).reduce<Record<string, unknown>>((acc, key) => {
+        const canonical = resolveCanonicalKey(key);
+        const match = canonical?.match(/(?:^|_)(?:TIER|PALIER)_?(\d+)_(QTY|QUANTITY|PRICE|PRIX)$/i);
+        if (match && Number(match[1]) === index) {
+          acc[match[2].toUpperCase()] = row[key];
+        }
+        const threshold = canonical?.match(/(?:^|_)(?:TIER|PALIER)_?(\d+)_(MIN_QTY|UP_TO_QTY|MAX_QTY)$/i);
+        if (threshold && Number(threshold[1]) === index) acc[threshold[2].toUpperCase()] = row[key];
+        return acc;
+      }, {});
+      const resolvedMinimum = mappedMinimum ?? canonicalFields.MIN_QTY;
+      const resolvedMaximum = mappedMaximum ?? canonicalFields.UP_TO_QTY ?? canonicalFields.MAX_QTY;
+      const resolvedQty = q ?? canonicalFields.QTY ?? canonicalFields.QUANTITY ?? resolvedMinimum ??
+        (resolvedMaximum !== undefined ? previousMaximum + 1 : undefined);
+      const resolvedPrice = p ?? canonicalFields.PRICE ?? canonicalFields.PRIX;
 
-      if (q !== undefined && p !== undefined && q !== null && p !== null) {
-        const minQty = typeof q === 'number' ? q : parseFloat(String(q));
-        const unitPrice = typeof p === 'number' ? p : parseFloat(String(p));
-        if (!isNaN(minQty) && !isNaN(unitPrice)) {
+      if (resolvedQty !== undefined && resolvedPrice !== undefined && resolvedQty !== null && resolvedPrice !== null) {
+        const minQtyResult = parsePriceValue(resolvedQty);
+        const priceResult = parsePriceValue(resolvedPrice);
+        const maxQtyResult = resolvedMaximum === undefined || resolvedMaximum === null
+          ? { status: 'missing' as const }
+          : parsePriceValue(resolvedMaximum);
+        const minQty = minQtyResult.amount;
+        const unitPrice = priceResult.amount;
+        const maxQty = maxQtyResult.amount;
+        if (minQtyResult.status === 'valid' && priceResult.status === 'valid' &&
+            minQty !== undefined && unitPrice !== undefined &&
+            maxQtyResult.status !== 'invalid') {
           detectedTiers.push({
             min_qty: minQty,
+            max_qty: maxQtyResult.status === 'valid' ? maxQty : undefined,
             unit_price: unitPrice,
-            label: minQty === 1 ? 'Base Price' : `${minQty}+ Units`,
+            label: maxQtyResult.status === 'valid' && maxQty !== undefined
+              ? `${minQty}-${maxQty} Units`
+              : minQty === 1 ? 'Base Price' : `${minQty}+ Units`,
             is_base: minQty === 1,
           });
+          if (maxQtyResult.status === 'valid' && maxQty !== undefined) previousMaximum = maxQty;
         }
       }
       index++;
@@ -103,12 +141,26 @@ export class TierDetectionEngine {
    */
   static aggregateImplicitMultiRows(rawRows: any[]): ProductRecord[] {
     const groups: Map<string, any[]> = new Map();
+    const mappedValue = (row: any, canonicalKeys: string[], fallbackKeys: string[]): unknown => {
+      for (const key of fallbackKeys) {
+        if (row[key] !== undefined && row[key] !== null && row[key] !== '') return row[key];
+      }
+      for (const key of Object.keys(row)) {
+        if (canonicalKeys.includes(resolveCanonicalKey(key) || '') &&
+            row[key] !== undefined && row[key] !== null && row[key] !== '') {
+          return row[key];
+        }
+      }
+      return undefined;
+    };
 
     // Grouping by SKU/EAN/PARTNO/ID
     for (const row of rawRows) {
-      const groupKey = String(
-        row.PRODUCT_SCAN || row.PARTNO || row.EAN || row.SKU || row.id || row.ITEMNAME
-      ).trim();
+      const groupKey = String(mappedValue(
+        row,
+        ['PRODUCT_SCAN', 'PARTNO'],
+        ['PRODUCT_SCAN', 'PARTNO', 'EAN', 'SKU', 'id', 'ITEMNAME']
+      ) ?? row.ITEMNAME ?? '').trim();
 
       if (!groups.has(groupKey)) {
         groups.set(groupKey, []);
@@ -132,13 +184,15 @@ export class TierDetectionEngine {
 
       // Collect all quantity-price pairs
       for (const r of rows) {
-        const qRaw = r.QTY ?? r.min_qty ?? r.QUANTITY ?? r.QTE ?? r.tier_qty ?? 1;
-        const pRaw = r.SELLING_PRICE ?? r.UNIT_PRICE ?? r.PRICE ?? r.unit_price ?? r.PRIX ?? 0;
+        const qRaw = mappedValue(r, ['MIN_QTY', 'TIER_QTY'], ['QTY', 'min_qty', 'QUANTITY', 'QTE', 'tier_qty']) ?? 1;
+        const pRaw = mappedValue(r, ['SELLING_PRICE', 'TIER_PRICE'], ['SELLING_PRICE', 'UNIT_PRICE', 'PRICE', 'unit_price', 'PRIX']);
 
-        const q = typeof qRaw === 'number' ? qRaw : parseFloat(String(qRaw));
-        const p = typeof pRaw === 'number' ? pRaw : parseFloat(String(pRaw));
+        const qResult = parsePriceValue(qRaw);
+        const pResult = parsePriceValue(pRaw);
+        const q = qResult.status === 'valid' ? qResult.amount : undefined;
+        const p = pResult.status === 'valid' ? pResult.amount : undefined;
 
-        if (!isNaN(q) && !isNaN(p)) {
+        if (q !== undefined && p !== undefined && q > 0 && p >= 0) {
           if (!tierMap.has(q)) {
             tierMap.set(q, []);
           }
@@ -154,7 +208,7 @@ export class TierDetectionEngine {
 
       for (const qty of sortedQuantities) {
         const prices = tierMap.get(qty)!;
-        if (prices.length > 1) {
+        if (new Set(prices).size > 1) {
           duplicateErrors.push(
             `Quantité ${qty} présente plusieurs prix différents: ${prices.join(', ')}`
           );
@@ -215,6 +269,11 @@ export class TierDetectionEngine {
       if (tier.min_qty === undefined || tier.min_qty === null || isNaN(tier.min_qty) || tier.min_qty <= 0) {
         issues.push(`Palier #${i + 1}: Quantité manquante ou invalide (<= 0).`);
       }
+      if (tier.max_qty !== undefined && (
+        isNaN(tier.max_qty) || tier.max_qty < tier.min_qty
+      )) {
+        issues.push(`Palier #${i + 1}: Quantité maximale invalide (${tier.max_qty}).`);
+      }
 
       // Missing or invalid price
       if (tier.unit_price === undefined || tier.unit_price === null || isNaN(tier.unit_price) || tier.unit_price < 0) {
@@ -231,6 +290,9 @@ export class TierDetectionEngine {
       // Step progression anomaly (price should decrease or stay equal as quantity increases)
       if (i > 0) {
         const prevTier = tiers[i - 1];
+        if (prevTier.max_qty !== undefined && tier.min_qty <= prevTier.max_qty) {
+          issues.push(`Palier #${i + 1}: Seuil chevauchant (${tier.min_qty} est inférieur ou égal à ${prevTier.max_qty}).`);
+        }
         if (tier.min_qty > prevTier.min_qty && tier.unit_price > prevTier.unit_price) {
           issues.push(
             `Incohérence tarifaire : Le prix unitaire augmente à ${tier.min_qty} unités (${tier.unit_price}) par rapport à ${prevTier.min_qty} unités (${prevTier.unit_price}).`
