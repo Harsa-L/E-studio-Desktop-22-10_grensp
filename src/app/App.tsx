@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TooltipProvider } from '../context/TooltipContext';
 import { MappingDictionaryProvider } from '../context/MappingDictionaryContext';
 import { AppProviders } from './providers/AppProviders';
@@ -14,18 +14,24 @@ import { FontManagerModal } from '../components/FontManagerModal';
 import { KeyboardShortcutsModal } from '../components/KeyboardShortcutsModal';
 import { MappingDictionaryModal } from '../components/MappingDictionaryModal';
 import { AccessibilityPreferencesModal } from '../components/AccessibilityPreferencesModal';
-import { LabelTemplate, ProductRecord } from '../types';
+import { ProjectStartScreen } from '../components/ProjectStartScreen';
+import { LabelProject, LabelTemplate, ProductRecord } from '../types';
 import { catalogRepository } from '../services/catalogRepository';
 import { navigationService, AppView } from '../services/navigationService';
 import { AuditLogService } from '../services/auditLogService';
 import { sanitizeNonPriceElement } from '../utils/pricingEngine';
 import { api } from '../services/api';
+import { projectFileService } from '../services/projectFileService';
+import { desktopFileService } from '../services/desktopFileService';
 
 function MainWorkspace() {
-  const [currentView, setCurrentView] = useState<AppView>('home');
-  // Starts with genuine empty array on clean install, loads from SQLite
+  const [currentView, setCurrentView] = useState<AppView>('start');
+  // Project templates are loaded from the local project library on launch.
   const [templates, setTemplates] = useState<LabelTemplate[]>([]);
   const [activeTemplate, setActiveTemplate] = useState<LabelTemplate | null>(null);
+  const [projects, setProjects] = useState<LabelProject[]>([]);
+  const [activeProject, setActiveProject] = useState<LabelProject | null>(null);
+  const [newProjectRequested, setNewProjectRequested] = useState(false);
   const [generationProducts, setGenerationProducts] = useState<ProductRecord[] | undefined>(undefined);
   const [generationBatchName, setGenerationBatchName] = useState<string | undefined>(undefined);
 
@@ -40,6 +46,61 @@ function MainWorkspace() {
   const [isMappingDictOpen, setIsMappingDictOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+  const navigationInitialized = useRef(false);
+
+  const makeProject = (name: string, templates: LabelTemplate[] = []): LabelProject => {
+    const now = new Date().toISOString();
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `project_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    return {
+      id,
+      name,
+      created_at: now,
+      updated_at: now,
+      templates,
+      data_sources: [],
+    };
+  };
+
+  const loadProjects = useCallback(async () => {
+    try {
+      const projectList = await api.projectList();
+      if (projectList.length > 0) {
+        const recent = projectList[0];
+        const opened = await api.projectSave({ ...recent, last_opened_at: new Date().toISOString() });
+        const sortedProjects = [opened, ...projectList.slice(1)];
+        setProjects(sortedProjects);
+        setActiveProject(opened);
+        setTemplates(opened.templates || []);
+        setActiveTemplate(opened.templates?.[0] || null);
+        return;
+      }
+
+      const summaries = await api.templateList();
+      const legacyTemplates = (await Promise.all(
+        summaries.map(async (summary) => {
+          try {
+            return await api.templateGet(summary.id);
+          } catch {
+            return null;
+          }
+        })
+      )).filter((template): template is LabelTemplate => template !== null);
+      if (legacyTemplates.length > 0) {
+        const legacyProject = await api.projectSave(makeProject('Projet importé', legacyTemplates));
+        setProjects([legacyProject]);
+        setActiveProject(legacyProject);
+        setTemplates(legacyTemplates);
+        setActiveTemplate(legacyTemplates[0] || null);
+      } else {
+        setProjects([]);
+        setActiveProject(null);
+        setTemplates([]);
+        setActiveTemplate(null);
+      }
+    } catch (err) {
+      console.error('Failed to load the local project library', err);
+    }
+  }, []);
 
   const loadTemplates = async () => {
     try {
@@ -58,18 +119,27 @@ function MainWorkspace() {
       if (validDocs.length > 0) {
         setActiveTemplate((prev) => prev || validDocs[0]);
       }
+      if (activeProject && validDocs.length === 0 && activeProject.templates?.length) {
+        setTemplates(activeProject.templates);
+      }
     } catch (err) {
       console.warn('Failed to load templates from SQLite', err);
     }
   };
 
-  // Load templates from SQLite on mount
+  // Load the local project library on launch.
   useEffect(() => {
-    loadTemplates();
+    void loadProjects();
   }, []);
 
   // Subscribe to Navigation Service
   useEffect(() => {
+    if (!navigationInitialized.current) {
+      navigationInitialized.current = true;
+      if (navigationService.getCurrentRoute().view === 'home') {
+        navigationService.navigateTo('start', {}, true);
+      }
+    }
     const unsub = navigationService.subscribe((route) => {
       setCurrentView(route.view);
       const targetId = route.params.templateId || route.params.template;
@@ -110,6 +180,149 @@ function MainWorkspace() {
     navigationService.navigateTo('generation', { template: template.id });
   };
 
+  const syncProjectSnapshot = useCallback(async (nextTemplates: LabelTemplate[] = templates) => {
+    if (!activeProject) return;
+    const nextProject: LabelProject = {
+      ...activeProject,
+      templates: nextTemplates,
+    };
+    const savedProject = await api.projectSave(nextProject);
+    setActiveProject(savedProject);
+    setProjects((prev) => {
+      const existingIndex = prev.findIndex((project) => project.id === savedProject.id);
+      if (existingIndex >= 0) {
+        const next = [...prev];
+        next[existingIndex] = savedProject;
+        return next;
+      }
+      return [savedProject, ...prev];
+    });
+  }, [activeProject, templates]);
+
+  const handleStartNewProject = () => {
+    setNewProjectRequested(true);
+    navigationService.navigateTo('start');
+  };
+
+  const handleCreateProject = async (name: string) => {
+    const newProject = { ...makeProject(name), last_opened_at: new Date().toISOString() };
+    const saved = await api.projectSave(newProject);
+    setProjects((prev) => [saved, ...prev]);
+    setActiveProject(saved);
+    setTemplates(saved.templates || []);
+    setActiveTemplate(null);
+    navigationService.navigateTo('home');
+  };
+
+  const handleOpenProject = async (project: LabelProject) => {
+    const storedProject = await api.projectGet(project.id);
+    const loadedProject = await api.projectSave({ ...storedProject, last_opened_at: new Date().toISOString() });
+    setActiveProject(loadedProject);
+    setProjects((prev) => [loadedProject, ...prev.filter((item) => item.id !== loadedProject.id)]);
+    const nextTemplates = loadedProject.templates || [];
+    setTemplates(nextTemplates);
+    setActiveTemplate(nextTemplates[0] || null);
+    navigationService.navigateTo('home');
+  };
+
+  const handleRenameProject = async (projectId: string, nextName: string) => {
+    const target = projects.find((project) => project.id === projectId);
+    if (!target) return;
+    const name = nextName.trim();
+    if (!name) return;
+    const updated = { ...target, name };
+    const saved = await api.projectSave(updated);
+    setProjects((prev) => prev.map((project) => (project.id === saved.id ? saved : project)));
+    if (activeProject?.id === saved.id) setActiveProject(saved);
+  };
+
+  const handleDuplicateProject = async (project: LabelProject) => {
+    const copyName = `${project.name} - Copie`;
+    const duplicated = {
+      ...makeProject(copyName),
+      last_opened_at: new Date().toISOString(),
+      templates: JSON.parse(JSON.stringify(project.templates || [])) as LabelTemplate[],
+      data_sources: JSON.parse(JSON.stringify(project.data_sources || [])),
+    };
+    const saved = await api.projectSave(duplicated);
+    setProjects((prev) => [saved, ...prev]);
+    setActiveProject(saved);
+    setTemplates(saved.templates || []);
+    setActiveTemplate((saved.templates || [])[0] || null);
+    navigationService.navigateTo('home');
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    const target = projects.find((project) => project.id === projectId);
+    if (!target) return;
+    await api.projectDelete(projectId);
+    const remaining = projects.filter((project) => project.id !== projectId);
+    setProjects(remaining);
+    if (activeProject?.id === projectId) {
+      const fallback = remaining[0] || null;
+      setActiveProject(fallback);
+      setTemplates(fallback?.templates || []);
+      setActiveTemplate(fallback?.templates?.[0] || null);
+      if (!fallback) navigationService.navigateTo('start');
+    }
+  };
+
+  const handleSaveProject = async () => {
+    await syncProjectSnapshot(templates);
+  };
+
+  const handleSaveProjectArchive = async (project: LabelProject, format: 'eproj' | 'zip' = 'eproj') => {
+    const safeName = (project.name || 'projet').trim().replace(/[^a-z0-9-_]+/gi, '_').toLowerCase() || 'projet';
+    const password = window.prompt(`Mot de passe optionnel pour .${format} (8+ caractères, vide = non chiffré)`, '');
+    if (password === null) return;
+    const snapshot = {
+      ...project,
+      templates: project.id === activeProject?.id ? templates : project.templates,
+    };
+    if (format === 'zip') {
+      const contents = await projectFileService.exportZip(snapshot, password.trim() ? password.trim() : undefined);
+      await desktopFileService.saveBinary(`${safeName}.zip`, contents, [
+        { name: 'Archive de projet E-Studio', extensions: ['zip'] },
+      ]);
+    } else {
+      const contents = await projectFileService.exportEproj(snapshot, password.trim() ? password.trim() : undefined);
+      await desktopFileService.saveText(`${safeName}.eproj`, contents, [
+        { name: 'Projet E-Studio', extensions: ['eproj'] },
+      ]);
+    }
+  };
+
+  const handleImportProjectArchive = async (file: File) => {
+    const password = window.prompt('Mot de passe du projet si chiffré', '');
+    if (password === null) return;
+    const trimmedPassword = password && password.trim() ? password.trim() : undefined;
+    const content = new Uint8Array(await file.arrayBuffer());
+    const imported = file.name.toLowerCase().endsWith('.zip')
+      ? await projectFileService.importZip(content, trimmedPassword)
+      : await projectFileService.importEproj(new TextDecoder().decode(content), trimmedPassword);
+    const projectToSave = projects.some((project) => project.id === imported.id)
+      ? {
+          ...imported,
+          id: makeProject(imported.name).id,
+          name: `${imported.name} - Copie`,
+        }
+      : imported;
+    const saved = await api.projectSave({ ...projectToSave, last_opened_at: new Date().toISOString() });
+    setProjects((prev) => [saved, ...prev.filter((project) => project.id !== saved.id)]);
+    setActiveProject(saved);
+    setTemplates(saved.templates || []);
+    setActiveTemplate((saved.templates || [])[0] || null);
+    navigationService.navigateTo('home');
+  };
+
+  const runProjectAction = (action: () => Promise<unknown>) => {
+    void action().catch((error) => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('Project operation failed', error);
+      window.alert(`Project operation failed: ${message}`);
+    });
+  };
+
   const handleSaveTemplate = async (updated: LabelTemplate) => {
     const now = new Date().toISOString();
     const sanitized: LabelTemplate = {
@@ -121,16 +334,18 @@ function MainWorkspace() {
       items: (updated.items || []).map((it) => sanitizeNonPriceElement(it)),
     };
     const savedDoc = await api.templateSave(sanitized);
-    setTemplates((prev) => {
-      const existingIndex = prev.findIndex((t) => t.id === savedDoc.id);
+    const nextTemplates = (() => {
+      const existingIndex = templates.findIndex((t) => t.id === savedDoc.id);
       if (existingIndex >= 0) {
-        const next = [...prev];
+        const next = [...templates];
         next[existingIndex] = savedDoc;
         return next;
       }
-      return [savedDoc, ...prev];
-    });
+      return [savedDoc, ...templates];
+    })();
+    setTemplates(nextTemplates);
     setActiveTemplate(savedDoc);
+    await syncProjectSnapshot(nextTemplates);
     AuditLogService.append({
       action: 'MODIFICATION_GABARIT',
       template_name: savedDoc.name,
@@ -153,8 +368,10 @@ function MainWorkspace() {
     };
     try {
       const savedDoc = await api.templateSave(duplicated);
-      setTemplates((prev) => [savedDoc, ...prev]);
+      const nextTemplates = [savedDoc, ...templates];
+      setTemplates(nextTemplates);
       setActiveTemplate(savedDoc);
+      await syncProjectSnapshot(nextTemplates);
       AuditLogService.append({
         action: 'DUPLICATION_GABARIT',
         template_name: copyName,
@@ -170,13 +387,12 @@ function MainWorkspace() {
     const realId = toDelete?.id || templateId;
     try {
       await api.templateDelete(realId);
-      setTemplates((prev) => {
-        const next = prev.filter((t) => t.id !== realId && t.name !== realId);
-        if (activeTemplate?.id === realId || activeTemplate?.name === realId) {
-          setActiveTemplate(next[0] || null);
-        }
-        return next;
-      });
+      const nextTemplates = templates.filter((t) => t.id !== realId && t.name !== realId);
+      setTemplates(nextTemplates);
+      if (activeTemplate?.id === realId || activeTemplate?.name === realId) {
+        setActiveTemplate(nextTemplates[0] || null);
+      }
+      await syncProjectSnapshot(nextTemplates);
       AuditLogService.append({
         action: 'SUPPRESSION_GABARIT',
         template_name: toDelete?.name || templateId,
@@ -199,8 +415,10 @@ function MainWorkspace() {
     };
     try {
       const savedDoc = await api.templateSave(sanitized);
-      setTemplates((prev) => [savedDoc, ...prev.filter((t) => t.id !== savedDoc.id)]);
+      const nextTemplates = [savedDoc, ...templates.filter((t) => t.id !== savedDoc.id)];
+      setTemplates(nextTemplates);
       setActiveTemplate(savedDoc);
+      await syncProjectSnapshot(nextTemplates);
       AuditLogService.append({
         action: 'IMPORT_GABARIT',
         template_name: savedDoc.name,
@@ -223,8 +441,10 @@ function MainWorkspace() {
     };
     try {
       const savedDoc = await api.templateSave(sanitized);
-      setTemplates((prev) => [savedDoc, ...prev]);
+      const nextTemplates = [savedDoc, ...templates];
+      setTemplates(nextTemplates);
       setActiveTemplate(savedDoc);
+      await syncProjectSnapshot(nextTemplates);
       setIsNewWizardOpen(false);
       navigationService.navigateTo('editor', { template: savedDoc.id });
       AuditLogService.append({
@@ -245,7 +465,12 @@ function MainWorkspace() {
         activeTemplate={activeTemplate}
         templates={templates}
         totalProductsCount={productsCount}
+        activeProjectName={activeProject?.name}
         onNavigate={handleNavigate}
+        onOpenProjectFile={(file) => runProjectAction(() => handleImportProjectArchive(file))}
+        onNewProject={handleStartNewProject}
+        onSaveProject={() => runProjectAction(handleSaveProject)}
+        onSaveProjectAs={() => activeProject && runProjectAction(() => handleSaveProjectArchive(activeProject))}
         onOpenRulesModal={() => setIsRulesModalOpen(true)}
         onOpenFontManager={() => setIsFontManagerOpen(true)}
         onOpenAuditLogs={() => setIsAuditLogsOpen(true)}
@@ -256,6 +481,21 @@ function MainWorkspace() {
 
       {/* Main Viewport Container */}
       <main className="flex-1 flex min-h-0 min-w-0 overflow-hidden relative">
+        {currentView === 'start' && (
+          <ProjectStartScreen
+            projects={projects}
+            newProjectRequested={newProjectRequested}
+            onNewProjectRequestHandled={() => setNewProjectRequested(false)}
+            onCreateProject={(name) => runProjectAction(() => handleCreateProject(name))}
+            onOpenProject={(project) => runProjectAction(() => handleOpenProject(project))}
+            onOpenProjectFile={(file) => runProjectAction(() => handleImportProjectArchive(file))}
+            onRenameProject={(projectId, name) => runProjectAction(() => handleRenameProject(projectId, name))}
+            onDuplicateProject={(project) => runProjectAction(() => handleDuplicateProject(project))}
+            onDeleteProject={(projectId) => runProjectAction(() => handleDeleteProject(projectId))}
+            onExportProject={(project, format) => runProjectAction(() => handleSaveProjectArchive(project, format))}
+          />
+        )}
+
         {currentView === 'home' && (
           <HomeDashboard
             templates={templates}

@@ -23,17 +23,19 @@ class NavigationService {
 
   private parseHash(): RouteState {
     if (typeof window === 'undefined') {
-      return { view: 'home', params: {}, fullHash: '#/home' };
+      return { view: 'start', params: {}, fullHash: '#/start' };
     }
 
-    const rawHash = window.location.hash || '#/home';
+    const rawHash = window.location.hash || '#/start';
     const hashWithoutPrefix = rawHash.replace(/^#\/?/, '');
     const [pathPart, queryPart] = hashWithoutPrefix.split('?');
 
-    let view: AppView = 'home';
-    const cleanPath = (pathPart || 'home').toLowerCase();
+    let view: AppView = 'start';
+    const cleanPath = (pathPart || 'start').toLowerCase();
 
-    if (cleanPath === 'editor' || cleanPath === 'studio') {
+    if (cleanPath === 'start' || cleanPath === 'home') {
+      view = cleanPath;
+    } else if (cleanPath === 'editor' || cleanPath === 'studio') {
       view = 'editor';
     } else if (cleanPath === 'generation' || cleanPath === 'print' || cleanPath === 'imposition') {
       view = 'generation';

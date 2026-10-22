@@ -69,6 +69,8 @@ import {
   Plus,
   Link2,
   X,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 
 interface PropertyInspectorProps {
@@ -85,6 +87,10 @@ interface PropertyInspectorProps {
   onCopyStyle?: (style: ElementStylePayload) => void;
   onPasteStyle?: () => void;
   onClose?: () => void;
+  inspectorWidth?: number;
+  inspectorWidthLocked?: boolean;
+  selectedPriceExtensionId?: string | null;
+  onToggleInspectorWidthLock?: () => void;
 }
 
 export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
@@ -101,6 +107,10 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
   onCopyStyle,
   onPasteStyle,
   onClose,
+  inspectorWidth = 320,
+  inspectorWidthLocked = false,
+  selectedPriceExtensionId,
+  onToggleInspectorWidthLock,
 }) => {
   const { dictionary } = useMappingDictionary();
   const availableFields = React.useMemo(() => {
@@ -113,10 +123,33 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
   }, [dictionary]);
 
   const count = selectedItems.length;
+  const [arePropertiesFolded, setArePropertiesFolded] = React.useState(false);
+  const foldButton = (
+    <button
+      type="button"
+      onClick={() => setArePropertiesFolded((folded) => !folded)}
+      aria-expanded={!arePropertiesFolded}
+      title={arePropertiesFolded ? 'Déplier les propriétés' : 'Replier les propriétés'}
+      className="p-1.5 rounded hover:bg-slate-200 text-slate-600"
+    >
+      {arePropertiesFolded ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+    </button>
+  );
+  const widthLockButton = onToggleInspectorWidthLock ? (
+    <button
+      type="button"
+      onClick={onToggleInspectorWidthLock}
+      aria-pressed={inspectorWidthLocked}
+      title={inspectorWidthLocked ? 'Déverrouiller la largeur de l’inspecteur' : 'Verrouiller la largeur de l’inspecteur'}
+      className={`p-1.5 rounded transition ${inspectorWidthLocked ? 'bg-amber-100 text-amber-800' : 'hover:bg-slate-200 text-slate-600'}`}
+    >
+      {inspectorWidthLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+    </button>
+  ) : null;
 
   if (count === 0) {
     return (
-      <div className="w-80 bg-white border-l border-slate-200 p-6 text-slate-500 text-sm flex flex-col items-center justify-center text-center h-full select-none shrink-0 z-10">
+      <div style={{ width: inspectorWidth }} className="bg-white border-l border-slate-200 p-6 text-slate-500 text-sm flex flex-col items-center justify-center text-center h-full select-none shrink-0 z-10">
         <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
           <Sliders className="w-6 h-6" />
         </div>
@@ -177,7 +210,7 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
     const allLocked = selectedItems.every((it) => it.locked);
 
     return (
-      <div className="w-80 bg-white border-l border-slate-200 h-full flex flex-col text-xs text-slate-700 select-none overflow-y-auto shrink-0 z-10 shadow-lg">
+      <div style={{ width: inspectorWidth }} className="bg-white border-l border-slate-200 h-full flex flex-col text-xs text-slate-700 select-none overflow-y-auto shrink-0 z-10 shadow-lg">
         {/* Multi-Selection Header */}
         <div className="p-3 border-b border-slate-200 bg-blue-50/70 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -191,6 +224,8 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
           </div>
 
           <div className="flex items-center gap-1">
+            {foldButton}
+            {widthLockButton}
             {onCopyStyle && (
               <button
                 onClick={handleCopyStyleFromFirst}
@@ -255,7 +290,7 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
           </div>
         )}
 
-        <div className="p-4 space-y-4">
+        <div className={arePropertiesFolded ? 'hidden' : 'p-4 space-y-4'}>
           {/* Dimensions communes */}
           <div>
             <h4 className="font-bold text-slate-900 mb-2 uppercase text-[10px] tracking-wider text-slate-400 flex items-center gap-1">
@@ -526,7 +561,7 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
   };
 
   return (
-    <div className="w-80 bg-white border-l border-slate-200 h-full flex flex-col text-xs text-slate-700 select-none overflow-y-auto shrink-0 z-10 shadow-lg">
+    <div style={{ width: inspectorWidth }} className="bg-white border-l border-slate-200 h-full flex flex-col text-xs text-slate-700 select-none overflow-y-auto shrink-0 z-10 shadow-lg">
       {/* Header with quick actions */}
       <div className="p-3 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
         <div>
@@ -534,6 +569,8 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
           <h3 className="font-bold text-slate-800 capitalize text-sm">{selectedItem.type.replace('_', ' ')}</h3>
         </div>
         <div className="flex items-center gap-1">
+          {foldButton}
+          {widthLockButton}
           {onCopyStyle && (
             <button
               onClick={() => onCopyStyle(extractElementStyle(selectedItem))}
@@ -612,7 +649,7 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
         </div>
       )}
 
-      <div className="p-4 space-y-4">
+      <div className={arePropertiesFolded ? 'hidden' : 'p-4 space-y-4'}>
         {/* Geometry (mm) */}
         <div>
           <h4 className="font-bold text-slate-900 mb-2 uppercase text-[10px] tracking-wider text-slate-400">
@@ -2394,6 +2431,40 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
               <span>Bloc Prix & Centimes Flottants</span>
             </h4>
 
+            <label className="flex items-center gap-2 text-[11px] text-slate-700">
+              <input
+                type="checkbox"
+                checked={(selectedItem as PriceBlockItemProperties).decimals_enabled !== false}
+                onChange={(event) => update({ decimals_enabled: event.target.checked })}
+                className="rounded text-blue-600"
+              />
+              Afficher les centimes / décimales
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="text-[11px] text-slate-500">
+                Format de devise
+                <select
+                  value={(selectedItem as PriceBlockItemProperties).currency_display || 'symbol'}
+                  onChange={(event) => update({ currency_display: event.target.value as PriceBlockItemProperties['currency_display'] })}
+                  className="w-full mt-0.5 px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs"
+                >
+                  <option value="symbol">Symbole</option>
+                  <option value="code">Code monétaire (ISO)</option>
+                  <option value="none">Aucune devise</option>
+                </select>
+              </label>
+              <label className="text-[11px] text-slate-500">
+                Code monétaire
+                <input
+                  type="text"
+                  value={(selectedItem as PriceBlockItemProperties).currency_code || ''}
+                  onChange={(event) => update({ currency_code: event.target.value.trim().toUpperCase() || undefined })}
+                  placeholder="EUR, XOF, USD…"
+                  className="w-full mt-0.5 px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs font-mono uppercase"
+                />
+              </label>
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
               {(['prefix_text', 'suffix_text'] as const).map((key) => (
                 <label key={key} className="text-[11px] text-slate-500">
@@ -2454,7 +2525,28 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                 </button>
               </div>
               {((selectedItem as PriceBlockItemProperties).extensions || []).map((extension, index) => (
-                <div key={extension.id} className="p-2 bg-slate-50 border border-slate-200 rounded space-y-2">
+                <details
+                  key={extension.id}
+                  open
+                  className={`bg-slate-50 border rounded ${selectedPriceExtensionId === extension.id ? 'border-amber-400 ring-1 ring-amber-300' : 'border-slate-200'}`}
+                >
+                  <summary className="px-2 py-1.5 text-[10px] font-bold text-slate-700 cursor-pointer">
+                    Segment {index + 1} · {extension.role.replace('_', ' ')}
+                  </summary>
+                  <div className="p-2 pt-0 space-y-2">
+                  <label className="flex items-center gap-2 text-[10px] font-semibold text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={extension.enabled !== false}
+                      onChange={(event) => {
+                        const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                        extensions[index] = { ...extension, enabled: event.target.checked };
+                        update({ extensions });
+                      }}
+                      className="rounded text-blue-600"
+                    />
+                    Segment actif
+                  </label>
                   <div className="flex items-center gap-2">
                     <select
                       value={extension.role}
@@ -2521,7 +2613,29 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                       />
                     </label>
                   </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      ['offset_x_mm', 'Décalage X (mm)'],
+                      ['offset_y_mm', 'Décalage Y (mm)'],
+                    ] as const).map(([key, label]) => (
+                      <label key={key} className="text-[10px] text-slate-500">
+                        {label}
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={extension[key] ?? 0}
+                          onChange={(event) => {
+                            const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                            extensions[index] = { ...extension, [key]: Number(event.target.value) || 0 };
+                            update({ extensions });
+                          }}
+                          className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                        />
+                      </label>
+                    ))}
+                  </div>
                   {['promo_price', 'compare_at', 'discount_pct'].includes(extension.role) && (
+                    <div className="space-y-2">
                     <div className="grid grid-cols-3 gap-2">
                       <label className="text-[10px] text-slate-500">
                         Devise
@@ -2568,6 +2682,54 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                           <option value="subscript">Indice</option>
                         </select>
                       </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="text-[10px] text-slate-500">
+                        Affichage de devise
+                        <select
+                          value={extension.currency_display || (selectedItem as PriceBlockItemProperties).currency_display || 'symbol'}
+                          onChange={(event) => {
+                            const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                            extensions[index] = { ...extension, currency_display: event.target.value as typeof extension.currency_display };
+                            update({ extensions });
+                          }}
+                          className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                        >
+                          <option value="symbol">Symbole</option>
+                          <option value="code">Code ISO</option>
+                          <option value="none">Aucune</option>
+                        </select>
+                      </label>
+                      <label className="text-[10px] text-slate-500">
+                        Code ISO
+                        <input
+                          type="text"
+                          value={extension.currency_code || (selectedItem as PriceBlockItemProperties).currency_code || ''}
+                          onChange={(event) => {
+                            const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                            extensions[index] = { ...extension, currency_code: event.target.value.trim().toUpperCase() || undefined };
+                            update({ extensions });
+                          }}
+                          placeholder="EUR, XOF…"
+                          className="w-full mt-0.5 px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono uppercase"
+                        />
+                      </label>
+                    </div>
+                    <label className="flex items-center gap-2 text-[10px] text-slate-600">
+                      <input
+                        type="checkbox"
+                        checked={extension.decimals_enabled !== undefined
+                          ? extension.decimals_enabled
+                          : (selectedItem as PriceBlockItemProperties).decimals_enabled !== false}
+                        onChange={(event) => {
+                          const extensions = [...((selectedItem as PriceBlockItemProperties).extensions || [])];
+                          extensions[index] = { ...extension, decimals_enabled: event.target.checked };
+                          update({ extensions });
+                        }}
+                        className="rounded text-blue-600"
+                      />
+                      Décimales pour ce segment (remplace le réglage global)
+                    </label>
                     </div>
                   )}
                   <label className="block text-[10px] text-slate-500">
@@ -2805,7 +2967,8 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                       </label>
                     ))}
                   </div>
-                </div>
+                  </div>
+                </details>
               ))}
             </div>
 

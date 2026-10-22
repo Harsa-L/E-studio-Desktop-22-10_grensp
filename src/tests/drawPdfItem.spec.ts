@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import jsPDF from 'jspdf';
 import { drawPdfItem } from '../render/drawPdfItem';
 import { ImpositionConfig, LabelTemplate, PriceBlockItemProperties, ProductRecord } from '../types';
@@ -77,6 +77,40 @@ describe('drawPdfItem Specification Tests', () => {
     const output = doc.output();
     expect(output).toContain('4,5');
     expect(output).not.toContain('PALIERS DE PRIX');
+  });
+
+  it('applies independent segment offsets in millimeters', () => {
+    const doc = new jsPDF({ unit: 'mm', format: [100, 50] });
+    const textSpy = vi.spyOn(doc, 'text');
+    const item: PriceBlockItemProperties = {
+      id: 'price-with-child',
+      type: 'price_block',
+      x_mm: 2,
+      y_mm: 2,
+      w_mm: 30,
+      h_mm: 10,
+      rotation: 0,
+      z_index: 1,
+      locked: false,
+      binding_key: 'SELLING_PRICE',
+      integer_style: { font_size_pt: 12 },
+      decimal_style: { font_size_pt: 8 },
+      extensions: [{
+        id: 'child',
+        role: 'custom',
+        anchor: 'above',
+        text: 'Child segment',
+        offset_x_mm: 1,
+        offset_y_mm: 2,
+        style: { font_size_pt: 8 },
+      }],
+    };
+
+    drawPdfItem(doc, item, 10, 10, { id: 'product', ITEMNAME: 'Product', SELLING_PRICE: 12 });
+
+    const childTextCall = textSpy.mock.calls.find(([text]) => text === 'Child segment');
+    expect(childTextCall?.[1]).toBe(11);
+    expect(childTextCall?.[2]).toBeCloseTo(14.8);
   });
 
   it('rebuilds imposed PDF jobs from the saved template, products, and sheet configuration', () => {

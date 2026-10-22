@@ -23,6 +23,8 @@ interface LabelRendererProps {
   selectedItemId?: string | null;
   selectedItemIds?: string[];
   onSelectItem?: (id: string, e: React.MouseEvent) => void;
+  selectedPriceExtensionId?: string | null;
+  onSelectPriceExtension?: (itemId: string, extensionId: string, e: React.MouseEvent) => void;
   onResizeStart?: (id: string, handle: string, e: React.MouseEvent) => void;
   onRotateStart?: (id: string, e: React.MouseEvent, handlePos?: string) => void;
   onRotateStep90?: (id: string, e: React.MouseEvent) => void;
@@ -48,6 +50,8 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
   selectedItemId = null,
   selectedItemIds,
   onSelectItem,
+  selectedPriceExtensionId,
+  onSelectPriceExtension,
   onResizeStart,
   onRotateStart,
   onRotateStep90,
@@ -352,8 +356,8 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
           return null;
         }
 
-        const currencySym = item.currency_symbol || '€';
-        const decimals = PricingEngine.getDecimalsForCurrency(currencySym);
+        const currencySym = PricingEngine.getPriceBlockCurrency(item);
+        const decimals = PricingEngine.getPriceBlockDecimals(item);
         const separator = item.decimal_separator ?? ',';
         const { integerPart, decimalPart } = PricingEngine.splitPrice(resolvedPrice.heroAmount, separator, decimals);
 
@@ -527,7 +531,15 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
             {resolvedPrice.extensions.filter((extension) => !['before', 'after'].includes(extension.anchor)).map((extension) => (
               <span
                 key={extension.id}
-                className="absolute whitespace-nowrap"
+                data-price-extension-id={extension.id}
+                onMouseDown={(event) => {
+                  if (!interactive || !onSelectPriceExtension) return;
+                  event.stopPropagation();
+                  onSelectPriceExtension(item.id, extension.id, event);
+                }}
+                className={`absolute whitespace-nowrap ${interactive ? 'cursor-pointer' : ''} ${
+                  selectedPriceExtensionId === extension.id ? 'outline outline-2 outline-amber-500 bg-amber-100/60 z-50' : ''
+                }`}
                 style={{
                   fontFamily: extension.style?.font_family || item.font_family,
                   fontSize: `${(extension.style?.font_size_pt || 9) * 1.333 * zoom}px`,
@@ -543,6 +555,7 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
                   bottom: extension.anchor === 'below' ? 0 : undefined,
                   left: extension.anchor === 'beside' ? undefined : extension.anchor === 'corner' ? undefined : 0,
                   right: extension.anchor === 'beside' || extension.anchor === 'corner' ? 0 : undefined,
+                  transform: `translate(${extension.offset_x_mm * pxPerMm}px, ${extension.offset_y_mm * pxPerMm}px)`,
                 }}
               >
                 {extension.text}
@@ -551,7 +564,15 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
             {resolvedPrice.extensions.filter((extension) => ['before', 'after'].includes(extension.anchor)).map((extension) => (
               <span
                 key={extension.id}
-                className="absolute whitespace-nowrap"
+                data-price-extension-id={extension.id}
+                onMouseDown={(event) => {
+                  if (!interactive || !onSelectPriceExtension) return;
+                  event.stopPropagation();
+                  onSelectPriceExtension(item.id, extension.id, event);
+                }}
+                className={`absolute whitespace-nowrap ${interactive ? 'cursor-pointer' : ''} ${
+                  selectedPriceExtensionId === extension.id ? 'outline outline-2 outline-amber-500 bg-amber-100/60 z-50' : ''
+                }`}
                 style={{
                   fontFamily: extension.style?.font_family || item.font_family,
                   fontSize: `${(extension.style?.font_size_pt || 9) * 1.333 * zoom}px`,
@@ -566,7 +587,7 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
                   left: extension.anchor === 'before' ? 0 : undefined,
                   right: extension.anchor === 'after' ? 0 : undefined,
                   top: '50%',
-                  transform: 'translateY(-50%)',
+                  transform: `translateY(-50%) translate(${extension.offset_x_mm * pxPerMm}px, ${extension.offset_y_mm * pxPerMm}px)`,
                 }}
               >
                 {extension.text}

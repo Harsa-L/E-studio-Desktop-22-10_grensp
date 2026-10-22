@@ -1,8 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import { api } from '../services/api';
-import { LabelTemplate, ProductRecord } from '../types';
+import { LabelProject, LabelTemplate, ProductRecord } from '../types';
 
 describe('API Services & In-Memory Store Unit Tests', () => {
+  it('persists project library entries across project API operations', async () => {
+    const project: LabelProject = {
+      id: 'project_api_library_test',
+      name: 'Project Library Test',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      templates: [],
+      data_sources: [],
+    };
+
+    const saved = await api.projectSave(project);
+    expect(await api.projectGet(project.id)).toMatchObject({ id: project.id, name: project.name });
+    expect((await api.projectList()).some((item) => item.id === project.id)).toBe(true);
+
+    await api.projectSave({ ...saved, name: 'Renamed Project' });
+    expect((await api.projectGet(project.id)).name).toBe('Renamed Project');
+    await api.projectDelete(project.id);
+    await expect(api.projectGet(project.id)).rejects.toThrow(`Project not found: ${project.id}`);
+  });
+
   it('saves and retrieves templates accurately with revision increment', async () => {
     const tpl: LabelTemplate = {
       id: 'tpl_unit_test',

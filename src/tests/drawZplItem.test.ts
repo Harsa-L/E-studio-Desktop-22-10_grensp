@@ -49,4 +49,21 @@ describe('drawZplItem price blocks', () => {
     expect(output).toContain('^FD10 €^FS');
     expect(output).not.toContain('8,00 €');
   });
+
+  it('applies independent segment offsets in millimeters', () => {
+    const output = drawZplItem({
+      ...item,
+      extensions: [{
+        id: 'child',
+        role: 'custom',
+        anchor: 'below',
+        text: 'Child segment',
+        offset_x_mm: 1,
+        offset_y_mm: 2,
+      }],
+    }, 203, product).join('\n');
+
+    expect(output).toContain('^FO48,133');
+    expect(output).toContain('Child segment');
+  });
 });

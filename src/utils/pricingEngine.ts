@@ -8,6 +8,8 @@ export interface ResolvedPriceBlockExtension {
   id: string;
   role: PriceBlockExtension['role'];
   anchor: PriceBlockExtension['anchor'];
+  offset_x_mm: number;
+  offset_y_mm: number;
   text: string;
   amount?: number;
   style?: PriceBlockExtension['style'];
@@ -153,6 +155,25 @@ export class PricingEngine {
     return 2;
   }
 
+  static getPriceBlockCurrency(
+    item: PriceBlockItemProperties,
+    extension?: PriceBlockExtension
+  ): string {
+    const display = extension?.currency_display ?? item.currency_display ?? 'symbol';
+    if (display === 'none') return '';
+    if (display === 'code') return extension?.currency_code || item.currency_code || '';
+    return extension?.currency_symbol || item.currency_symbol || '€';
+  }
+
+  static getPriceBlockDecimals(
+    item: PriceBlockItemProperties,
+    extension?: PriceBlockExtension
+  ): number {
+    if (!(extension?.decimals_enabled ?? item.decimals_enabled ?? true)) return 0;
+    const currency = PricingEngine.getPriceBlockCurrency(item, extension);
+    return extension?.decimals ?? PricingEngine.getDecimalsForCurrency(currency);
+  }
+
   /**
    * Helper: Resolves promo price from record with fallback matching and date window verification.
    */
@@ -261,6 +282,7 @@ export class PricingEngine {
     const extensions: ResolvedPriceBlockExtension[] = [];
 
     for (const extension of item.extensions || []) {
+      if (extension.enabled === false) continue;
       if (extension.condition?.enabled &&
           !PricingEngine.shouldDisplayItem({ ...item, conditional_display: extension.condition }, record)) {
         continue;
@@ -344,8 +366,8 @@ export class PricingEngine {
       }
 
       if (amount !== undefined) {
-        const currency = extension.currency_symbol || item.currency_symbol || '';
-        const decimals = extension.decimals ?? PricingEngine.getDecimalsForCurrency(currency);
+        const currency = PricingEngine.getPriceBlockCurrency(item, extension);
+        const decimals = PricingEngine.getPriceBlockDecimals(item, extension);
         const formattedAmount = amount.toLocaleString('fr-FR', {
           minimumFractionDigits: decimals,
           maximumFractionDigits: decimals,
@@ -376,6 +398,8 @@ export class PricingEngine {
         id: extension.id,
         role: extension.role,
         anchor: extension.anchor,
+        offset_x_mm: Number.isFinite(extension.offset_x_mm) ? extension.offset_x_mm! : 0,
+        offset_y_mm: Number.isFinite(extension.offset_y_mm) ? extension.offset_y_mm! : 0,
         text,
         amount,
         style: extension.style,

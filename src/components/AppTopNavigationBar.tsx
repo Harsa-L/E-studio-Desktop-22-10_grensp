@@ -11,6 +11,11 @@ import {
   History,
   FileSpreadsheet,
   Keyboard,
+  FilePlus2,
+  FolderOpen,
+  Save,
+  SaveAll,
+  Home,
 } from 'lucide-react';
 
 interface AppTopNavigationBarProps {
@@ -18,7 +23,12 @@ interface AppTopNavigationBarProps {
   activeTemplate: LabelTemplate | null;
   templates: LabelTemplate[];
   totalProductsCount: number;
+  activeProjectName?: string;
   onNavigate: (view: AppView) => void;
+  onOpenProjectFile: (file: File) => void;
+  onNewProject: () => void;
+  onSaveProject: () => void;
+  onSaveProjectAs: () => void;
   onOpenRulesModal: () => void;
   onOpenFontManager: () => void;
   onOpenAuditLogs: () => void;
@@ -32,7 +42,12 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
   activeTemplate,
   templates,
   totalProductsCount,
+  activeProjectName,
   onNavigate,
+  onOpenProjectFile,
+  onNewProject,
+  onSaveProject,
+  onSaveProjectAs,
   onOpenRulesModal,
   onOpenFontManager,
   onOpenAuditLogs,
@@ -41,6 +56,8 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
   onOpenShortcuts,
 }) => {
   const [toolsDropdownOpen, setToolsDropdownOpen] = React.useState(false);
+  const [fileMenuOpen, setFileMenuOpen] = React.useState(false);
+  const projectFileInput = React.useRef<HTMLInputElement>(null);
 
   // Global hotkeys Alt+1 .. Alt+4
   React.useEffect(() => {
@@ -71,9 +88,9 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
         {/* Left Side: Brand Logo & Breadcrumb Navigation */}
         <div className="flex items-center gap-3 min-w-0">
           <button
-            onClick={() => onNavigate('home')}
+            onClick={() => onNavigate('start')}
             className="flex items-center gap-2 text-left group hover:opacity-90 transition shrink-0 focus:outline-none"
-            title="Retour au Tableau de bord (Alt+1)"
+            title="Accueil des projets"
           >
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-inner">
               <Layers className="w-4 h-4 text-white" />
@@ -87,6 +104,30 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
               </div>
             </div>
           </button>
+
+          <div className="relative">
+            <button
+              onClick={() => setFileMenuOpen((open) => !open)}
+              className="rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
+              aria-expanded={fileMenuOpen}
+            >
+              Fichier
+            </button>
+            {fileMenuOpen && (
+              <>
+                <button className="fixed inset-0 z-40 cursor-default" aria-label="Fermer le menu fichier" onClick={() => setFileMenuOpen(false)} />
+                <div className="absolute left-0 top-9 z-50 w-60 rounded-lg border border-slate-700 bg-slate-900 p-1.5 shadow-2xl">
+                  {activeProjectName && <div className="truncate px-3 py-2 text-[11px] font-semibold text-slate-500">{activeProjectName}</div>}
+                  <button onClick={() => { setFileMenuOpen(false); onNavigate('start'); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><Home className="h-3.5 w-3.5" />Accueil des projets</button>
+                  <button onClick={() => { setFileMenuOpen(false); onNewProject(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><FilePlus2 className="h-3.5 w-3.5" />Nouveau projet…</button>
+                  <button onClick={() => { setFileMenuOpen(false); projectFileInput.current?.click(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><FolderOpen className="h-3.5 w-3.5" />Ouvrir un projet…</button>
+                  <div className="my-1 border-t border-slate-800" />
+                  <button disabled={!activeProjectName} onClick={() => { setFileMenuOpen(false); onSaveProject(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><Save className="h-3.5 w-3.5" />Enregistrer le projet</button>
+                  <button disabled={!activeProjectName} onClick={() => { setFileMenuOpen(false); onSaveProjectAs(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><SaveAll className="h-3.5 w-3.5" />Exporter / Enregistrer sous…</button>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Breadcrumb Separator */}
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
@@ -131,6 +172,8 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
           </div>
         </div>
 
+        {currentView !== 'start' && (
+          <>
         {/* Center: Module View Switcher */}
         <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 shadow-inner">
           <button
@@ -283,7 +326,10 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
             )}
           </div>
         </div>
+          </>
+        )}
       </div>
+      <input ref={projectFileInput} type="file" accept=".eproj,.zip" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) onOpenProjectFile(file); event.currentTarget.value = ''; }} />
     </nav>
   );
 };

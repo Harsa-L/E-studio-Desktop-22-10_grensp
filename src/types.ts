@@ -257,15 +257,21 @@ export interface PriceSubStyle {
 
 export interface PriceBlockExtension {
   id: string;
+  enabled?: boolean;
   role: 'promo_price' | 'compare_at' | 'discount_pct' | 'unit_price' | 'tier_price' | 'custom';
   binding_key?: string;
   anchor: 'before' | 'after' | 'above' | 'below' | 'beside' | 'corner';
+  offset_x_mm?: number;
+  offset_y_mm?: number;
   condition?: ConditionalDisplayConfig;
   fallback?: 'hide' | { literal: string };
   prefix_text?: string;
   suffix_text?: string;
   currency_symbol?: string;
+  currency_code?: string;
+  currency_display?: 'symbol' | 'code' | 'none';
   currency_position?: 'before' | 'after' | 'superscript' | 'subscript';
+  decimals_enabled?: boolean;
   decimals?: number;
   format_pattern?: string;
   text?: string;
@@ -288,7 +294,10 @@ export interface PriceBlockItemProperties extends BaseItemProperties {
   border_color?: string;
   border_width?: number;
   currency_symbol?: string; // e.g. "€", "FCFA", "$"
+  currency_code?: string;
+  currency_display?: 'symbol' | 'code' | 'none';
   currency_position?: 'after' | 'before' | 'superscript' | 'subscript';
+  decimals_enabled?: boolean;
   decimal_separator?: '.' | ',';
   integer_style: PriceSubStyle;
   decimal_style: PriceSubStyle;
@@ -535,7 +544,7 @@ export interface PrintJob {
   zpl_dpi?: 203 | 300 | 600;
 }
 
-export type AppView = 'home' | 'editor' | 'generation' | 'catalog';
+export type AppView = 'start' | 'home' | 'editor' | 'generation' | 'catalog';
 
 export interface TemplateSummary {
   id: string;
@@ -682,6 +691,25 @@ export interface ProductRecord {
   forced_copies?: number;
 
   [custom_key: string]: any;
+}
+
+export interface ProjectDataSource {
+  id: string;
+  name: string;
+  source_file_name?: string;
+  created_at: string;
+  updated_at: string;
+  records: ProductRecord[];
+}
+
+export interface LabelProject {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  last_opened_at?: string;
+  templates: LabelTemplate[];
+  data_sources: ProjectDataSource[];
 }
 
 export interface BlueprintOverlayConfig {

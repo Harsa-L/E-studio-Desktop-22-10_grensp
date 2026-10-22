@@ -152,8 +152,8 @@ export function drawPdfItem(
         return;
       }
 
-      const currencySym = priceItem.currency_symbol || '€';
-      const decimals = PricingEngine.getDecimalsForCurrency(currencySym);
+      const currencySym = PricingEngine.getPriceBlockCurrency(priceItem);
+      const decimals = PricingEngine.getPriceBlockDecimals(priceItem);
       const separator = priceItem.decimal_separator ?? ',';
       const { integerPart, decimalPart, hasDecimals } = PricingEngine.splitPrice(resolvedPrice.heroAmount, separator, decimals);
 
@@ -223,6 +223,8 @@ export function drawPdfItem(
         }
         if (extension.baselineShift === 'superscript') extensionY -= fontSize * 0.35;
         if (extension.baselineShift === 'subscript') extensionY += fontSize * 0.15;
+        extensionX += extension.offset_x_mm;
+        extensionY += extension.offset_y_mm;
         withPdfOpacity(doc, priceItem.text_opacity, () => {
           doc.text(extension.text, extensionX, extensionY, {
             align: extension.anchor === 'after' || extension.anchor === 'beside' || extension.anchor === 'corner' ? 'right' : 'left',

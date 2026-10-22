@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import {
+  LabelProject,
   LabelTemplate,
   ProductRecord,
   PrintJob,
@@ -29,12 +30,105 @@ export const isTauriEnvironment = (): boolean => {
 const inMemoryStore = {
   templates: new Map<string, LabelTemplate>(),
   templateRevisions: new Map<string, LabelTemplate>(),
+  projects: new Map<string, LabelProject>(),
   products: new Map<string, ProductRecord>(),
   jobs: new Map<string, PrintJob>(),
   audit: [] as AuditRecord[],
   kv: new Map<string, string>(),
   importBatches: [] as any[],
 };
+
+const PROJECT_LIBRARY_KEY = 'e_studio_project_library_v1';
+const PROJECT_DATABASE_NAME = 'e-studio-project-library';
+const PROJECT_DATABASE_VERSION = 1;
+
+function openProjectDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(PROJECT_DATABASE_NAME, PROJECT_DATABASE_VERSION);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains('projects')) {
+        request.result.createObjectStore('projects', { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(new Error(`Unable to open the local project library: ${request.error?.message || 'IndexedDB error'}`));
+    request.onblocked = () => reject(new Error('The local project library is blocked by another open database connection.'));
+  });
+}
+
+async function readIndexedProjects(): Promise<LabelProject[]> {
+  const database = await openProjectDatabase();
+  return await new Promise((resolve, reject) => {
+    const request = database.transaction('projects', 'readonly').objectStore('projects').getAll();
+    request.onsuccess = () => {
+      database.close();
+      resolve(request.result as LabelProject[]);
+    };
+    request.onerror = () => {
+      database.close();
+      reject(new Error(`Unable to read the local project library: ${request.error?.message || 'IndexedDB error'}`));
+    };
+  });
+}
+
+async function writeIndexedProjects(projects: LabelProject[]): Promise<void> {
+  const database = await openProjectDatabase();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction('projects', 'readwrite');
+    const store = transaction.objectStore('projects');
+    store.clear();
+    projects.forEach((project) => store.put(project));
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(new Error(`Unable to save the local project library: ${transaction.error?.message || 'IndexedDB error'}`));
+    transaction.onabort = () => reject(new Error(`Saving the local project library was aborted: ${transaction.error?.message || 'IndexedDB error'}`));
+  });
+  database.close();
+}
+
+async function readProjectLibrary(): Promise<Map<string, LabelProject>> {
+  let serialized: string | null = null;
+  if (isTauriEnvironment()) {
+    serialized = await invoke<string | null>('prefs_get', { key: PROJECT_LIBRARY_KEY });
+  } else if (typeof indexedDB !== 'undefined') {
+    const projects = await readIndexedProjects();
+    const library = new Map(projects.map((project) => [project.id, project]));
+    inMemoryStore.projects.clear();
+    library.forEach((project, id) => inMemoryStore.projects.set(id, project));
+    return library;
+  }
+
+  if (serialized === null) return new Map(inMemoryStore.projects);
+  let decoded: unknown;
+  try {
+    decoded = JSON.parse(serialized);
+  } catch {
+    throw new Error('The local project library is damaged and could not be read.');
+  }
+  if (!Array.isArray(decoded) || decoded.some((project) =>
+    !project ||
+    typeof project.id !== 'string' ||
+    typeof project.name !== 'string' ||
+    !Array.isArray(project.templates) ||
+    !Array.isArray(project.data_sources)
+  )) {
+    throw new Error('The local project library has an invalid format.');
+  }
+  const library = new Map<string, LabelProject>(decoded.map((project: LabelProject) => [project.id, project]));
+  inMemoryStore.projects.clear();
+  library.forEach((project, id) => inMemoryStore.projects.set(id, project));
+  return library;
+}
+
+async function writeProjectLibrary(projects: Map<string, LabelProject>): Promise<void> {
+  const serialized = JSON.stringify(Array.from(projects.values()));
+  if (isTauriEnvironment()) {
+    await invoke('prefs_set', { key: PROJECT_LIBRARY_KEY, value: serialized });
+  } else if (typeof indexedDB !== 'undefined') {
+    await writeIndexedProjects(Array.from(projects.values()));
+  }
+  inMemoryStore.projects.clear();
+  projects.forEach((project, id) => inMemoryStore.projects.set(id, project));
+}
 
 let auditIdCounter = 0;
 
@@ -138,6 +232,43 @@ export const api = {
       return;
     }
     inMemoryStore.templates.delete(id);
+  },
+
+  async projectList(): Promise<LabelProject[]> {
+    const library = await readProjectLibrary();
+    return Array.from(library.values()).sort((a, b) =>
+      (b.last_opened_at || b.updated_at).localeCompare(a.last_opened_at || a.updated_at)
+    );
+  },
+
+  async projectGet(id: string): Promise<LabelProject> {
+    const project = (await readProjectLibrary()).get(id);
+    if (!project) throw new Error(`Project not found: ${id}`);
+    return project;
+  },
+
+  async projectSave(project: LabelProject): Promise<LabelProject> {
+    const library = await readProjectLibrary();
+    const now = new Date().toISOString();
+    const existing = library.get(project.id);
+    const normalized: LabelProject = {
+      ...project,
+      id: project.id || `project_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      name: project.name || 'Nouveau projet',
+      created_at: project.created_at || existing?.created_at || now,
+      updated_at: now,
+      templates: Array.isArray(project.templates) ? project.templates : [],
+      data_sources: Array.isArray(project.data_sources) ? project.data_sources : [],
+    };
+    library.set(normalized.id, normalized);
+    await writeProjectLibrary(library);
+    return normalized;
+  },
+
+  async projectDelete(id: string): Promise<void> {
+    const library = await readProjectLibrary();
+    library.delete(id);
+    await writeProjectLibrary(library);
   },
 
   async catalogSearch(q: string, limit?: number): Promise<ProductRecord[]> {

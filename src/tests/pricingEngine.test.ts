@@ -114,6 +114,63 @@ describe('PricingEngine Unit Tests', () => {
     expect(parsePriceValue('12,50 €').amount).toBe(12.5);
   });
 
+  it('supports global currency/decimal settings and local price-segment overrides', () => {
+    const item: PriceBlockItemProperties = {
+      id: 'price-settings',
+      type: 'price_block',
+      x_mm: 1,
+      y_mm: 1,
+      w_mm: 30,
+      h_mm: 10,
+      rotation: 0,
+      z_index: 1,
+      locked: false,
+      binding_key: 'SELLING_PRICE',
+      currency_symbol: '€',
+      currency_code: 'EUR',
+      currency_display: 'code',
+      decimals_enabled: false,
+      integer_style: { font_size_pt: 28 },
+      decimal_style: { font_size_pt: 14 },
+    };
+
+    expect(PricingEngine.getPriceBlockCurrency(item)).toBe('EUR');
+    expect(PricingEngine.getPriceBlockDecimals(item)).toBe(0);
+    expect(PricingEngine.getPriceBlockCurrency({ ...item, currency_display: 'symbol' })).toBe('€');
+    expect(PricingEngine.getPriceBlockCurrency({ ...item, currency_display: 'none' })).toBe('');
+    expect(PricingEngine.getPriceBlockDecimals(item, { id: 'local', role: 'promo_price', anchor: 'above', decimals_enabled: true })).toBe(2);
+    expect(PricingEngine.getPriceBlockDecimals(item, { id: 'local', role: 'promo_price', anchor: 'above', decimals_enabled: true, decimals: 1 })).toBe(1);
+  });
+
+  it('omits disabled Smart Price extension segments from resolved output', () => {
+    const item: PriceBlockItemProperties = {
+      id: 'price-segments',
+      type: 'price_block',
+      x_mm: 1,
+      y_mm: 1,
+      w_mm: 30,
+      h_mm: 10,
+      rotation: 0,
+      z_index: 1,
+      locked: false,
+      binding_key: 'SELLING_PRICE',
+      integer_style: { font_size_pt: 28 },
+      decimal_style: { font_size_pt: 14 },
+      extensions: [
+        { id: 'hidden', role: 'custom', anchor: 'above', enabled: false, text: 'Hidden' },
+        { id: 'visible', role: 'custom', anchor: 'below', text: 'Visible', offset_x_mm: 1.25, offset_y_mm: -0.5 },
+      ],
+    };
+    const resolved = PricingEngine.resolvePriceBlock(item, {
+      id: 'product',
+      ITEMNAME: 'Product',
+      SELLING_PRICE: 12.5,
+    });
+
+    expect(resolved.extensions.map((extension) => extension.id)).toEqual(['visible']);
+    expect(resolved.extensions[0]).toMatchObject({ offset_x_mm: 1.25, offset_y_mm: -0.5 });
+  });
+
   it('moves an active promo into the hero style and resolves the configured compare-at extension without mutating the template', () => {
     const item: PriceBlockItemProperties = {
       id: 'price',

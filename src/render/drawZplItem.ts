@@ -68,8 +68,8 @@ export function drawZplItem(
       const resolvedPrice = PricingEngine.resolvePriceBlock(priceItem, record);
       if (resolvedPrice.heroAmount === undefined) return [];
 
-      const currencySym = priceItem.currency_symbol || '€';
-      const decimals = PricingEngine.getDecimalsForCurrency(currencySym);
+      const currencySym = PricingEngine.getPriceBlockCurrency(priceItem);
+      const decimals = PricingEngine.getPriceBlockDecimals(priceItem);
       const separator = priceItem.decimal_separator ?? ',';
       const { integerPart, decimalPart, hasDecimals } = PricingEngine.splitPrice(resolvedPrice.heroAmount, separator, decimals);
 
@@ -107,6 +107,8 @@ export function drawZplItem(
         }
         if (extension.baselineShift === 'superscript') extY -= Math.round(extHeight * 0.35);
         if (extension.baselineShift === 'subscript') extY += Math.round(extHeight * 0.15);
+        extX += mmToDots(extension.offset_x_mm, dpi);
+        extY += mmToDots(extension.offset_y_mm, dpi);
         const extensionText = escapeZplText(extension.text);
         const fontWidth = Math.round(extHeight * 0.65);
         lines.push(`^FO${extX},${extY}^A0N,${extHeight},${fontWidth}^FH^FD${extensionText}^FS`);

@@ -110,6 +110,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>(
     template.items.length > 0 ? [template.items[0].id] : []
   );
+  const [selectedPriceExtension, setSelectedPriceExtension] = useState<{ itemId: string; extensionId: string } | null>(null);
   const [history, setHistory] = useState<LabelTemplate[]>([initialTemplate]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
@@ -140,6 +141,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   // Context-Driven Adaptive Workspace & Diagnostic States
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [isInspectorDrawerOpen, setIsInspectorDrawerOpen] = useState(true);
+  const [inspectorWidth, setInspectorWidth] = useState(uiPreferences?.inspectorWidthPx || 320);
+  const [isResizingInspector, setIsResizingInspector] = useState(false);
+  const inspectorResizeStartRef = useRef<{ x: number; width: number } | null>(null);
   const [isHeatmapActive, setIsHeatmapActive] = useState(false);
 
   // Modals state
@@ -147,6 +151,55 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const [isFindReplaceOpen, setIsFindReplaceOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isPreFlightModalOpen, setIsPreFlightModalOpen] = useState(false);
+  const [isCanvasSettingsOpen, setIsCanvasSettingsOpen] = useState(false);
+  const [canvasWidthDraft, setCanvasWidthDraft] = useState(String(initialTemplate.width_mm));
+  const [canvasHeightDraft, setCanvasHeightDraft] = useState(String(initialTemplate.height_mm));
+
+  useEffect(() => {
+    setInspectorWidth(Math.min(600, Math.max(250, uiPreferences?.inspectorWidthPx || 320)));
+  }, [uiPreferences?.inspectorWidthPx]);
+
+  const handleInspectorResizeStart = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (uiPreferences?.lockInspectorWidth) return;
+    event.preventDefault();
+    inspectorResizeStartRef.current = { x: event.clientX, width: inspectorWidth };
+    setIsResizingInspector(true);
+  };
+
+  useEffect(() => {
+    if (!isResizingInspector) return;
+    const handleMouseMove = (event: MouseEvent) => {
+      const start = inspectorResizeStartRef.current;
+      if (start) setInspectorWidth(Math.min(600, Math.max(250, start.width + start.x - event.clientX)));
+    };
+    const handleMouseUp = () => {
+      setIsResizingInspector(false);
+      inspectorResizeStartRef.current = null;
+      updateUIPreferences({ inspectorWidthPx: inspectorWidth });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingInspector, inspectorWidth, updateUIPreferences]);
+
+  const openCanvasSettings = () => {
+    setCanvasWidthDraft(String(template.width_mm));
+    setCanvasHeightDraft(String(template.height_mm));
+    setIsCanvasSettingsOpen(true);
+  };
+
+  const saveCanvasDimensions = () => {
+    const width = Number(canvasWidthDraft);
+    const height = Number(canvasHeightDraft);
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1 || width > 2000 || height > 2000) {
+      return;
+    }
+    pushState({ ...template, width_mm: width, height_mm: height });
+    setIsCanvasSettingsOpen(false);
+  };
 
   // Live computed pre-flight quality verification report
   const preFlightReport = useMemo(() => {
@@ -338,8 +391,21 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         ];
 
   const selectedItems = template.items.filter((i) => selectedItemIds.includes(i.id));
+  const selectedPriceExtensionId =
+    selectedItems.length === 1 && selectedItems[0].id === selectedPriceExtension?.itemId
+      ? selectedPriceExtension.extensionId
+      : null;
   const currentPreviewRecord: ProductRecord | undefined =
     previewDataIndex !== null ? availablePreviewProducts[previewDataIndex] || availablePreviewProducts[0] : undefined;
+
+  useEffect(() => {
+    if (
+      selectedPriceExtension &&
+      (selectedItemIds.length !== 1 || selectedItemIds[0] !== selectedPriceExtension.itemId)
+    ) {
+      setSelectedPriceExtension(null);
+    }
+  }, [selectedItemIds, selectedPriceExtension]);
 
   // History / Undo / Redo
   const pushState = (newTemplate: LabelTemplate) => {
@@ -1196,6 +1262,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
     }
 
     e.stopPropagation();
+    setSelectedPriceExtension(null);
 
     let newSelected: string[];
     if (e.shiftKey) {
@@ -1705,6 +1772,14 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               <span className="text-[11px] text-slate-500 font-mono">
                 {template.width_mm} × {template.height_mm} mm • {template.items.length} éléments
               </span>
+              <button
+                type="button"
+                onClick={openCanvasSettings}
+                className="text-[10px] font-semibold text-indigo-700 hover:bg-indigo-50 px-1.5 py-0.5 rounded"
+                title="Modifier la taille du gabarit"
+              >
+                Taille…
+              </button>
               <button
                 type="button"
                 onClick={() => setIsPreFlightModalOpen(true)}
@@ -2436,6 +2511,16 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               showHazardWarnings={showHazardWarnings}
               selectedItemIds={selectedItemIds}
               onSelectItem={(id, e) => handleItemMouseDown(id, e)}
+              selectedPriceExtensionId={selectedPriceExtensionId}
+              onSelectPriceExtension={(itemId, extensionId, event) => {
+                if (activeTool === 'pan' || activeTool === 'marquee') {
+                  handleCanvasMouseDown(event);
+                  return;
+                }
+                setSelectedItemIds([itemId]);
+                setSelectedPriceExtension({ itemId, extensionId });
+                setIsInspectorDrawerOpen(true);
+              }}
               onResizeStart={handleResizeStart}
               onRotateStart={handleRotateStart}
               onRotateStep90={handleRotateStep90}
@@ -2516,7 +2601,20 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
         {/* 3. Right Adaptive Contextual Inspector Drawer (Always visible by default) */}
         {isInspectorDrawerOpen && (
-          <div className="h-full z-20 shrink-0 animate-in slide-in-from-right-4 duration-200 shadow-2xl">
+          <div
+            className="h-full z-20 shrink-0 relative animate-in slide-in-from-right-4 duration-200 shadow-2xl"
+            style={{ width: inspectorWidth }}
+          >
+            <button
+              type="button"
+              onMouseDown={handleInspectorResizeStart}
+              disabled={uiPreferences?.lockInspectorWidth}
+              aria-label="Redimensionner l’inspecteur de propriétés"
+              title={uiPreferences?.lockInspectorWidth ? 'Largeur verrouillée' : 'Glisser pour modifier la largeur'}
+              className={`absolute left-0 top-0 bottom-0 z-30 w-1.5 -translate-x-1/2 transition-colors ${
+                uiPreferences?.lockInspectorWidth ? 'cursor-not-allowed bg-slate-200' : 'cursor-col-resize bg-transparent hover:bg-indigo-400'
+              }`}
+            />
             <PropertyInspector
               selectedItems={selectedItems}
               allItems={template.items}
@@ -2531,10 +2629,84 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               onCopyStyle={handleCopyStyle}
               onPasteStyle={handlePasteStyle}
               onClose={() => setIsInspectorDrawerOpen(false)}
+              inspectorWidth={inspectorWidth}
+              inspectorWidthLocked={Boolean(uiPreferences?.lockInspectorWidth)}
+              selectedPriceExtensionId={selectedPriceExtensionId}
+              onToggleInspectorWidthLock={() =>
+                updateUIPreferences({ lockInspectorWidth: !uiPreferences?.lockInspectorWidth })
+              }
             />
           </div>
         )}
       </div>
+
+      {isCanvasSettingsOpen && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/50 flex items-center justify-center p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="canvas-dimensions-title"
+            className="w-full max-w-sm rounded-xl bg-white shadow-2xl border border-slate-200 p-5"
+          >
+            <h2 id="canvas-dimensions-title" className="text-sm font-bold text-slate-900">
+              Dimensions du gabarit
+            </h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Modifiez la taille du canevas en millimètres. Les éléments existants ne sont pas déplacés.
+            </p>
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <label className="text-xs font-semibold text-slate-600">
+                Largeur (mm)
+                <input
+                  type="number"
+                  min="1"
+                  max="2000"
+                  step="0.1"
+                  value={canvasWidthDraft}
+                  onChange={(event) => setCanvasWidthDraft(event.target.value)}
+                  className="w-full mt-1 rounded-lg border border-slate-300 px-2.5 py-2 font-mono text-sm"
+                />
+              </label>
+              <label className="text-xs font-semibold text-slate-600">
+                Hauteur (mm)
+                <input
+                  type="number"
+                  min="1"
+                  max="2000"
+                  step="0.1"
+                  value={canvasHeightDraft}
+                  onChange={(event) => setCanvasHeightDraft(event.target.value)}
+                  className="w-full mt-1 rounded-lg border border-slate-300 px-2.5 py-2 font-mono text-sm"
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsCanvasSettingsOpen(false)}
+                className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={saveCanvasDimensions}
+                disabled={
+                  !Number.isFinite(Number(canvasWidthDraft)) ||
+                  !Number.isFinite(Number(canvasHeightDraft)) ||
+                  Number(canvasWidthDraft) < 1 ||
+                  Number(canvasHeightDraft) < 1 ||
+                  Number(canvasWidthDraft) > 2000 ||
+                  Number(canvasHeightDraft) > 2000
+                }
+                className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Appliquer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Editor Status Bar */}
       <footer className="h-7 bg-white border-t border-slate-200 px-3 flex items-center justify-between text-[11px] text-slate-600 shrink-0 font-mono z-20">

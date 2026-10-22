@@ -21,6 +21,8 @@ export interface UIPreferences {
   showFloatingHud: boolean;
   hudPosition: { x: number; y: number } | null;
   lockPropertyInspector: boolean;
+  inspectorWidthPx: number;
+  lockInspectorWidth: boolean;
   lockLeftSidebar: boolean;
   rotationHandleType?: RotationHandleType;
   rotationSnapEnabled?: boolean;
@@ -70,6 +72,8 @@ const DEFAULT_UI_PREFERENCES: UIPreferences = {
   showFloatingHud: true,
   hudPosition: null,
   lockPropertyInspector: true,
+  inspectorWidthPx: 320,
+  lockInspectorWidth: false,
   lockLeftSidebar: true,
   rotationHandleType: 'top_stem',
   rotationSnapEnabled: true,
