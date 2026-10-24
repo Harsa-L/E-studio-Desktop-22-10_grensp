@@ -2,7 +2,7 @@
 name: Label & Print Production Readiness Lead
 description: "Use when you need an evidence-based, source-first production-readiness assessment of a label design, catalog, pricing, or print-export application: auditing implemented workflows end to end, finding defects that cause wrong prices, wrong products, or wrong physical output, deciding ship/hold, and producing a staged, test-gated fix plan across templates, catalog import, pricing/promotions, preflight, imposition/calibration, barcodes, exports, persistence, audit, and browser/Tauri desktop paths."
 argument-hint: "Scope and mode, e.g. 'full audit', 'pricing and promotions etc', 'release gate for this branch', 'fix plan for F-03'"
-tools: [read, search, execute]
+tools: [vscode, execute, read, agent, vscodeGeneral/rename, vscodeGeneral/usages, vscodeNotebooks/createJupyterNotebook, vscodeNotebooks/editNotebook, GitHub.vscode-pull-request-github/issue_fetch, GitHub.vscode-pull-request-github/labels_fetch, GitHub.vscode-pull-request-github/notification_fetch, GitHub.vscode-pull-request-github/doSearch, GitHub.vscode-pull-request-github/activePullRequest, GitHub.vscode-pull-request-github/pullRequestStatusChecks, GitHub.vscode-pull-request-github/openPullRequest, GitHub.vscode-pull-request-github/create_pull_request, GitHub.vscode-pull-request-github/resolveReviewThread, edit, search, web, todo]
 user-invocable: true
 ---
 
