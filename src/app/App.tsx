@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TooltipProvider } from '../context/TooltipContext';
 import { MappingDictionaryProvider } from '../context/MappingDictionaryContext';
 import { AppProviders } from './providers/AppProviders';
@@ -19,6 +19,11 @@ import { ProjectStartScreen } from '../components/ProjectStartScreen';
 import { LabelProject, LabelTemplate, ProductRecord } from '../types';
 import { catalogRepository } from '../services/catalogRepository';
 import { navigationService, AppView } from '../services/navigationService';
+import { useNavigationStore } from '../services/navigationService';
+import { loadWorkspaceSession, useWorkspaceStore } from '../store/workspaceStore';
+import { useAppUiStore } from '../store/appUiStore';
+import { loadDetachedWorkspaceContext, openWorkspaceWindow, setWorkspaceWindowTitle, supportsDetachedWorkspaces } from '../services/desktopWindowService';
+import { subscribeWorkspaceChanges } from '../services/workspaceSync';
 import { AuditLogService } from '../services/auditLogService';
 import { sanitizeNonPriceElement } from '../utils/pricingEngine';
 import { api } from '../services/api';
@@ -26,30 +31,44 @@ import { projectFileService } from '../services/projectFileService';
 import { desktopFileService } from '../services/desktopFileService';
 
 function MainWorkspace() {
-  const [currentView, setCurrentView] = useState<AppView>('start');
-  // Project templates are loaded from the local project library on launch.
-  const [templates, setTemplates] = useState<LabelTemplate[]>([]);
-  const [activeTemplate, setActiveTemplate] = useState<LabelTemplate | null>(null);
-  const [projects, setProjects] = useState<LabelProject[]>([]);
-  const [activeProject, setActiveProject] = useState<LabelProject | null>(null);
+  const route = useNavigationStore((state) => state.route);
+  const currentView = route.view;
+  const templates = useWorkspaceStore((state) => state.templates);
+  const setTemplates = useWorkspaceStore((state) => state.setTemplates);
+  const activeTemplate = useWorkspaceStore((state) => state.activeTemplate);
+  const setActiveTemplate = useWorkspaceStore((state) => state.setActiveTemplate);
+  const projects = useWorkspaceStore((state) => state.projects);
+  const setProjects = useWorkspaceStore((state) => state.setProjects);
+  const activeProject = useWorkspaceStore((state) => state.activeProject);
+  const setActiveProject = useWorkspaceStore((state) => state.setActiveProject);
   const [newProjectRequested, setNewProjectRequested] = useState(false);
-  const [generationProducts, setGenerationProducts] = useState<ProductRecord[] | undefined>(undefined);
-  const [generationBatchName, setGenerationBatchName] = useState<string | undefined>(undefined);
+  const generationProducts = useWorkspaceStore((state) => state.generationProducts);
+  const setGenerationProducts = useWorkspaceStore((state) => state.setGenerationProducts);
+  const generationBatchName = useWorkspaceStore((state) => state.generationBatchName);
+  const setGenerationBatchName = useWorkspaceStore((state) => state.setGenerationBatchName);
 
   // Catalog products count
-  const [productsCount, setProductsCount] = useState<number>(() => catalogRepository.getProducts().length);
+  const productsCount = useWorkspaceStore((state) => state.productsCount);
+  const setProductsCount = useWorkspaceStore((state) => state.setProductsCount);
 
-  // Modals state
-  const [isNewWizardOpen, setIsNewWizardOpen] = useState(false);
-  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
-  const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
-  const [isFontManagerOpen, setIsFontManagerOpen] = useState(false);
-  const [isMappingDictOpen, setIsMappingDictOpen] = useState(false);
-  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
-  const [isMcpDraftReviewOpen, setIsMcpDraftReviewOpen] = useState(false);
-  const navigationInitialized = useRef(false);
-
+  const modals = useAppUiStore((state) => state.modals);
+  const setModalOpen = useAppUiStore((state) => state.setModalOpen);
+  const isNewWizardOpen = modals.newTemplate;
+  const setIsNewWizardOpen = (isOpen: boolean) => setModalOpen('newTemplate', isOpen);
+  const isRulesModalOpen = modals.rules;
+  const setIsRulesModalOpen = (isOpen: boolean) => setModalOpen('rules', isOpen);
+  const isAuditLogsOpen = modals.audit;
+  const setIsAuditLogsOpen = (isOpen: boolean) => setModalOpen('audit', isOpen);
+  const isFontManagerOpen = modals.fonts;
+  const setIsFontManagerOpen = (isOpen: boolean) => setModalOpen('fonts', isOpen);
+  const isMappingDictOpen = modals.mappingDictionary;
+  const setIsMappingDictOpen = (isOpen: boolean) => setModalOpen('mappingDictionary', isOpen);
+  const isShortcutsOpen = modals.shortcuts;
+  const setIsShortcutsOpen = (isOpen: boolean) => setModalOpen('shortcuts', isOpen);
+  const isPreferencesOpen = modals.preferences;
+  const setIsPreferencesOpen = (isOpen: boolean) => setModalOpen('preferences', isOpen);
+  const isMcpDraftReviewOpen = modals.mcpDraftReview;
+  const setIsMcpDraftReviewOpen = (isOpen: boolean) => setModalOpen('mcpDraftReview', isOpen);
   const makeProject = (name: string, templates: LabelTemplate[] = []): LabelProject => {
     const now = new Date().toISOString();
     const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `project_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -67,13 +86,17 @@ function MainWorkspace() {
     try {
       const projectList = await api.projectList();
       if (projectList.length > 0) {
-        const recent = projectList[0];
+        const session = await loadWorkspaceSession();
+        const routeProjectId = route.params.projectId;
+        const selectedProjectId = routeProjectId || session?.activeProjectId;
+        const recent = projectList.find((project) => project.id === selectedProjectId)
+          || projectList[0];
         const opened = await api.projectSave({ ...recent, last_opened_at: new Date().toISOString() });
-        const sortedProjects = [opened, ...projectList.slice(1)];
-        setProjects(sortedProjects);
-        setActiveProject(opened);
-        setTemplates(opened.templates || []);
-        setActiveTemplate(opened.templates?.[0] || null);
+        const sortedProjects = [opened, ...projectList.filter((project) => project.id !== opened.id)];
+        useWorkspaceStore.getState().restoreSession(sortedProjects, {
+          activeProjectId: opened.id,
+          activeTemplateId: routeProjectId ? route.params.templateId || route.params.template || null : session?.activeTemplateId || null,
+        });
         return;
       }
 
@@ -89,20 +112,14 @@ function MainWorkspace() {
       )).filter((template): template is LabelTemplate => template !== null);
       if (legacyTemplates.length > 0) {
         const legacyProject = await api.projectSave(makeProject('Projet importé', legacyTemplates));
-        setProjects([legacyProject]);
-        setActiveProject(legacyProject);
-        setTemplates(legacyTemplates);
-        setActiveTemplate(legacyTemplates[0] || null);
+        useWorkspaceStore.getState().restoreSession([legacyProject], null);
       } else {
-        setProjects([]);
-        setActiveProject(null);
-        setTemplates([]);
-        setActiveTemplate(null);
+        useWorkspaceStore.getState().restoreSession([], null);
       }
     } catch (err) {
       console.error('Failed to load the local project library', err);
     }
-  }, []);
+  }, [route.params.projectId]);
 
   const loadTemplates = async () => {
     try {
@@ -134,24 +151,67 @@ function MainWorkspace() {
     void loadProjects();
   }, []);
 
-  // Subscribe to Navigation Service
   useEffect(() => {
-    if (!navigationInitialized.current) {
-      navigationInitialized.current = true;
-      if (navigationService.getCurrentRoute().view === 'home') {
-        navigationService.navigateTo('start', {}, true);
+    void loadDetachedWorkspaceContext().then((context) => {
+      if (!context) return;
+      if (context.generationProducts) setGenerationProducts(context.generationProducts);
+      if (context.generationBatchName) setGenerationBatchName(context.generationBatchName);
+    }).catch((error) => console.warn('Unable to restore detached workspace data', error));
+  }, [setGenerationBatchName, setGenerationProducts]);
+
+  useEffect(() => {
+    let disposed = false;
+    let unsubscribe = () => undefined;
+    void subscribeWorkspaceChanges(({ resource }) => {
+      if (resource === 'catalog') {
+        void catalogRepository.init();
+        return;
       }
-    }
-    const unsub = navigationService.subscribe((route) => {
-      setCurrentView(route.view);
-      const targetId = route.params.templateId || route.params.template;
-      if (targetId) {
-        const found = templates.find((t) => t.id === targetId || t.name === targetId);
-        if (found) setActiveTemplate(found);
-      }
-    });
-    return () => unsub();
-  }, [templates]);
+      void (async () => {
+        const projectList = await api.projectList();
+        if (disposed) return;
+        const session = await loadWorkspaceSession();
+        const current = useWorkspaceStore.getState();
+        const activeId = current.activeProject?.id || session?.activeProjectId || route.params.projectId;
+        const activeProject = projectList.find((project) => project.id === activeId) || projectList[0] || null;
+        setProjects(projectList);
+        if (!activeProject) {
+          setActiveProject(null);
+          setTemplates([]);
+          setActiveTemplate(null);
+          return;
+        }
+        const latest = await api.projectGet(activeProject.id);
+        if (disposed) return;
+        const latestTemplates = latest.templates || [];
+        setActiveProject(latest);
+        setTemplates(latestTemplates);
+        setActiveTemplate((previous) => latestTemplates.find((template) => template.id === previous?.id)
+          || latestTemplates[0]
+          || null);
+      })().catch((error) => console.warn('Unable to refresh workspace after a window update', error));
+    }).then((stopListening) => {
+      if (disposed) stopListening();
+      else unsubscribe = stopListening;
+    }).catch((error) => console.warn('Unable to subscribe to workspace updates', error));
+
+    return () => {
+      disposed = true;
+      unsubscribe();
+    };
+  }, [route.params.projectId, setActiveProject, setActiveTemplate, setProjects, setTemplates]);
+
+  useEffect(() => {
+    const targetId = route.params.templateId || route.params.template;
+    if (!targetId) return;
+    const found = templates.find((template) => template.id === targetId || template.name === targetId);
+    if (found) setActiveTemplate(found);
+  }, [route.params.templateId, route.params.template, templates]);
+
+  useEffect(() => {
+    void setWorkspaceWindowTitle(currentView, activeProject?.name, activeTemplate?.name)
+      .catch((error) => console.error('Unable to update workspace window title', error));
+  }, [currentView, activeProject?.name, activeTemplate?.name]);
 
   // Subscribe to Catalog Repository changes
   useEffect(() => {
@@ -482,6 +542,20 @@ function MainWorkspace() {
         onOpenPreferences={() => setIsPreferencesOpen(true)}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
         onOpenMcpDrafts={() => setIsMcpDraftReviewOpen(true)}
+        detachedWorkspacesSupported={supportsDetachedWorkspaces()}
+        onOpenInNewWindow={() => {
+          if (!supportsDetachedWorkspaces()) return;
+          void openWorkspaceWindow(currentView, {
+            ...route.params,
+            projectId: activeProject?.id || route.params.projectId || '',
+          }, {
+            generationProducts,
+            generationBatchName,
+          }).catch((error) => {
+            console.error('Unable to open workspace window', error);
+            window.alert(error instanceof Error ? error.message : String(error));
+          });
+        }}
       />
 
       {/* Main Viewport Container */}

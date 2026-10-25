@@ -18,6 +18,7 @@ import {
   Home,
   Bot,
   Languages,
+  ExternalLink,
 } from 'lucide-react';
 import { useLocalization } from '../context/LocalizationContext';
 import { LOCALE_LABELS, SUPPORTED_LOCALES } from '../i18n/localization';
@@ -40,6 +41,8 @@ interface AppTopNavigationBarProps {
   onOpenPreferences: () => void;
   onOpenShortcuts: () => void;
   onOpenMcpDrafts: () => void;
+  onOpenInNewWindow: () => void;
+  detachedWorkspacesSupported: boolean;
 }
 
 export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
@@ -60,6 +63,8 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
   onOpenPreferences,
   onOpenShortcuts,
   onOpenMcpDrafts,
+  onOpenInNewWindow,
+  detachedWorkspacesSupported,
 }) => {
   const { locale, setLocale, persistenceError, t } = useLocalization();
   const [toolsDropdownOpen, setToolsDropdownOpen] = React.useState(false);
@@ -90,7 +95,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
   }, [onNavigate]);
 
   return (
-    <nav className="bg-slate-950 text-white border-b border-slate-800 shrink-0 select-none z-40 relative shadow-md">
+    <nav data-studio-shell className="bg-slate-950 text-white border-b border-slate-800 shrink-0 select-none z-40 relative shadow-none">
       <div className="h-12 px-3 sm:px-4 flex items-center justify-between gap-3">
         {/* Left Side: Brand Logo & Breadcrumb Navigation */}
         <div className="flex items-center gap-3 min-w-0">
@@ -182,13 +187,13 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
         {currentView !== 'start' && (
           <>
         {/* Center: Module View Switcher */}
-        <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 shadow-inner">
+        <div className="flex h-12 items-stretch border-x border-slate-800">
           <button
             onClick={() => onNavigate('home')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+            className={`px-3 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
               currentView === 'home'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'border-blue-500 bg-slate-900 text-white'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/70'
             }`}
             title={`${t('projectHome')} (Alt+1)`}
           >
@@ -198,10 +203,10 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
 
           <button
             onClick={() => onNavigate('editor')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+            className={`px-3 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
               currentView === 'editor'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'border-blue-500 bg-slate-900 text-white'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/70'
             }`}
             title="Concepteur Visuel de Gabarit (Alt+2)"
           >
@@ -211,10 +216,10 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
 
           <button
             onClick={() => onNavigate('generation')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+            className={`px-3 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
               currentView === 'generation'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'border-blue-500 bg-slate-900 text-white'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/70'
             }`}
             title="Impression & Planches (Alt+3)"
           >
@@ -224,10 +229,10 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
 
           <button
             onClick={() => onNavigate('catalog')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+            className={`px-3 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
               currentView === 'catalog'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'border-emerald-500 bg-slate-900 text-white'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/70'
             }`}
             title="Catalogue & Import Excel/CSV (Alt+4)"
           >
@@ -243,6 +248,16 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
 
         {/* Right Side: Tools Dropdown Menu */}
         <div className="flex items-center gap-2 shrink-0">
+          {detachedWorkspacesSupported && (
+            <button
+              onClick={onOpenInNewWindow}
+              className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md border border-slate-800 transition"
+              title="Open this workspace in a new window"
+              aria-label="Open this workspace in a new window"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={onOpenShortcuts}
             className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg border border-slate-800 transition"

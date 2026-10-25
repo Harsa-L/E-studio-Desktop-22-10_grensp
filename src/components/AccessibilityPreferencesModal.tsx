@@ -1,4 +1,13 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import {
+  createCustomTheme,
+  parseCustomThemeJson,
+  serializeCustomTheme,
+  THEME_PRESETS,
+  type CustomTheme,
+  type ThemeColorKey,
+  type ThemeMode,
+} from '../theme/themeEngine';
 import { useTooltip } from '../context/TooltipContext';
 import {
   Sliders,
@@ -24,6 +33,14 @@ import {
   Maximize2,
   Box,
   Layers2,
+  Palette,
+  Plus,
+  Pencil,
+  Download,
+  Upload,
+  Trash2,
+  Code2,
+  Save,
 } from 'lucide-react';
 import { RotationHandleType, ElementPlacementStrategy } from '../types';
 import { useLocalization } from '../context/LocalizationContext';
@@ -33,6 +50,20 @@ interface AccessibilityPreferencesModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const THEME_COLOR_FIELDS: Array<{ key: ThemeColorKey; label: string }> = [
+  { key: 'shell', label: 'Application chrome' },
+  { key: 'paper', label: 'Primary surface' },
+  { key: 'paperAlt', label: 'Secondary surface' },
+  { key: 'workbench', label: 'Workspace' },
+  { key: 'surface', label: 'Panel surface' },
+  { key: 'surfaceStrong', label: 'Raised surface' },
+  { key: 'line', label: 'Borders' },
+  { key: 'ink', label: 'Primary text' },
+  { key: 'muted', label: 'Secondary text' },
+  { key: 'accent', label: 'Accent' },
+  { key: 'appBg', label: 'Application background' },
+];
 
 export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesModalProps> = ({
   isOpen,
@@ -45,6 +76,12 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
     setGridSnapSensitivityMm,
     themeMode,
     setThemeMode,
+    customThemes,
+    activeCustomThemeId,
+    setCustomTheme,
+    removeCustomTheme,
+    densityMode,
+    setDensityMode,
     uiPreferences,
     updateUIPreferences,
     rulerSettings,
@@ -55,6 +92,76 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
     translateAccessibility(locale, key);
 
   const [previewAngle, setPreviewAngle] = useState(0);
+  const [themeDraft, setThemeDraft] = useState<CustomTheme | null>(null);
+  const [themeJson, setThemeJson] = useState('');
+  const [themeEditorMode, setThemeEditorMode] = useState<'visual' | 'json'>('visual');
+  const [themeMessage, setThemeMessage] = useState('');
+  const themeFileInput = useRef<HTMLInputElement>(null);
+
+  const setThemeDraftAndJson = (theme: CustomTheme) => {
+    setThemeDraft(theme);
+    setThemeJson(serializeCustomTheme(theme));
+    setThemeMessage('');
+  };
+
+  const updateThemeDraft = (theme: CustomTheme) => {
+    setThemeDraft(theme);
+    try {
+      setThemeJson(serializeCustomTheme(theme));
+    } catch {
+      setThemeJson(JSON.stringify(theme, null, 2));
+    }
+  };
+
+  const downloadThemeFile = (theme: CustomTheme) => {
+    const url = URL.createObjectURL(new Blob([serializeCustomTheme(theme)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${theme.id}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const applyThemeJsonToDraft = () => {
+    try {
+      const parsed = parseCustomThemeJson(themeJson);
+      setThemeDraftAndJson({ ...parsed, id: themeDraft?.id ?? parsed.id });
+      setThemeMessage('JSON is valid. Save to apply this theme.');
+    } catch (error) {
+      setThemeMessage(error instanceof Error ? error.message : 'Unable to read theme JSON.');
+    }
+  };
+
+  const importThemeFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+    try {
+      if (file.size > 65536) throw new Error('Theme JSON must be smaller than 64 KB.');
+      const parsed = parseCustomThemeJson(await file.text());
+      setThemeDraftAndJson(parsed);
+      setThemeEditorMode('visual');
+      setThemeMessage(`Loaded ${file.name}. Save to apply this theme.`);
+    } catch (error) {
+      setThemeMessage(error instanceof Error ? error.message : 'Unable to import theme file.');
+    }
+  };
+
+  const saveThemeDraft = () => {
+    if (!themeDraft) return;
+    let themeToSave = themeDraft;
+    if (themeEditorMode === 'json') {
+      try {
+        themeToSave = { ...parseCustomThemeJson(themeJson), id: themeDraft.id };
+      } catch (error) {
+        setThemeMessage(error instanceof Error ? error.message : 'Unable to read theme JSON.');
+        return;
+      }
+    }
+    setCustomTheme(themeToSave);
+    setThemeDraft(null);
+    setThemeMessage('');
+  };
 
   if (!isOpen) return null;
 
@@ -66,7 +173,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">
@@ -227,42 +334,210 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
               <span>{accessibilityText('themeSection')}</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => setThemeMode('light')}
-                className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition ${
-                  themeMode === 'light'
-                    ? 'bg-indigo-50 border-indigo-500 text-indigo-900 ring-2 ring-indigo-400/30 font-bold'
-                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <Sun className="w-4 h-4 text-amber-500" />
-                <span className="text-xs">{accessibilityText('lightTheme')}</span>
-              </button>
+            <div className="grid grid-cols-2 gap-2">
+              {(Object.entries(THEME_PRESETS) as Array<[keyof typeof THEME_PRESETS, (typeof THEME_PRESETS)[keyof typeof THEME_PRESETS]]>).map(([mode, preset]) => {
+                const isActive = themeMode === mode && !activeCustomThemeId;
+                const Icon = mode === 'light' ? Sun : mode === 'dark' ? Moon : mode === 'graphite' ? Layers : ShieldAlert;
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => { setThemeMode(mode); setThemeDraft(null); }}
+                    className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition text-left ${
+                      isActive
+                        ? 'ring-2 ring-indigo-400/30 border-indigo-500 font-bold shadow-sm'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                    }`}
+                    style={isActive ? { background: `linear-gradient(135deg, ${preset.accent}22, ${preset.paper})`, color: preset.ink } : undefined}
+                  >
+                    <Icon className="w-4 h-4" style={{ color: preset.accent }} />
+                    <span className="text-xs">{preset.label}</span>
+                    <span className="text-[10px] opacity-70">{preset.description}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-              <button
-                onClick={() => setThemeMode('dark')}
-                className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition ${
-                  themeMode === 'dark'
-                    ? 'bg-slate-900 border-indigo-500 text-white ring-2 ring-indigo-400/30 font-bold'
-                    : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                <Moon className="w-4 h-4 text-indigo-400" />
-                <span className="text-xs">{accessibilityText('darkTheme')}</span>
-              </button>
+            <div className="space-y-2 border-t border-slate-200 pt-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Custom themes</span>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    ref={themeFileInput}
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    onChange={(event) => { void importThemeFile(event); }}
+                  />
+                  <button
+                    type="button"
+                    title="Import theme JSON"
+                    onClick={() => themeFileInput.current?.click()}
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    <Upload className="h-3 w-3" /> Import JSON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = createCustomTheme(`My Theme ${customThemes.length + 1}`, themeMode);
+                      setThemeDraftAndJson(next);
+                      setThemeEditorMode('visual');
+                    }}
+                    className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2 py-1.5 text-[10px] font-semibold text-white hover:bg-slate-700"
+                  >
+                    <Plus className="h-3 w-3" /> New theme
+                  </button>
+                </div>
+              </div>
 
-              <button
-                onClick={() => setThemeMode('eink_high_contrast')}
-                className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition ${
-                  themeMode === 'eink_high_contrast'
-                    ? 'bg-black border-white text-white ring-2 ring-white/50 font-bold'
-                    : 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-black'
-                }`}
-              >
-                <ShieldAlert className="w-4 h-4 text-rose-500" />
-                <span className="text-xs">{accessibilityText('highContrastTheme')}</span>
-              </button>
+              {customThemes.length > 0 ? (
+                <div className="space-y-1.5">
+                  {customThemes.map((theme) => (
+                    <div key={theme.id} className={`flex items-center gap-2 rounded-lg border p-2 ${activeCustomThemeId === theme.id ? 'border-slate-500 bg-slate-50' : 'border-slate-200'}`}>
+                      <button
+                        type="button"
+                        onClick={() => setCustomTheme(theme)}
+                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                        aria-pressed={activeCustomThemeId === theme.id}
+                      >
+                        <span className="flex shrink-0 overflow-hidden rounded border border-slate-300">
+                          {[theme.colors.paper, theme.colors.workbench, theme.colors.accent, theme.colors.ink].map((color, index) => (
+                            <span key={`${theme.id}-${index}`} className="h-5 w-3" style={{ backgroundColor: color }} />
+                          ))}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-[11px] font-semibold text-slate-800">{theme.name}</span>
+                          <span className="block truncate text-[9px] text-slate-500">{theme.description}</span>
+                        </span>
+                      </button>
+                      <button type="button" title="Edit theme" aria-label={`Edit ${theme.name}`} onClick={() => { setThemeDraftAndJson(theme); setThemeEditorMode('visual'); }} className="rounded p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-900">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button type="button" title="Export theme JSON" aria-label={`Export ${theme.name}`} onClick={() => downloadThemeFile(theme)} className="rounded p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-900">
+                        <Download className="h-3.5 w-3.5" />
+                      </button>
+                      <button type="button" title="Delete theme" aria-label={`Delete ${theme.name}`} onClick={() => { removeCustomTheme(theme.id); if (themeDraft?.id === theme.id) setThemeDraft(null); }} className="rounded p-1.5 text-slate-500 hover:bg-rose-100 hover:text-rose-700">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-[10px] text-slate-500">No custom themes yet. Create one visually or import a JSON theme file.</p>
+              )}
+
+              {themeDraft && (
+                <div className="space-y-3 rounded-lg border border-slate-300 bg-slate-50 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-800">
+                      <Palette className="h-3.5 w-3.5" /> Theme editor
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => setThemeEditorMode('visual')} className={`rounded px-2 py-1 text-[10px] font-semibold ${themeEditorMode === 'visual' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>
+                        Visual
+                      </button>
+                      <button type="button" onClick={() => {
+                        try {
+                          setThemeJson(serializeCustomTheme(themeDraft));
+                          setThemeEditorMode('json');
+                        } catch {
+                          setThemeMessage('Enter a theme name before editing its JSON.');
+                        }
+                      }} className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-semibold ${themeEditorMode === 'json' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>
+                        <Code2 className="h-3 w-3" /> JSON
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-hidden rounded-md border" style={{ borderColor: themeDraft.colors.line, backgroundColor: themeDraft.colors.appBg, color: themeDraft.colors.ink }}>
+                    <div className="flex items-center justify-between px-3 py-2 text-[10px] font-semibold" style={{ backgroundColor: themeDraft.colors.shell, color: themeDraft.colors.paper }}>
+                      <span>{themeDraft.name || 'Theme preview'}</span>
+                      <span style={{ color: themeDraft.colors.accent }}>Studio</span>
+                    </div>
+                    <div className="grid grid-cols-[1fr_1.5fr] gap-2 p-2.5" style={{ backgroundColor: themeDraft.colors.workbench }}>
+                      <div className="rounded p-2 text-[9px]" style={{ backgroundColor: themeDraft.colors.surface, color: themeDraft.colors.ink }}>
+                        <span className="block font-semibold">Workspace</span>
+                        <span className="mt-1 block" style={{ color: themeDraft.colors.muted }}>Secondary text</span>
+                      </div>
+                      <div className="rounded border p-2 text-[9px]" style={{ backgroundColor: themeDraft.colors.paper, borderColor: themeDraft.colors.line }}>
+                        <span className="block font-semibold">Label design</span>
+                        <span className="mt-1 inline-block rounded px-1.5 py-0.5 text-white" style={{ backgroundColor: themeDraft.colors.accent }}>Accent</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {themeEditorMode === 'visual' ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <label className="text-[10px] font-semibold text-slate-600">
+                          Theme name
+                          <input value={themeDraft.name} maxLength={60} onChange={(event) => updateThemeDraft({ ...themeDraft, name: event.target.value })} className="mt-1 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900" />
+                        </label>
+                        <label className="text-[10px] font-semibold text-slate-600">
+                          Base behavior
+                          <select value={themeDraft.baseMode} onChange={(event) => updateThemeDraft({ ...themeDraft, baseMode: event.target.value as ThemeMode })} className="mt-1 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900">
+                            {(Object.entries(THEME_PRESETS) as Array<[ThemeMode, (typeof THEME_PRESETS)[ThemeMode]]>).map(([mode, preset]) => <option key={mode} value={mode}>{preset.label}</option>)}
+                          </select>
+                        </label>
+                      </div>
+                      <label className="block text-[10px] font-semibold text-slate-600">
+                        Description
+                        <input value={themeDraft.description} maxLength={160} onChange={(event) => updateThemeDraft({ ...themeDraft, description: event.target.value })} className="mt-1 w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900" />
+                      </label>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {THEME_COLOR_FIELDS.map(({ key, label }) => (
+                          <label key={key} className="flex min-w-0 items-center gap-2 rounded border border-slate-200 bg-white px-2 py-1.5">
+                            <input type="color" value={themeDraft.colors[key]} onChange={(event) => updateThemeDraft({ ...themeDraft, colors: { ...themeDraft.colors, [key]: event.target.value } })} className="h-7 w-8 shrink-0 cursor-pointer border-0 bg-transparent p-0" aria-label={`${label} color`} />
+                            <span className="min-w-0">
+                              <span className="block truncate text-[9px] font-semibold text-slate-700">{label}</span>
+                              <span className="block font-mono text-[9px] text-slate-500">{themeDraft.colors[key]}</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <textarea value={themeJson} onChange={(event) => setThemeJson(event.target.value)} spellCheck={false} aria-label="Theme JSON" className="h-64 w-full resize-y rounded border border-slate-300 bg-white p-2 font-mono text-[10px] text-slate-900" />
+                      <button type="button" onClick={applyThemeJsonToDraft} className="inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-100">
+                        <Code2 className="h-3 w-3" /> Validate JSON
+                      </button>
+                    </div>
+                  )}
+
+                  {themeMessage && <p role="status" className="text-[10px] text-slate-600">{themeMessage}</p>}
+                  <div className="flex justify-end gap-2 border-t border-slate-200 pt-2">
+                    <button type="button" onClick={() => downloadThemeFile(themeDraft)} disabled={!themeDraft.name.trim()} className="inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+                      <Download className="h-3 w-3" /> Export JSON
+                    </button>
+                    <button type="button" onClick={() => { setThemeDraft(null); setThemeMessage(''); }} className="rounded border border-slate-300 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-100">
+                      Cancel
+                    </button>
+                    <button type="button" onClick={saveThemeDraft} disabled={!themeDraft.name.trim()} className="inline-flex items-center gap-1.5 rounded bg-slate-900 px-2.5 py-1.5 text-[10px] font-semibold text-white hover:bg-slate-700 disabled:opacity-50">
+                      <Save className="h-3 w-3" /> Save & Apply
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-slate-200">
+              <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Density</div>
+              <div className="grid grid-cols-3 gap-2">
+                {(['compact', 'standard', 'comfortable'] as const).map((preset) => (
+                  <button
+                    key={preset}
+                    onClick={() => setDensityMode(preset)}
+                    className={`rounded-lg border px-2 py-2 text-[10px] font-semibold capitalize transition ${
+                      densityMode === preset
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-900 ring-2 ring-indigo-400/30'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

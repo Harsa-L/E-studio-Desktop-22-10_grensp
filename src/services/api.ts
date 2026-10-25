@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { publishWorkspaceChange, type WorkspaceResource } from './workspaceSync';
 import {
   LabelProject,
   LabelTemplate,
@@ -67,6 +68,12 @@ const inMemoryStore = {
 const PROJECT_LIBRARY_KEY = 'e_studio_project_library_v1';
 const PROJECT_DATABASE_NAME = 'e-studio-project-library';
 const PROJECT_DATABASE_VERSION = 2;
+
+function notifyWorkspaceChange(resource: WorkspaceResource, recordId?: string): void {
+  void publishWorkspaceChange({ resource, recordId }).catch((error) => {
+    console.warn(`Unable to broadcast ${resource} update`, error);
+  });
+}
 
 function openProjectDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -597,9 +604,15 @@ export const api = {
 
   async templateSave(doc: LabelTemplate): Promise<LabelTemplate> {
     if (isTauriEnvironment()) {
-      return await invoke<LabelTemplate>('template_save', { doc });
+      const saved = await invoke<LabelTemplate>('template_save', { doc });
+      notifyWorkspaceChange('templates', saved.id);
+      return saved;
     }
-    if (hasBrowserDatabase()) return await writeTemplateWithRevision(doc);
+    if (hasBrowserDatabase()) {
+      const saved = await writeTemplateWithRevision(doc);
+      notifyWorkspaceChange('templates', saved.id);
+      return saved;
+    }
 
     const existing = inMemoryStore.templates.get(doc.id);
     const revision = existing ? existing.revision + 1 : 1;
@@ -612,12 +625,14 @@ export const api = {
     };
     inMemoryStore.templates.set(doc.id, saved);
     inMemoryStore.templateRevisions.set(`${saved.id}_v${saved.revision}`, saved);
+    notifyWorkspaceChange('templates', saved.id);
     return saved;
   },
 
   async templateDelete(id: string): Promise<void> {
     if (isTauriEnvironment()) {
       await invoke('template_delete', { id });
+      notifyWorkspaceChange('templates', id);
       return;
     }
     if (hasBrowserDatabase()) {
@@ -628,6 +643,7 @@ export const api = {
         if (key.startsWith(`${id}_v`)) inMemoryStore.templateRevisions.delete(key);
       }
     }
+    notifyWorkspaceChange('templates', id);
   },
 
   async projectList(): Promise<LabelProject[]> {
@@ -645,7 +661,9 @@ export const api = {
 
   async projectSave(project: LabelProject): Promise<LabelProject> {
     if (!isTauriEnvironment() && hasBrowserDatabase()) {
-      return await saveIndexedProject(project);
+      const saved = await saveIndexedProject(project);
+      notifyWorkspaceChange('projects', saved.id);
+      return saved;
     }
     const library = await readProjectLibrary();
     const now = new Date().toISOString();
@@ -661,17 +679,20 @@ export const api = {
     };
     library.set(normalized.id, normalized);
     await writeProjectLibrary(library);
+    notifyWorkspaceChange('projects', normalized.id);
     return normalized;
   },
 
   async projectDelete(id: string): Promise<void> {
     if (!isTauriEnvironment() && hasBrowserDatabase()) {
       await deleteIndexedProject(id);
+      notifyWorkspaceChange('projects', id);
       return;
     }
     const library = await readProjectLibrary();
     library.delete(id);
     await writeProjectLibrary(library);
+    notifyWorkspaceChange('projects', id);
   },
 
   async catalogSearch(q: string, limit?: number): Promise<ProductRecord[]> {
@@ -694,15 +715,22 @@ export const api = {
 
   async catalogUpsert(rows: ProductRecord[]): Promise<UpsertResult> {
     if (isTauriEnvironment()) {
-      return await invoke<UpsertResult>('catalog_upsert', { rows });
+      const result = await invoke<UpsertResult>('catalog_upsert', { rows });
+      notifyWorkspaceChange('catalog');
+      return result;
     }
-    if (hasBrowserDatabase()) return await upsertIndexedCatalogRows(rows);
-    return mergeCatalogRows(rows, inMemoryStore.products);
+    const result = hasBrowserDatabase()
+      ? await upsertIndexedCatalogRows(rows)
+      : mergeCatalogRows(rows, inMemoryStore.products);
+    notifyWorkspaceChange('catalog');
+    return result;
   },
 
   async catalogReplaceAll(rows: ProductRecord[]): Promise<number> {
     if (isTauriEnvironment()) {
-      return await invoke<number>('catalog_replace_all', { rows });
+      const count = await invoke<number>('catalog_replace_all', { rows });
+      notifyWorkspaceChange('catalog');
+      return count;
     }
     const products = hasBrowserDatabase() ? new Map<string, ProductRecord>() : inMemoryStore.products;
     products.clear();
@@ -714,6 +742,7 @@ export const api = {
       count++;
     }
     if (hasBrowserDatabase()) await writeIndexedRecords('products', Array.from(products.values()), true);
+    notifyWorkspaceChange('catalog');
     return count;
   },
 
@@ -754,11 +783,13 @@ export const api = {
     });
 
     if (isTauriEnvironment()) {
-      return await invoke<number>('catalog_commit_import', {
+      const count = await invoke<number>('catalog_commit_import', {
         rows: normalizedRows,
         reportJson: JSON.stringify(report),
         replaceAll,
       });
+      notifyWorkspaceChange('catalog');
+      return count;
     }
     if (hasBrowserDatabase()) {
       const database = await openProjectDatabase();
@@ -770,6 +801,7 @@ export const api = {
         transaction.objectStore('import_batches').put(batch);
         transaction.oncomplete = () => {
           database.close();
+          notifyWorkspaceChange('catalog');
           resolve(normalizedRows.length);
         };
         transaction.onerror = () => {
@@ -788,6 +820,7 @@ export const api = {
     const nextBatches = [batch, ...inMemoryStore.importBatches.filter((existing) => existing.id !== batch.id)];
     inMemoryStore.products = nextProducts;
     inMemoryStore.importBatches = nextBatches;
+    notifyWorkspaceChange('catalog');
     return normalizedRows.length;
   },
 

@@ -1799,9 +1799,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   }, [isDragging, isResizing, isMarqueeSelecting, isPanning, isZoomMarquee, handleMouseMove, handleMouseUp]);
 
   return (
-    <div className="flex flex-col h-full bg-slate-100 overflow-hidden select-none">
+    <div data-studio-workspace="designer" className="flex flex-col h-full bg-slate-100 overflow-hidden select-none">
       {/* Top Application Bar */}
-      <header className="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between z-30 shrink-0 shadow-xs">
+      <header className="h-12 bg-white border-b border-slate-200 px-3 flex items-center justify-between z-30 shrink-0 shadow-none">
         <div className="flex items-center gap-3">
           <ContextTooltip
             title="Gabarits d'Étiquettes"
@@ -2028,9 +2028,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       </header>
 
       {/* Ergonomic Tools Ribbon Toolbar */}
-      <div className="bg-slate-50 border-b border-slate-200 px-3 py-1.5 flex items-center justify-between shrink-0 overflow-x-auto text-xs gap-3 whitespace-nowrap scrollbar-thin">
+      <div className="designer-ribbon bg-slate-50 border-b border-slate-200 px-2 py-1 flex items-center justify-between shrink-0 overflow-x-auto text-xs gap-2 whitespace-nowrap scrollbar-thin">
         {/* Insert Palette Clusters */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="designer-insert-tools flex items-center gap-3 shrink-0">
           {/* Cluster 1: Typographie & Prix */}
           <div className="flex items-center gap-1 shrink-0">
             <span className="text-[10px] uppercase font-bold text-slate-400 mr-0.5 tracking-wider select-none shrink-0">
@@ -2169,7 +2169,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
         {/* Alignment & Style Clipboard Group */}
         {selectedItems.length > 0 && (
-          <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
+          <div className="designer-selection-tools flex items-center gap-1 border-l border-slate-200 pl-2">
             <span className="text-[10px] uppercase font-bold text-slate-400 mr-1 tracking-wider select-none">
               Agencer
             </span>
@@ -2264,7 +2264,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         )}
 
         {/* Repères & Grille Options */}
-        <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
+        <div className="designer-reference-tools flex items-center gap-1 border-l border-slate-200 pl-2">
           <span className="text-[10px] uppercase font-bold text-slate-400 mr-1 tracking-wider select-none">
             Repères
           </span>
@@ -2352,7 +2352,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         </div>
 
         {/* Data Simulator & Zoom */}
-        <div className="flex items-center gap-2">
+        <div className="designer-preview-tools flex items-center gap-2">
           {/* Toggle Inspector Drawer */}
           <button
             onClick={() => setIsInspectorDrawerOpen(!isInspectorDrawerOpen)}
@@ -2495,15 +2495,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               }
             }
           }}
-          className="flex-1 overflow-auto p-12 flex items-center justify-center relative cursor-default"
-          style={{
-            backgroundColor: isHeatmapActive ? '#090d16' : '#e2e8f0',
-            backgroundImage: isHeatmapActive
-              ? 'radial-gradient(#1e293b 1.5px, transparent 1.5px), radial-gradient(#1e293b 1.5px, #090d16 1.5px)'
-              : 'radial-gradient(#cbd5e1 1.5px, transparent 1.5px), radial-gradient(#cbd5e1 1.5px, #e2e8f0 1.5px)',
-            backgroundSize: '24px 24px',
-            backgroundPosition: '0 0, 12px 12px',
-          }}
+          className="designer-stage flex-1 overflow-auto p-12 flex items-center justify-center relative cursor-default"
+          data-heatmap-active={isHeatmapActive}
         >
           {/* Independent Draggable Floating Ruler HUD */}
           <FloatingRulerHUD
@@ -2672,7 +2665,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         {/* 3. Right Adaptive Contextual Inspector Drawer (Always visible by default) */}
         {isInspectorDrawerOpen && (
           <div
-            className="h-full z-20 shrink-0 relative animate-in slide-in-from-right-4 duration-200 shadow-2xl"
+            className="designer-inspector h-full z-20 shrink-0 relative animate-in slide-in-from-right-4 duration-200 shadow-2xl"
             style={{ width: inspectorWidth }}
           >
             <button
@@ -2779,7 +2772,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       )}
 
       {/* Editor Status Bar */}
-      <footer className="h-7 bg-white border-t border-slate-200 px-3 flex items-center justify-between text-[11px] text-slate-600 shrink-0 font-mono z-20">
+      <footer className="h-7 bg-slate-900 border-t border-slate-800 px-3 flex items-center justify-between text-[11px] text-slate-300 shrink-0 font-mono z-20">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />

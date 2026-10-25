@@ -213,7 +213,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-950 text-slate-100 overflow-y-auto font-sans">
+    <div data-studio-workspace="library" className="flex-1 flex flex-col bg-slate-950 text-slate-100 overflow-y-auto font-sans">
       {/* Top Welcome Banner */}
       <div className="bg-slate-900 border-b border-slate-800 py-6 px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">

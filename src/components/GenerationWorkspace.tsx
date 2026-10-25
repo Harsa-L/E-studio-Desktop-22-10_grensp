@@ -1373,7 +1373,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-100 overflow-hidden select-none">
+    <div data-studio-workspace="production" className="flex flex-col h-full bg-slate-100 overflow-hidden select-none">
       {/* Top Header Bar */}
       <header className="bg-white border-b border-slate-200 shrink-0 shadow-xs z-30">
         {/* Tier 1: Master Action Bar */}

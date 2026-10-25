@@ -152,7 +152,7 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
 
   if (count === 0) {
     return (
-      <div style={{ width: inspectorWidth }} className="bg-white border-l border-slate-200 p-6 text-slate-500 text-sm flex flex-col items-center justify-center text-center h-full select-none shrink-0 z-10">
+      <div style={{ width: inspectorWidth }} className="designer-inspector-panel bg-white border-l border-slate-200 p-6 text-slate-500 text-sm flex flex-col items-center justify-center text-center h-full select-none shrink-0 z-10">
         <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
           <Sliders className="w-6 h-6" />
         </div>
@@ -564,7 +564,7 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
   };
 
   return (
-    <div style={{ width: inspectorWidth }} className="bg-white border-l border-slate-200 h-full flex flex-col text-xs text-slate-700 select-none overflow-y-auto shrink-0 z-10 shadow-lg">
+    <div style={{ width: inspectorWidth }} className="designer-inspector-panel bg-white border-l border-slate-200 h-full flex flex-col text-xs text-slate-700 select-none overflow-y-auto shrink-0 z-10 shadow-none">
       {/* Header with quick actions */}
       <div className="p-3 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
         <div>

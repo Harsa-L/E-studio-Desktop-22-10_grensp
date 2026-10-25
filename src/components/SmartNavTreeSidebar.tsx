@@ -123,7 +123,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
   // Collapsed Minimalist Dock
   if (isCollapsed) {
     return (
-      <aside className="w-12 bg-slate-900 border-r border-slate-800 flex flex-col items-center py-3 select-none shrink-0 z-20 transition-all duration-300">
+      <aside className="designer-tree w-12 bg-slate-900 border-r border-slate-800 flex flex-col items-center py-3 select-none shrink-0 z-20 transition-all duration-300">
         <ContextTooltip title="Déplier le panneau latéral" content="Afficher l'arborescence des calques, le catalogue de données et les règles" category="Navigation">
           <button
             onClick={onToggleCollapse}
@@ -195,7 +195,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
 
   // Expanded Smart Tree & Catalog Sidebar
   return (
-    <aside className="w-72 bg-slate-900 border-r border-slate-800 flex flex-col text-slate-200 select-none shrink-0 z-20 transition-all duration-300 shadow-xl">
+    <aside className="designer-tree w-72 bg-slate-900 border-r border-slate-800 flex flex-col text-slate-200 select-none shrink-0 z-20 transition-all duration-300 shadow-none">
       {/* Header & Tabs */}
       <div className="p-3 border-b border-slate-800 flex flex-col gap-2.5">
         <div className="flex items-center justify-between">

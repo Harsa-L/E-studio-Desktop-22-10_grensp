@@ -1,39 +1,22 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { TooltipSettings, ZoomMethod, RotationHandleType, ElementPlacementStrategy } from '../types';
-import { api, isTauriEnvironment } from '../services/api';
-
-export interface RulerSettings {
-  showHorizontal: boolean;
-  showVertical: boolean;
-  showSheet: boolean;
-  showHud: boolean;
-}
-
-export interface UIPreferences {
-  defaultZoom: number;
-  zoomMethod: ZoomMethod;
-  autoSaveIntervalSec: number;
-  rulerMode: 'sheet_margins' | 'window_frame' | 'floating' | 'hidden';
-  rulerOffsetPx: number;
-  showTopRuler: boolean;
-  showLeftRuler: boolean;
-  showSheetRulers: boolean;
-  showFloatingHud: boolean;
-  hudPosition: { x: number; y: number } | null;
-  lockPropertyInspector: boolean;
-  inspectorWidthPx: number;
-  lockInspectorWidth: boolean;
-  lockLeftSidebar: boolean;
-  rotationHandleType?: RotationHandleType;
-  rotationSnapEnabled?: boolean;
-  rotationSnapAngle?: number;
-  elementPlacementStrategy?: ElementPlacementStrategy;
-}
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import type { TooltipSettings } from '../types';
+import {
+  DEFAULT_RULER_SETTINGS,
+  DEFAULT_TOOLTIP_SETTINGS,
+  DEFAULT_UI_PREFERENCES,
+  usePreferencesStore,
+  type RulerSettings,
+  type UIPreferences,
+} from '../store/preferencesStore';
+import { applyCustomThemeTokens, applyThemeTokens, type CustomTheme, type DensityMode, type ThemeMode } from '../theme/themeEngine';
 
 interface TooltipContextType {
   tooltipSettings: TooltipSettings;
   gridSnapSensitivityMm: number;
-  themeMode: 'light' | 'dark' | 'eink_high_contrast';
+  themeMode: ThemeMode;
+  customThemes: CustomTheme[];
+  activeCustomThemeId: string | null;
+  densityMode: DensityMode;
   uiPreferences: UIPreferences;
   rulerSettings: RulerSettings;
   isPreferencesModalOpen: boolean;
@@ -43,182 +26,53 @@ interface TooltipContextType {
   updateUIPreferences: (prefs: Partial<UIPreferences>) => void;
   updateRulerSettings: (settings: Partial<RulerSettings>) => void;
   setGridSnapSensitivityMm: (val: number) => void;
-  setThemeMode: (mode: 'light' | 'dark' | 'eink_high_contrast') => void;
+  setThemeMode: (mode: ThemeMode) => void;
+  setCustomTheme: (theme: CustomTheme) => void;
+  removeCustomTheme: (id: string) => void;
+  setDensityMode: (mode: DensityMode) => void;
 }
-
-const DEFAULT_SETTINGS: TooltipSettings = {
-  enabled: true,
-  hoverDelayMs: 300,
-  opacityPercent: 95,
-  autoDismissSec: 6,
-};
-
-const DEFAULT_RULER_SETTINGS: RulerSettings = {
-  showHorizontal: true,
-  showVertical: true,
-  showSheet: true,
-  showHud: true,
-};
-
-const DEFAULT_UI_PREFERENCES: UIPreferences = {
-  defaultZoom: 1.25,
-  zoomMethod: 'pointer',
-  autoSaveIntervalSec: 30,
-  rulerMode: 'window_frame',
-  rulerOffsetPx: 40,
-  showTopRuler: true,
-  showLeftRuler: true,
-  showSheetRulers: true,
-  showFloatingHud: true,
-  hudPosition: null,
-  lockPropertyInspector: true,
-  inspectorWidthPx: 320,
-  lockInspectorWidth: false,
-  lockLeftSidebar: true,
-  rotationHandleType: 'top_stem',
-  rotationSnapEnabled: true,
-  rotationSnapAngle: 15,
-  elementPlacementStrategy: 'ergonomic_smart',
-};
 
 const TooltipContext = createContext<TooltipContextType | undefined>(undefined);
 
 export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [tooltipSettings, setTooltipSettings] = useState<TooltipSettings>(DEFAULT_SETTINGS);
-  const [uiPreferences, setUiPreferences] = useState<UIPreferences>(DEFAULT_UI_PREFERENCES);
-  const [rulerSettings, setRulerSettings] = useState<RulerSettings>(DEFAULT_RULER_SETTINGS);
-  const [gridSnapSensitivityMm, setGridSnapSensitivityMmState] = useState<number>(1.0);
-  const [themeMode, setThemeModeState] = useState<'light' | 'dark' | 'eink_high_contrast'>('light');
-  const [isPreferencesModalOpen, setIsPreferencesModalOpen] = useState(false);
-  const [preferencesHydrated, setPreferencesHydrated] = useState(false);
-
-  // Load persisted preferences on startup.
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      try {
-        let browserTheme: string | null = null;
-        if (!isTauriEnvironment() && typeof window !== 'undefined') {
-          try {
-            browserTheme = window.localStorage.getItem('estudio_theme_mode');
-          } catch (error) {
-            console.error('Unable to read the browser theme preference', error);
-          }
-        }
-        const [ttVal, uiVal, rulerVal, gridVal, themeVal] = await Promise.all([
-          api.prefsGet('estudio_tooltip_settings_v1'),
-          api.prefsGet('estudio_ui_preferences_v1'),
-          api.prefsGet('estudio_ruler_settings_v1'),
-          api.prefsGet('estudio_grid_snap_mm'),
-          api.prefsGet('estudio_theme_mode'),
-        ]);
-        if (!isMounted) return;
-        if (ttVal) {
-          try { setTooltipSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(ttVal) }); }
-          catch (error) { console.error('Stored tooltip preferences are invalid', error); }
-        }
-        if (uiVal) {
-          try { setUiPreferences({ ...DEFAULT_UI_PREFERENCES, ...JSON.parse(uiVal) }); }
-          catch (error) { console.error('Stored UI preferences are invalid', error); }
-        }
-        if (rulerVal) {
-          try { setRulerSettings({ ...DEFAULT_RULER_SETTINGS, ...JSON.parse(rulerVal) }); }
-          catch (error) { console.error('Stored ruler preferences are invalid', error); }
-        }
-        if (gridVal) {
-          const num = Number(gridVal);
-          if (!isNaN(num) && num > 0) setGridSnapSensitivityMmState(num);
-        }
-        const persistedTheme = browserTheme || themeVal;
-        if (persistedTheme && ['light', 'dark', 'eink_high_contrast'].includes(persistedTheme)) {
-          setThemeModeState(persistedTheme as 'light' | 'dark' | 'eink_high_contrast');
-        }
-        setPreferencesHydrated(true);
-      } catch (err) {
-        console.error('Failed to load studio preferences', err);
-      }
-    })();
-    return () => { isMounted = false; };
-  }, []);
+  const state = usePreferencesStore();
+  const initialize = usePreferencesStore((store) => store.initialize);
 
   useEffect(() => {
-    if (!preferencesHydrated) return;
-    api.prefsSet('estudio_tooltip_settings_v1', JSON.stringify(tooltipSettings))
-      .catch((error) => console.error('Unable to persist tooltip preferences', error));
-  }, [tooltipSettings, preferencesHydrated]);
+    void initialize();
+  }, [initialize]);
 
   useEffect(() => {
-    if (!preferencesHydrated) return;
-    api.prefsSet('estudio_ui_preferences_v1', JSON.stringify(uiPreferences))
-      .catch((error) => console.error('Unable to persist UI preferences', error));
-  }, [uiPreferences, preferencesHydrated]);
-
-  useEffect(() => {
-    if (!preferencesHydrated) return;
-    api.prefsSet('estudio_ruler_settings_v1', JSON.stringify(rulerSettings))
-      .catch((error) => console.error('Unable to persist ruler preferences', error));
-  }, [rulerSettings, preferencesHydrated]);
-
-  useEffect(() => {
-    if (!preferencesHydrated) return;
-    api.prefsSet('estudio_grid_snap_mm', String(gridSnapSensitivityMm))
-      .catch((error) => console.error('Unable to persist grid snap preference', error));
-  }, [gridSnapSensitivityMm, preferencesHydrated]);
-
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.dataset.theme = themeMode;
-      document.documentElement.style.colorScheme = themeMode === 'light' ? 'light' : 'dark';
+    const customTheme = state.customThemes.find((theme) => theme.id === state.activeCustomThemeId);
+    if (customTheme) {
+      applyCustomThemeTokens(document.documentElement, customTheme, state.densityMode);
+    } else {
+      applyThemeTokens(document.documentElement, state.themeMode, state.densityMode);
     }
-    if (!preferencesHydrated) return;
-    try {
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('estudio_theme_mode', themeMode);
-      }
-    } catch (error) {
-      console.error('Unable to persist the browser theme preference', error);
-    }
-    api.prefsSet('estudio_theme_mode', themeMode).catch((error) => {
-      console.error('Unable to persist the studio theme preference', error);
-    });
-  }, [themeMode, preferencesHydrated]);
-
-  const updateTooltipSettings = (partial: Partial<TooltipSettings>) => {
-    setTooltipSettings((prev) => ({ ...prev, ...partial }));
-  };
-
-  const updateUIPreferences = (partial: Partial<UIPreferences>) => {
-    setUiPreferences((prev) => ({ ...prev, ...partial }));
-  };
-
-  const updateRulerSettings = (partial: Partial<RulerSettings>) => {
-    setRulerSettings((prev) => ({ ...prev, ...partial }));
-  };
-
-  const setGridSnapSensitivityMm = (val: number) => {
-    setGridSnapSensitivityMmState(val);
-  };
-
-  const setThemeMode = (mode: 'light' | 'dark' | 'eink_high_contrast') => {
-    setThemeModeState(mode);
-  };
+  }, [state.themeMode, state.customThemes, state.activeCustomThemeId, state.densityMode]);
 
   return (
     <TooltipContext.Provider
       value={{
-        tooltipSettings,
-        gridSnapSensitivityMm,
-        themeMode,
-        uiPreferences,
-        rulerSettings,
-        isPreferencesModalOpen,
-        openPreferencesModal: () => setIsPreferencesModalOpen(true),
-        closePreferencesModal: () => setIsPreferencesModalOpen(false),
-        updateTooltipSettings,
-        updateUIPreferences,
-        updateRulerSettings,
-        setGridSnapSensitivityMm,
-        setThemeMode,
+        tooltipSettings: state.tooltipSettings,
+        gridSnapSensitivityMm: state.gridSnapSensitivityMm,
+        themeMode: state.themeMode,
+        customThemes: state.customThemes,
+        activeCustomThemeId: state.activeCustomThemeId,
+        densityMode: state.densityMode,
+        uiPreferences: state.uiPreferences,
+        rulerSettings: state.rulerSettings,
+        isPreferencesModalOpen: state.isPreferencesModalOpen,
+        openPreferencesModal: state.openPreferencesModal,
+        closePreferencesModal: state.closePreferencesModal,
+        updateTooltipSettings: state.updateTooltipSettings,
+        updateUIPreferences: state.updateUIPreferences,
+        updateRulerSettings: state.updateRulerSettings,
+        setGridSnapSensitivityMm: state.setGridSnapSensitivityMm,
+        setThemeMode: state.setThemeMode,
+        setCustomTheme: state.setCustomTheme,
+        removeCustomTheme: state.removeCustomTheme,
+        setDensityMode: state.setDensityMode,
       }}
     >
       {children}
@@ -230,9 +84,12 @@ export function useTooltip() {
   const context = useContext(TooltipContext);
   if (!context) {
     return {
-      tooltipSettings: DEFAULT_SETTINGS,
+      tooltipSettings: DEFAULT_TOOLTIP_SETTINGS,
       gridSnapSensitivityMm: 1.0,
-      themeMode: 'light' as const,
+      themeMode: 'graphite' as const,
+      customThemes: [] as CustomTheme[],
+      activeCustomThemeId: null,
+      densityMode: 'standard' as const,
       uiPreferences: DEFAULT_UI_PREFERENCES,
       rulerSettings: DEFAULT_RULER_SETTINGS,
       isPreferencesModalOpen: false,
@@ -243,6 +100,9 @@ export function useTooltip() {
       updateRulerSettings: () => {},
       setGridSnapSensitivityMm: () => {},
       setThemeMode: () => {},
+      setCustomTheme: () => {},
+      removeCustomTheme: () => {},
+      setDensityMode: () => {},
     };
   }
   return context;
