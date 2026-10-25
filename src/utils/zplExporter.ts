@@ -1,6 +1,7 @@
 import { LabelTemplate, ProductRecord } from '../types';
 import { desktopFileService } from '../services/desktopFileService';
 import { drawZplItem, mmToDots, escapeZplText } from '../render/drawZplItem';
+import { generateSourcePreservingZpl } from './zplSourceExporter';
 
 export interface ZplConfig {
   dpi: 203 | 300 | 600;
@@ -22,6 +23,7 @@ export class ZplExporter {
     record: ProductRecord,
     config: ZplConfig = { dpi: 203, quantity: 1, printSpeed: 4, darkness: 15, includeComments: true }
   ): string {
+    if (template.zpl_source) return generateSourcePreservingZpl(template, record);
     const lines: string[] = [];
     const { dpi, quantity = 1, darkness = 15, includeComments = true } = config;
 
@@ -47,7 +49,11 @@ export class ZplExporter {
     lines.push(`^LH0,0`);
 
     // Render elements using drawZplItem
-    for (const item of template.items || []) {
+    const orderedItems = (template.items || [])
+      .map((item, index) => ({ item, index }))
+      .sort((a, b) => (a.item.z_index || 0) - (b.item.z_index || 0) || a.index - b.index)
+      .map(({ item }) => item);
+    for (const item of orderedItems) {
       const itemLines = drawZplItem(item, dpi, record);
       lines.push(...itemLines);
     }

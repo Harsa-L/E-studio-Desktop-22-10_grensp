@@ -518,17 +518,21 @@ export class PricingEngine {
    * alias matching, case-insensitivity, and fallback cascade (binding_key -> PRODUCT_SCAN -> PARTNO/SKU -> id).
    */
   static resolveBarcodeValue(
-    item: { binding_key?: string; code?: string; barcode_type?: string } | TemplateItem,
+    item: { binding_key?: string; code?: string; barcode_type?: string; use_static_value?: boolean } | TemplateItem,
     record?: ProductRecord | null,
     options?: { sample?: boolean }
   ): string {
     if (record) {
+      const staticCode = 'code' in item ? item.code : undefined;
       // 1. Explicit binding key defined on element
       if (item.binding_key) {
         const val = PricingEngine.getProductFieldValue(record, item.binding_key);
         if (val !== undefined && val !== null && String(val).trim() !== '') {
           return String(val).trim();
         }
+      }
+      if ('use_static_value' in item && item.use_static_value && staticCode && String(staticCode).trim()) {
+        return String(staticCode).trim();
       }
 
       // 2. Automatic canonical barcode domain resolution (EAN / GTIN / PRODUCT_SCAN)

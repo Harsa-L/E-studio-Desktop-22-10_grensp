@@ -14,6 +14,7 @@ import { FontManagerModal } from '../components/FontManagerModal';
 import { KeyboardShortcutsModal } from '../components/KeyboardShortcutsModal';
 import { MappingDictionaryModal } from '../components/MappingDictionaryModal';
 import { AccessibilityPreferencesModal } from '../components/AccessibilityPreferencesModal';
+import { McpDraftReviewModal } from '../components/McpDraftReviewModal';
 import { ProjectStartScreen } from '../components/ProjectStartScreen';
 import { LabelProject, LabelTemplate, ProductRecord } from '../types';
 import { catalogRepository } from '../services/catalogRepository';
@@ -46,6 +47,7 @@ function MainWorkspace() {
   const [isMappingDictOpen, setIsMappingDictOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+  const [isMcpDraftReviewOpen, setIsMcpDraftReviewOpen] = useState(false);
   const navigationInitialized = useRef(false);
 
   const makeProject = (name: string, templates: LabelTemplate[] = []): LabelProject => {
@@ -403,7 +405,7 @@ function MainWorkspace() {
     }
   };
 
-  const handleImportTemplate = async (imported: LabelTemplate) => {
+  const handleImportTemplate = async (imported: LabelTemplate): Promise<LabelTemplate> => {
     const now = new Date().toISOString();
     const sanitized: LabelTemplate = {
       ...imported,
@@ -424,8 +426,10 @@ function MainWorkspace() {
         template_name: savedDoc.name,
         details: `Gabarit importé : ${savedDoc.name} (${savedDoc.id})`,
       });
+      return savedDoc;
     } catch (err) {
       console.error('Failed to import template into SQLite', err);
+      throw err;
     }
   };
 
@@ -477,6 +481,7 @@ function MainWorkspace() {
         onOpenMappingDictionary={() => setIsMappingDictOpen(true)}
         onOpenPreferences={() => setIsPreferencesOpen(true)}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
+        onOpenMcpDrafts={() => setIsMcpDraftReviewOpen(true)}
       />
 
       {/* Main Viewport Container */}
@@ -613,6 +618,15 @@ function MainWorkspace() {
       <AccessibilityPreferencesModal
         isOpen={isPreferencesOpen}
         onClose={() => setIsPreferencesOpen(false)}
+      />
+
+      <McpDraftReviewModal
+        isOpen={isMcpDraftReviewOpen}
+        onClose={() => setIsMcpDraftReviewOpen(false)}
+        onApprove={async (draft) => {
+          const saved = await handleImportTemplate(draft);
+          navigationService.navigateTo('editor', { template: saved.id });
+        }}
       />
     </div>
   );

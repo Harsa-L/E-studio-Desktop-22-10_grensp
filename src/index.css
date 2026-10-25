@@ -4,6 +4,134 @@
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
+
+  html[data-theme='dark'],
+  html[data-theme='eink_high_contrast'] {
+    color-scheme: dark;
+  }
+}
+
+html[data-theme='dark'] body {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] :is(
+  .bg-white,
+  .bg-slate-50,
+  .bg-slate-100,
+  .bg-gray-50,
+  .bg-gray-100,
+  [class~='bg-slate-50/70'],
+  [class~='bg-slate-50/40']
+) {
+  background-color: #1e293b !important;
+}
+
+html[data-theme='dark'] :is(.bg-slate-200, .bg-gray-200) {
+  background-color: #334155 !important;
+}
+
+html[data-theme='dark'] :is(.text-slate-900, .text-slate-800, .text-gray-900, .text-gray-800) {
+  color: #f1f5f9 !important;
+}
+
+html[data-theme='dark'] :is(.text-slate-700, .text-slate-600, .text-gray-700, .text-gray-600) {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='dark'] :is(.text-slate-500, .text-slate-400, .text-gray-500, .text-gray-400) {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='dark'] :is(
+  .border-slate-50,
+  .border-slate-100,
+  .border-slate-200,
+  .border-slate-300,
+  .border-gray-100,
+  .border-gray-200,
+  .border-gray-300
+) {
+  border-color: #334155 !important;
+}
+
+html[data-theme='dark'] :is(
+  .hover\:bg-slate-50:hover,
+  .hover\:bg-slate-100:hover,
+  .hover\:bg-slate-200:hover,
+  .hover\:bg-gray-50:hover,
+  .hover\:bg-gray-100:hover
+) {
+  background-color: #334155 !important;
+}
+
+html[data-theme='dark'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+html[data-theme='dark'] textarea,
+html[data-theme='dark'] select {
+  background-color: #0f172a;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+html[data-theme='eink_high_contrast'] body {
+  background-color: #fff;
+  color: #000;
+}
+
+html[data-theme='eink_high_contrast'] :is(
+  .bg-white,
+  .bg-slate-50,
+  .bg-slate-100,
+  .bg-slate-200,
+  .bg-gray-50,
+  .bg-gray-100,
+  [class~='bg-slate-50/70'],
+  [class~='bg-slate-50/40']
+) {
+  background-color: #fff !important;
+}
+
+html[data-theme='eink_high_contrast'] :is(
+  .text-slate-900,
+  .text-slate-800,
+  .text-slate-700,
+  .text-slate-600,
+  .text-slate-500,
+  .text-slate-400,
+  .text-gray-900,
+  .text-gray-800,
+  .text-gray-700,
+  .text-gray-600,
+  .text-gray-500,
+  .text-gray-400
+) {
+  color: #000 !important;
+}
+
+html[data-theme='eink_high_contrast'] :is(
+  .border-slate-50,
+  .border-slate-100,
+  .border-slate-200,
+  .border-slate-300,
+  .border-gray-100,
+  .border-gray-200,
+  .border-gray-300
+) {
+  border-color: #000 !important;
 }
 
 /* Custom scrollbars */

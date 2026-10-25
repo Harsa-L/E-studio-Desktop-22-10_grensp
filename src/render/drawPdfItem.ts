@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import { TemplateItem, ProductRecord, TextItemProperties, PriceBlockItemProperties, TierPriceItemProperties, RichTextItemProperties } from '../types';
 import { PricingEngine } from '../utils/pricingEngine';
 import { TierEngine } from '../utils/tierEngine';
-import { generateBarcodeBars } from '../utils/barcodeGenerator';
+import { generateBarcodeBars, getBarcodeQuietZone, renderBarcodePng, resolveBarcodeSymbology } from '../utils/barcodeGenerator';
 import { generateQrMatrix } from '../utils/qrGenerator';
 import { drawPictogramPdf } from './pictograms';
 
@@ -324,13 +324,36 @@ export function drawPdfItem(
     }
 
     case 'barcode': {
-      const barcodeType = (item as any).barcode_type || 'auto';
+      const requestedBarcodeType = (item as any).barcode_type || 'auto';
       const rawBarcode = PricingEngine.resolveBarcodeValue(item, record, { sample: false });
       if (!rawBarcode || rawBarcode.trim() === '') return;
+      const barcodeType = resolveBarcodeSymbology(rawBarcode, requestedBarcodeType);
 
       const [barR, barG, barB] = hexToRgb((item as any).bar_color || '#000000');
-      const barcode = generateBarcodeBars(rawBarcode, barcodeType);
-      if (barcode.error) return;
+      const barcode = generateBarcodeBars(rawBarcode, requestedBarcodeType);
+      if (barcode.error) throw new Error(`PDF barcode rendering failed: ${barcode.error}`);
+      if (barcode.bars.length === 0) {
+        const image = renderBarcodePng(rawBarcode, barcodeType, {
+          includeText: Boolean((item as any).show_text),
+          barColor: (item as any).bar_color || '#000000',
+          backgroundColor: '#FFFFFF',
+        });
+        if (!image.dataUrl || image.widthPx < 1 || image.heightPx < 1) {
+          throw new Error(`PDF barcode rendering produced no image for "${barcodeType}".`);
+        }
+        const fitScale = Math.min(w / image.widthPx, h / image.heightPx);
+        const imageWidth = image.widthPx * fitScale;
+        const imageHeight = image.heightPx * fitScale;
+        doc.addImage(
+          image.dataUrl,
+          'PNG',
+          itemX + (w - imageWidth) / 2,
+          itemY + (h - imageHeight) / 2,
+          imageWidth,
+          imageHeight
+        );
+        break;
+      }
       const bars = barcode.bars;
       const textToShow = barcode.formattedCode;
 
@@ -338,7 +361,8 @@ export function drawPdfItem(
       const textMarginMm = showText ? 3.0 : 0;
       const barHeightMm = Math.max(2, h - textMarginMm);
       const totalBars = Math.max(1, bars.length);
-      const unitWidthMm = w / totalBars;
+      const quietZone = getBarcodeQuietZone(barcodeType);
+      const unitWidthMm = w / (totalBars + quietZone.leftModules + quietZone.rightModules);
 
       // Draw clean white background for high barcode contrast
       doc.setFillColor(255, 255, 255);
@@ -351,7 +375,7 @@ export function drawPdfItem(
           if (startIdx === null) startIdx = bIdx;
         } else {
           if (startIdx !== null) {
-            const bX = itemX + startIdx * unitWidthMm;
+            const bX = itemX + (quietZone.leftModules + startIdx) * unitWidthMm;
             const bW = (bIdx - startIdx) * unitWidthMm;
             doc.rect(bX, itemY, bW, barHeightMm, 'F');
             startIdx = null;
@@ -359,7 +383,7 @@ export function drawPdfItem(
         }
       }
       if (startIdx !== null) {
-        const bX = itemX + startIdx * unitWidthMm;
+        const bX = itemX + (quietZone.leftModules + startIdx) * unitWidthMm;
         const bW = (totalBars - startIdx) * unitWidthMm;
         doc.rect(bX, itemY, bW, barHeightMm, 'F');
       }

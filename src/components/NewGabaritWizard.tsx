@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { LabelTemplate, Margins } from '../types';
 import { X, Sparkles, AlertCircle } from 'lucide-react';
+import { useLocalization } from '../context/LocalizationContext';
+import { translateTemplateWizard } from '../i18n/localization';
 
 interface NewGabaritWizardProps {
   isOpen: boolean;
@@ -26,7 +28,10 @@ const PRESETS = [
 ];
 
 export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onClose, onCreate }) => {
-  const [name, setName] = useState("Nouveau Gabarit");
+  const { locale } = useLocalization();
+  const wizardText = (key: Parameters<typeof translateTemplateWizard>[1]) =>
+    translateTemplateWizard(locale, key);
+  const [name, setName] = useState(() => wizardText('defaultName'));
   const [width_mm, setWidth_mm] = useState(100.0);
   const [height_mm, setHeight_mm] = useState(50.0);
   const [innerMargins, setInnerMargins] = useState<Margins>({ top: 2.0, bottom: 2.0, left: 2.0, right: 2.0 });
@@ -134,8 +139,8 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">Nouveau Gabarit d'Étiquette</h2>
-              <p className="text-xs text-slate-500">Configurez les dimensions physiques, zones de découpe et marges</p>
+              <h2 className="text-base font-bold text-slate-900">{wizardText('title')}</h2>
+              <p className="text-xs text-slate-500">{wizardText('subtitle')}</p>
             </div>
           </div>
           <button
@@ -164,7 +169,7 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
 
           {/* Presets */}
           <div>
-            <label className="block font-semibold text-slate-700 mb-1.5">Formats Prédéfinis</label>
+            <label className="block font-semibold text-slate-700 mb-1.5">{wizardText('presets')}</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {PRESETS.map((p, idx) => (
                 <button
@@ -182,13 +187,13 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
 
           {/* Name */}
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Nom du Gabarit</label>
+            <label className="block font-semibold text-slate-700 mb-1">{wizardText('name')}</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="ex: Étiquette Rayon Promo 100x50mm"
+              placeholder={`${wizardText('name')}…`}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
             />
           </div>
@@ -196,7 +201,7 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
           {/* Dimensions */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Largeur (mm)</label>
+              <label className="block font-semibold text-slate-700 mb-1">{wizardText('width')}</label>
               <input
                 type="number"
                 step="0.5"
@@ -209,7 +214,7 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Hauteur (mm)</label>
+              <label className="block font-semibold text-slate-700 mb-1">{wizardText('height')}</label>
               <input
                 type="number"
                 step="0.5"

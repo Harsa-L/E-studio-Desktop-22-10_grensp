@@ -175,34 +175,24 @@ class CatalogRepository {
     skipKeys?: Set<string>
   ): Promise<void> {
     let nextProducts: ProductRecord[];
-    let toUpsert = importedRecords;
+    let productsToCommit = importedRecords;
+    const replaceAll = mode === 'replace';
 
-    if (mode === 'replace') {
+    if (replaceAll) {
       nextProducts = [...importedRecords];
-      const persistedCount = await api.catalogReplaceAll(importedRecords);
-      if (persistedCount !== importedRecords.length) {
-        throw new Error(`Only ${persistedCount} of ${importedRecords.length} products were saved.`);
-      }
     } else {
       const mergeResult = applyCatalogImport(this.products, importedRecords, mode, skipKeys);
       nextProducts = mergeResult.products;
-      toUpsert = mergeResult.toPersist;
-      const upsertResult = await api.catalogUpsert(toUpsert);
-      if (upsertResult.rejected > 0) {
-        throw new Error(`The catalog rejected ${upsertResult.rejected} imported product(s).`);
-      }
+      productsToCommit = mergeResult.toPersist;
     }
 
+    const persistedCount = await api.catalogCommitImport(productsToCommit, report, replaceAll);
+    if (persistedCount !== productsToCommit.length) {
+      throw new Error(`Only ${persistedCount} of ${productsToCommit.length} imported products were committed.`);
+    }
     this.products = nextProducts;
     this.importReports.unshift(report);
     this.notify();
-
-    try {
-      await api.batchImportRecord(report.id, report.filename, JSON.stringify(report));
-      await api.prefsSet('catalog_import_history', JSON.stringify(this.importReports.slice(0, 50)));
-    } catch (err) {
-      console.warn('Catalog import history could not be persisted:', err);
-    }
   }
 
   public deleteProduct(id: string) {

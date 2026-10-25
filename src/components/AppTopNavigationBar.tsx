@@ -16,7 +16,11 @@ import {
   Save,
   SaveAll,
   Home,
+  Bot,
+  Languages,
 } from 'lucide-react';
+import { useLocalization } from '../context/LocalizationContext';
+import { LOCALE_LABELS, SUPPORTED_LOCALES } from '../i18n/localization';
 
 interface AppTopNavigationBarProps {
   currentView: AppView;
@@ -35,6 +39,7 @@ interface AppTopNavigationBarProps {
   onOpenMappingDictionary: () => void;
   onOpenPreferences: () => void;
   onOpenShortcuts: () => void;
+  onOpenMcpDrafts: () => void;
 }
 
 export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
@@ -54,7 +59,9 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
   onOpenMappingDictionary,
   onOpenPreferences,
   onOpenShortcuts,
+  onOpenMcpDrafts,
 }) => {
+  const { locale, setLocale, persistenceError, t } = useLocalization();
   const [toolsDropdownOpen, setToolsDropdownOpen] = React.useState(false);
   const [fileMenuOpen, setFileMenuOpen] = React.useState(false);
   const projectFileInput = React.useRef<HTMLInputElement>(null);
@@ -90,7 +97,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
           <button
             onClick={() => onNavigate('start')}
             className="flex items-center gap-2 text-left group hover:opacity-90 transition shrink-0 focus:outline-none"
-            title="Accueil des projets"
+            title={t('projectHome')}
           >
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-inner">
               <Layers className="w-4 h-4 text-white" />
@@ -111,19 +118,19 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
               className="rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
               aria-expanded={fileMenuOpen}
             >
-              Fichier
+              {t('file')}
             </button>
             {fileMenuOpen && (
               <>
                 <button className="fixed inset-0 z-40 cursor-default" aria-label="Fermer le menu fichier" onClick={() => setFileMenuOpen(false)} />
                 <div className="absolute left-0 top-9 z-50 w-60 rounded-lg border border-slate-700 bg-slate-900 p-1.5 shadow-2xl">
                   {activeProjectName && <div className="truncate px-3 py-2 text-[11px] font-semibold text-slate-500">{activeProjectName}</div>}
-                  <button onClick={() => { setFileMenuOpen(false); onNavigate('start'); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><Home className="h-3.5 w-3.5" />Accueil des projets</button>
-                  <button onClick={() => { setFileMenuOpen(false); onNewProject(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><FilePlus2 className="h-3.5 w-3.5" />Nouveau projet…</button>
-                  <button onClick={() => { setFileMenuOpen(false); projectFileInput.current?.click(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><FolderOpen className="h-3.5 w-3.5" />Ouvrir un projet…</button>
+                  <button onClick={() => { setFileMenuOpen(false); onNavigate('start'); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><Home className="h-3.5 w-3.5" />{t('projectHome')}</button>
+                  <button onClick={() => { setFileMenuOpen(false); onNewProject(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><FilePlus2 className="h-3.5 w-3.5" />{t('newProject')}</button>
+                  <button onClick={() => { setFileMenuOpen(false); projectFileInput.current?.click(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><FolderOpen className="h-3.5 w-3.5" />{t('openProject')}</button>
                   <div className="my-1 border-t border-slate-800" />
-                  <button disabled={!activeProjectName} onClick={() => { setFileMenuOpen(false); onSaveProject(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><Save className="h-3.5 w-3.5" />Enregistrer le projet</button>
-                  <button disabled={!activeProjectName} onClick={() => { setFileMenuOpen(false); onSaveProjectAs(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><SaveAll className="h-3.5 w-3.5" />Exporter / Enregistrer sous…</button>
+                  <button disabled={!activeProjectName} onClick={() => { setFileMenuOpen(false); onSaveProject(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><Save className="h-3.5 w-3.5" />{t('saveProject')}</button>
+                  <button disabled={!activeProjectName} onClick={() => { setFileMenuOpen(false); onSaveProjectAs(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><SaveAll className="h-3.5 w-3.5" />{t('saveProjectAs')}</button>
                 </div>
               </>
             )}
@@ -133,7 +140,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
             <ChevronRight className="w-3.5 h-3.5 text-slate-600 shrink-0" />
             {currentView === 'home' && (
-              <span className="font-semibold text-slate-200">Tableau de Bord</span>
+              <span className="font-semibold text-slate-200">{t('dashboard')}</span>
             )}
 
             {currentView === 'editor' && (
@@ -142,11 +149,11 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                   onClick={() => onNavigate('home')}
                   className="hover:text-blue-400 transition truncate"
                 >
-                  Gabarits
+                  {t('templates')}
                 </button>
                 <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
                 <span className="font-semibold text-blue-400 truncate max-w-[140px] sm:max-w-[200px]">
-                  {activeTemplate ? activeTemplate.name : 'Concepteur Visuel'}
+                  {activeTemplate ? activeTemplate.name : t('visualDesigner')}
                 </span>
               </>
             )}
@@ -157,7 +164,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                   onClick={() => onNavigate('home')}
                   className="hover:text-blue-400 transition truncate"
                 >
-                  Production
+                  {t('production')}
                 </button>
                 <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
                 <span className="font-semibold text-blue-400 truncate max-w-[140px] sm:max-w-[200px]">
@@ -167,7 +174,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
             )}
 
             {currentView === 'catalog' && (
-              <span className="font-semibold text-emerald-400">Catalogue Produits & Import</span>
+              <span className="font-semibold text-emerald-400">{t('catalog')}</span>
             )}
           </div>
         </div>
@@ -183,10 +190,10 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
-            title="Accueil & Gabarits (Alt+1)"
+            title={`${t('projectHome')} (Alt+1)`}
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Tableau de bord</span>
+            <span>{t('dashboard')}</span>
           </button>
 
           <button
@@ -239,7 +246,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
           <button
             onClick={onOpenShortcuts}
             className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg border border-slate-800 transition"
-            title="Raccourcis Clavier"
+            title={t('keyboardShortcuts')}
           >
             <Keyboard className="w-4 h-4" />
           </button>
@@ -248,7 +255,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
             <button
               onClick={() => setToolsDropdownOpen((prev) => !prev)}
               className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg border border-slate-800 transition focus:outline-none"
-              title="Outils & Paramètres système"
+              title={t('systemTools')}
             >
               <Settings2 className="w-4 h-4" />
             </button>
@@ -260,10 +267,37 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                   onClick={() => setToolsDropdownOpen(false)}
                 />
                 <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-2 text-xs divide-y divide-slate-800 animate-in fade-in-50 duration-100">
+                  <label className="block px-2 pb-2">
+                    <span className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      <Languages className="h-3.5 w-3.5" />{t('language')}
+                    </span>
+                    <select
+                      value={locale}
+                      onChange={(event) => setLocale(event.target.value as typeof locale)}
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-white"
+                    >
+                      {SUPPORTED_LOCALES.map((code) => (
+                        <option key={code} value={code}>
+                          {LOCALE_LABELS[code]}
+                        </option>
+                      ))}
+                    </select>
+                    {persistenceError && <span role="alert" className="mt-1 block text-[10px] text-amber-300">{persistenceError}</span>}
+                  </label>
                   <div className="pb-1.5">
                     <span className="px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                      Données & Affichage
+                      {t('dataAndDisplay')}
                     </span>
+                    <button
+                      onClick={() => {
+                        setToolsDropdownOpen(false);
+                        onOpenMcpDrafts();
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
+                    >
+                      <Bot className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>{t('aiDrafts')}</span>
+                    </button>
                     <button
                       onClick={() => {
                         setToolsDropdownOpen(false);
@@ -272,7 +306,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                       className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
                     >
                       <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-                      <span>Dictionnaire de mapping & alias</span>
+                      <span>{t('mappingDictionary')}</span>
                     </button>
                     <button
                       onClick={() => {
@@ -282,7 +316,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                       className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
                     >
                       <Layers className="w-3.5 h-3.5 text-purple-400" />
-                      <span>Moteur de règles omnicanal</span>
+                      <span>{t('omnichannelRules')}</span>
                     </button>
                     <button
                       onClick={() => {
@@ -292,13 +326,13 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                       className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
                     >
                       <Type className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Polices typographiques</span>
+                      <span>{t('fonts')}</span>
                     </button>
                   </div>
 
                   <div className="pt-1.5">
                     <span className="px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                      Sécurité & Audit
+                      {t('securityAndAudit')}
                     </span>
                     <button
                       onClick={() => {
@@ -308,7 +342,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                       className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
                     >
                       <History className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Journal d'audit local</span>
+                      <span>{t('auditLog')}</span>
                     </button>
                     <button
                       onClick={() => {
@@ -318,7 +352,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                       className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
                     >
                       <Settings2 className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Préférences & Accessibilité</span>
+                      <span>{t('preferences')}</span>
                     </button>
                   </div>
                 </div>

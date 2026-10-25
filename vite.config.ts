@@ -14,7 +14,10 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-exceljs': ['exceljs'],
+          'vendor-bwipjs': ['bwip-js/browser'],
           'vendor-jspdf': ['jspdf'],
+          'vendor-pptxgenjs': ['pptxgenjs'],
+          'vendor-qrcode': ['qrcode'],
           'vendor-icons': ['lucide-react'],
           'vendor-react': ['react', 'react-dom'],
         },
@@ -28,4 +31,3 @@ export default defineConfig({
     hmr: false,
   },
 });
-

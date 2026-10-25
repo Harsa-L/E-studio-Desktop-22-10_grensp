@@ -2,7 +2,7 @@ import pptxgen from 'pptxgenjs';
 import { LabelTemplate, ProductRecord, ImpositionConfig, ImpositionCalculation } from '../types';
 import { TierEngine } from './tierEngine';
 import { PricingEngine } from './pricingEngine';
-import { renderBarcodeToDataUrl } from './barcodeGenerator';
+import { renderBarcodePng } from './barcodeGenerator';
 import { renderQrToDataUrl } from './qrGenerator';
 import { LabelResolutionEngine } from './labelResolutionEngine';
 import { ImpositionCalculator } from './impositionCalculator';
@@ -208,41 +208,28 @@ export class PptxExporter {
               if (!code || resolvedItem.resolvedBarcode?.status !== 'valid') {
                 break;
               }
-              const imgData = renderBarcodeToDataUrl(
+              const image = renderBarcodePng(
                 code,
                 resolvedItem.resolvedBarcode?.barcodeType || 'ean13',
-                Boolean(resolvedItem.resolvedBarcode?.showText),
-                item.bar_color || '#000000'
+                {
+                  includeText: Boolean(resolvedItem.resolvedBarcode?.showText),
+                  barColor: item.bar_color || '#000000',
+                  backgroundColor: '#FFFFFF',
+                }
               );
-
-              if (imgData) {
-                slide.addImage({
-                  data: imgData,
-                  x: itemX_in,
-                  y: itemY_in,
-                  w: itemW_in,
-                  h: itemH_in,
-                });
-              } else {
-                slide.addShape(pptx.ShapeType.rect, {
-                  x: itemX_in,
-                  y: itemY_in,
-                  w: itemW_in,
-                  h: itemH_in,
-                  fill: { color: 'F8FAFC' },
-                  line: { color: 'CBD5E1', width: 0.5 },
-                });
-                slide.addText(code, {
-                  x: itemX_in,
-                  y: itemY_in,
-                  w: itemW_in,
-                  h: itemH_in,
-                  fontSize: 8,
-                  fontFace: 'Consolas',
-                  align: 'center',
-                  valign: 'middle',
-                });
+              if (!image.dataUrl || image.widthPx < 1 || image.heightPx < 1) {
+                throw new Error(`PowerPoint barcode rendering produced no image for "${resolvedItem.resolvedBarcode?.barcodeType || 'ean13'}".`);
               }
+              const fitScale = Math.min(itemW_in / image.widthPx, itemH_in / image.heightPx);
+              const imageWidth = image.widthPx * fitScale;
+              const imageHeight = image.heightPx * fitScale;
+              slide.addImage({
+                data: image.dataUrl,
+                x: itemX_in + (itemW_in - imageWidth) / 2,
+                y: itemY_in + (itemH_in - imageHeight) / 2,
+                w: imageWidth,
+                h: imageHeight,
+              });
               break;
             }
 

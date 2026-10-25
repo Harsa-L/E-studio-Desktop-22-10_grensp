@@ -109,6 +109,11 @@ export interface TextItemProperties extends BaseItemProperties {
   letter_spacing_pt?: number;
   line_height_multiplier?: number;
   text_transform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  zpl_font_width_ratio?: number;
+  zpl_field_block?: {
+    line_spacing: number;
+    hanging_indent: number;
+  };
   prefix_text?: string;
   suffix_text?: string;
   fill_color?: string;
@@ -238,7 +243,15 @@ export interface QRCodeItemProperties extends BaseItemProperties {
 export interface BarcodeItemProperties extends BaseItemProperties {
   type: 'barcode';
   code: string;
-  barcode_type: 'auto' | 'code128' | 'ean8' | 'ean13' | 'gtin14' | 'gs1_128';
+  use_static_value?: boolean;
+  barcode_type:
+    | 'auto'
+    | 'code128' | 'code39' | 'code93' | 'codabar' | 'code11'
+    | 'interleaved2of5' | 'industrial2of5' | 'iata2of5' | 'itf14' | 'gtin14'
+    | 'ean8' | 'ean13' | 'upca' | 'upce'
+    | 'gs1_128' | 'databar' | 'databarexpanded'
+    | 'qrcode' | 'gs1_qrcode' | 'datamatrix' | 'gs1_datamatrix' | 'pdf417' | 'micropdf417' | 'azteccode' | 'maxicode'
+    | 'postnet' | 'planet' | 'royalmail' | 'auspost';
   show_text: boolean;
   bar_color: string;
 }
@@ -466,6 +479,20 @@ export interface LabelTemplate {
   calibration_image?: CalibrationImageConfig | null;
   default_imposition?: ImpositionConfig;
   items: TemplateItem[];
+  zpl_source?: {
+    source: string;
+    dpi: 203 | 300 | 600;
+    original_width_mm: number;
+    original_height_mm: number;
+    page_width_range?: { start: number; end: number; expected: string };
+    page_height_range?: { start: number; end: number; expected: string };
+    item_ranges: Array<{
+      item_id: string;
+      start: number;
+      end: number;
+      original_item: TemplateItem;
+    }>;
+  };
 }
 
 export const CURRENT_SCHEMA_VERSION = 1;
@@ -499,6 +526,7 @@ export function migrateTemplateSchema(raw: any): LabelTemplate {
     calibration_image: raw.calibration_image ?? null,
     default_imposition: raw.default_imposition,
     items: Array.isArray(raw.items) ? raw.items : [],
+    zpl_source: raw.zpl_source,
   };
 }
 

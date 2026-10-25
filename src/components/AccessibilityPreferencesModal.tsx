@@ -26,6 +26,8 @@ import {
   Layers2,
 } from 'lucide-react';
 import { RotationHandleType, ElementPlacementStrategy } from '../types';
+import { useLocalization } from '../context/LocalizationContext';
+import { translateAccessibility } from '../i18n/localization';
 
 interface AccessibilityPreferencesModalProps {
   isOpen: boolean;
@@ -48,6 +50,9 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
     rulerSettings,
     updateRulerSettings,
   } = useTooltip();
+  const { locale } = useLocalization();
+  const accessibilityText = (key: Parameters<typeof translateAccessibility>[1]) =>
+    translateAccessibility(locale, key);
 
   const [previewAngle, setPreviewAngle] = useState(0);
 
@@ -69,12 +74,13 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
               <Sliders className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-bold text-slate-900 text-sm">Accessibilité & Préférences Studio</h2>
-              <p className="text-[11px] text-slate-500">Personnalisez l'ergonomie, les poignées de rotation, les bulles d'aide et la sensibilité</p>
+              <h2 className="font-bold text-slate-900 text-sm">{accessibilityText('title')}</h2>
+              <p className="text-[11px] text-slate-500">{accessibilityText('subtitle')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
+            aria-label={accessibilityText('close')}
             className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition"
           >
             <X className="w-4 h-4" />
@@ -87,13 +93,13 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
           <div className="space-y-3">
             <div className="font-bold text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-2 border-b border-slate-100 pb-1">
               <Eye className="w-3.5 h-3.5 text-indigo-600" />
-              <span>1. Infobulles & Assistances Contextuelles</span>
+              <span>{accessibilityText('tooltipSection')}</span>
             </div>
 
             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
               <div>
-                <span className="font-semibold text-slate-800 block">Activer les infobulles contextuelles</span>
-                <span className="text-[11px] text-slate-500">Affiche des explications au survol des éléments</span>
+                <span className="font-semibold text-slate-800 block">{accessibilityText('enableTooltips')}</span>
+                <span className="text-[11px] text-slate-500">{accessibilityText('tooltipHelp')}</span>
               </div>
               <button
                 onClick={() => updateTooltipSettings({ enabled: !tooltipSettings.enabled })}
@@ -116,7 +122,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
                   <div className="flex justify-between items-center text-[11px] font-semibold text-slate-700">
                     <span className="flex items-center gap-1">
                       <MousePointer className="w-3 h-3 text-indigo-600" />
-                      Délai de Survol (Hover Latency)
+                      {accessibilityText('hoverDelay')}
                     </span>
                     <span className="font-mono text-indigo-700">{tooltipSettings.hoverDelayMs} ms</span>
                   </div>
@@ -138,7 +144,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
                 {/* Opacity Percent */}
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
                   <div className="flex justify-between items-center text-[11px] font-semibold text-slate-700">
-                    <span>Opacité des Infobulles</span>
+                    <span>{accessibilityText('tooltipOpacity')}</span>
                     <span className="font-mono text-indigo-700">{tooltipSettings.opacityPercent}%</span>
                   </div>
                   <input
@@ -159,7 +165,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
                 {/* Auto Dismiss Timer */}
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5 sm:col-span-2">
                   <div className="flex justify-between items-center text-[11px] font-semibold text-slate-700">
-                    <span>Minuterie Masquage Automatique (Auto-Dismiss)</span>
+                    <span>{accessibilityText('autoDismiss')}</span>
                     <span className="font-mono text-indigo-700">
                       {tooltipSettings.autoDismissSec === 0 ? 'Infinie (Permanent)' : `${tooltipSettings.autoDismissSec} s`}
                     </span>
@@ -187,12 +193,12 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
           <div className="space-y-3">
             <div className="font-bold text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-2 border-b border-slate-100 pb-1">
               <Layers className="w-3.5 h-3.5 text-indigo-600" />
-              <span>2. Sensibilité du Magnétisme / Grille</span>
+              <span>{accessibilityText('gridSection')}</span>
             </div>
 
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
               <div className="flex justify-between items-center text-xs font-semibold text-slate-800">
-                <span>Pas de Magnétisme (Grid Snap Sensitivity) :</span>
+                <span>{accessibilityText('gridSensitivity')}:</span>
                 <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded font-mono font-bold">
                   {gridSnapSensitivityMm} mm
                 </span>
@@ -218,7 +224,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
           <div className="space-y-3">
             <div className="font-bold text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-2 border-b border-slate-100 pb-1">
               <Sun className="w-3.5 h-3.5 text-indigo-600" />
-              <span>3. Thème & Mode d'Affichage</span>
+              <span>{accessibilityText('themeSection')}</span>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -231,7 +237,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
                 }`}
               >
                 <Sun className="w-4 h-4 text-amber-500" />
-                <span className="text-xs">Clair (Standard)</span>
+                <span className="text-xs">{accessibilityText('lightTheme')}</span>
               </button>
 
               <button
@@ -243,7 +249,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
                 }`}
               >
                 <Moon className="w-4 h-4 text-indigo-400" />
-                <span className="text-xs">Sombre (Dark)</span>
+                <span className="text-xs">{accessibilityText('darkTheme')}</span>
               </button>
 
               <button
@@ -255,7 +261,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
                 }`}
               >
                 <ShieldAlert className="w-4 h-4 text-rose-500" />
-                <span className="text-xs">Haut Contraste E-Ink</span>
+                <span className="text-xs">{accessibilityText('highContrastTheme')}</span>
               </button>
             </div>
           </div>

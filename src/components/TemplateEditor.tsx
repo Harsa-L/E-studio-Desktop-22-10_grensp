@@ -83,9 +83,13 @@ import {
   Settings,
   HelpCircle,
   Hand,
+  FileCode2,
 } from 'lucide-react';
 import { ContextTooltip, useTooltip } from '../context/TooltipContext';
 import { ViewportZoomToolbar } from './ViewportZoomToolbar';
+import { ZplSourceWorkbench } from './ZplSourceWorkbench';
+import { applyZplSourceToTemplate } from '../utils/zplTemplateImport';
+import { generateSourcePreservingZpl } from '../utils/zplSourceExporter';
 
 interface TemplateEditorProps {
   initialTemplate: LabelTemplate;
@@ -152,6 +156,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isPreFlightModalOpen, setIsPreFlightModalOpen] = useState(false);
   const [isCanvasSettingsOpen, setIsCanvasSettingsOpen] = useState(false);
+  const [isZplWorkbenchOpen, setIsZplWorkbenchOpen] = useState(false);
+  const [zplWorkbenchSource, setZplWorkbenchSource] = useState('');
+  const [zplWorkbenchError, setZplWorkbenchError] = useState<string | null>(null);
+  const [sourcePreviewTemplate, setSourcePreviewTemplate] = useState<LabelTemplate | null>(null);
   const [canvasWidthDraft, setCanvasWidthDraft] = useState(String(initialTemplate.width_mm));
   const [canvasHeightDraft, setCanvasHeightDraft] = useState(String(initialTemplate.height_mm));
 
@@ -451,6 +459,50 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       items: applySemanticSnapping(rawItems),
     };
     pushState(next);
+  };
+
+  const openZplWorkbench = () => {
+    if (!template.zpl_source) return;
+    try {
+      const previewRecord = availablePreviewProducts[previewDataIndex ?? 0] ?? null;
+      setZplWorkbenchSource(generateSourcePreservingZpl(template, previewRecord));
+      setZplWorkbenchError(null);
+      setSourcePreviewTemplate(null);
+      setIsZplWorkbenchOpen(true);
+    } catch (error) {
+      setZplWorkbenchError(error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  const previewZplSourceDraft = useCallback((source: string, hasEdits: boolean) => {
+    if (!hasEdits) {
+      setSourcePreviewTemplate(null);
+      setZplWorkbenchError(null);
+      return;
+    }
+    try {
+      const { template: previewTemplate } = applyZplSourceToTemplate(template, source);
+      setSourcePreviewTemplate(previewTemplate);
+      setZplWorkbenchError(null);
+    } catch (error) {
+      setSourcePreviewTemplate(null);
+      setZplWorkbenchError(error instanceof Error ? error.message : String(error));
+    }
+  }, [template]);
+
+  const applyZplSourceToCanvas = (source: string): string => {
+    const { template: updatedTemplate, diagnostics } = applyZplSourceToTemplate(template, source);
+    const nextTemplate = {
+      ...updatedTemplate,
+      items: updatedTemplate.items.map((item) => sanitizeNonPriceElement(item)),
+    };
+    pushState(nextTemplate);
+    setSourcePreviewTemplate(null);
+    setSelectedItemIds(nextTemplate.items.length > 0 ? [nextTemplate.items[0].id] : []);
+    setSelectedPriceExtension(null);
+    return diagnostics.length > 0
+      ? `Source appliquée avec ${diagnostics.length} avertissement(s) : ${diagnostics.slice(0, 2).join(' ')}`
+      : `${nextTemplate.items.length} objet(s) source appliqué(s) au canevas.`;
   };
 
   // Copy / Paste Style handlers
@@ -1941,6 +1993,24 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               <span>Export JSON</span>
             </button>
           </ContextTooltip>
+          {template.zpl_source && (
+            <ContextTooltip
+              title="Éditer la source ZPL"
+              content="Modifier la source ZPL liée à ce canevas et appliquer les objets pris en charge à l’éditeur visuel"
+              category="Source"
+            >
+              <button
+                onClick={openZplWorkbench}
+                className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-2xs"
+              >
+                <FileCode2 className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Source ZPL</span>
+              </button>
+            </ContextTooltip>
+          )}
+          {zplWorkbenchError && (
+            <span role="alert" className="max-w-48 text-xs text-rose-600">{zplWorkbenchError}</span>
+          )}
           <ContextTooltip
             title="Atelier d'Imposition & Impression"
             content="Basculer vers l'espace de génération par lots, imposition de planches A4/A3/Rouleau et exports ZPL/PDF"
@@ -2503,16 +2573,16 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             )}
 
             <LabelRenderer
-              template={template}
+              template={sourcePreviewTemplate || template}
               record={currentPreviewRecord}
               zoom={zoom}
               showBleed={showBleed}
               showInnerMargins={showInnerMargins}
               showHazardWarnings={showHazardWarnings}
-              selectedItemIds={selectedItemIds}
-              onSelectItem={(id, e) => handleItemMouseDown(id, e)}
+              selectedItemIds={sourcePreviewTemplate ? [] : selectedItemIds}
+              onSelectItem={sourcePreviewTemplate ? undefined : (id, e) => handleItemMouseDown(id, e)}
               selectedPriceExtensionId={selectedPriceExtensionId}
-              onSelectPriceExtension={(itemId, extensionId, event) => {
+              onSelectPriceExtension={sourcePreviewTemplate ? undefined : (itemId, extensionId, event) => {
                 if (activeTool === 'pan' || activeTool === 'marquee') {
                   handleCanvasMouseDown(event);
                   return;
@@ -2521,16 +2591,16 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                 setSelectedPriceExtension({ itemId, extensionId });
                 setIsInspectorDrawerOpen(true);
               }}
-              onResizeStart={handleResizeStart}
-              onRotateStart={handleRotateStart}
-              onRotateStep90={handleRotateStep90}
+              onResizeStart={sourcePreviewTemplate ? undefined : handleResizeStart}
+              onRotateStart={sourcePreviewTemplate ? undefined : handleRotateStart}
+              onRotateStep90={sourcePreviewTemplate ? undefined : handleRotateStep90}
               rotationHandleType={uiPreferences?.rotationHandleType || 'top_stem'}
               isRotating={isRotating}
               activeRotatingItemId={rotateState?.itemId}
               activeRotationAngle={activeRotationAngle}
               smartGuides={activeSmartGuides}
-              interactive={true}
-              className="ring-1 ring-slate-300"
+              interactive={!sourcePreviewTemplate}
+              className={sourcePreviewTemplate ? 'ring-2 ring-amber-400' : 'ring-1 ring-slate-300'}
             />
 
             {/* Diagnostic Heatmap Canvas Overlay */}
@@ -3243,6 +3313,19 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             </div>
           </div>
         </div>
+      )}
+      {isZplWorkbenchOpen && template.zpl_source && (
+        <ZplSourceWorkbench
+          isOpen={isZplWorkbenchOpen}
+          initialSource={zplWorkbenchSource}
+          initialFilename={template.name}
+          onClose={() => {
+            setIsZplWorkbenchOpen(false);
+            setSourcePreviewTemplate(null);
+          }}
+          onApplySource={applyZplSourceToCanvas}
+          onSourceDraftChange={previewZplSourceDraft}
+        />
       )}
     </div>
   );

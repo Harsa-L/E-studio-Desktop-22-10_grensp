@@ -438,6 +438,62 @@ pub fn catalog_replace_all(state: State<'_, DbState>, rows: Vec<Value>) -> Resul
 }
 
 #[tauri::command]
+pub fn catalog_commit_import(
+    state: State<'_, DbState>,
+    rows: Vec<Value>,
+    report_json: String,
+    replace_all: bool,
+) -> Result<usize, String> {
+    let report: Value = serde_json::from_str(&report_json)
+        .map_err(|e| format!("Import report is invalid JSON: {e}"))?;
+    let batch_id = report.get("id").and_then(Value::as_str)
+        .filter(|id| !id.trim().is_empty())
+        .ok_or_else(|| "Import report must contain an id".to_string())?;
+    let filename = report.get("filename").and_then(Value::as_str)
+        .filter(|name| !name.trim().is_empty())
+        .ok_or_else(|| "Import report must contain a filename".to_string())?;
+    let created_at = report.get("timestamp").and_then(Value::as_str)
+        .unwrap_or(&Utc::now().to_rfc3339())
+        .to_string();
+
+    let mut conn = state.0.lock().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    if replace_all {
+        tx.execute("DELETE FROM products", []).map_err(|e| e.to_string())?;
+    }
+
+    let mut count = 0;
+    for row in rows {
+        let obj = row.as_object()
+            .ok_or_else(|| "Catalog import contains a non-object product".to_string())?;
+        let id = value_to_str(obj.get("id"))
+            .or_else(|| value_to_str(obj.get("PARTNO")))
+            .or_else(|| value_to_str(obj.get("PRODUCT_SCAN")))
+            .ok_or_else(|| "Catalog import contains a product without an identifier".to_string())?;
+        let scan = value_to_str(obj.get("PRODUCT_SCAN"))
+            .or_else(|| value_to_str(obj.get("scan")))
+            .or_else(|| value_to_str(obj.get("barcode")));
+        let partno = value_to_str(obj.get("PARTNO"))
+            .or_else(|| value_to_str(obj.get("partno")));
+        let document_json = serde_json::to_string(&row).map_err(|e| e.to_string())?;
+
+        tx.execute(
+            "INSERT INTO products (id, scan, partno, document_json) VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT(id) DO UPDATE SET scan = excluded.scan, partno = excluded.partno, document_json = excluded.document_json",
+            params![id, scan, partno, document_json],
+        ).map_err(|e| e.to_string())?;
+        count += 1;
+    }
+
+    tx.execute(
+        "INSERT OR REPLACE INTO import_batches (id, filename, report_json, created_at) VALUES (?1, ?2, ?3, ?4)",
+        params![batch_id, filename, report_json, created_at],
+    ).map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(count)
+}
+
+#[tauri::command]
 pub fn job_insert(state: State<'_, DbState>, job: Value) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     let id = job
@@ -799,7 +855,7 @@ pub fn backup_db(state: State<'_, DbState>, dest_path: String) -> Result<String,
     conn.execute(&format!("VACUUM INTO '{}'", dest_clean), [])
         .or_else(|_| {
             std::fs::copy(&state.1, &dest_path)
-                .map(|_| ())
+                .map(|_| 0)
                 .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))
         })
         .map_err(|e| format!("Échec de la sauvegarde SQLite : {}", e))?;
@@ -827,4 +883,65 @@ pub fn restore_db(state: State<'_, DbState>, source_path: String) -> Result<Stri
     *conn = new_conn;
 
     Ok("Base SQLite restaurée avec succès".to_string())
+}
+
+#[tauri::command]
+pub fn mcp_draft_list() -> Result<Vec<Value>, String> {
+    let directory = crate::mcp_server::draft_directory()?;
+    if !directory.exists() {
+        return Ok(Vec::new());
+    }
+    let entries = std::fs::read_dir(directory).map_err(|error| format!("Unable to list MCP drafts: {error}"))?;
+    let mut drafts = Vec::new();
+    for entry in entries {
+        let entry = entry.map_err(|error| format!("Unable to read MCP draft entry: {error}"))?;
+        let path = entry.path();
+        if path.extension().and_then(|extension| extension.to_str()) != Some("json") {
+            continue;
+        }
+        let Some(id) = path.file_stem().and_then(|stem| stem.to_str()) else {
+            continue;
+        };
+        if !id.starts_with("mcp_") {
+            continue;
+        }
+        let metadata = std::fs::metadata(&path).map_err(|error| format!("Unable to inspect MCP draft: {error}"))?;
+        if metadata.len() > 2_097_152 {
+            continue;
+        }
+        let contents = std::fs::read_to_string(&path).map_err(|error| format!("Unable to read MCP draft: {error}"))?;
+        let template: Value = serde_json::from_str(&contents).map_err(|error| format!("Invalid MCP draft JSON: {error}"))?;
+        crate::mcp_server::validate_template(&template)?;
+        drafts.push(json!({
+            "id": id,
+            "name": template.get("name").and_then(Value::as_str).unwrap_or("Untitled draft"),
+            "width_mm": template.get("width_mm"),
+            "height_mm": template.get("height_mm"),
+            "item_count": template.get("items").and_then(Value::as_array).map(Vec::len).unwrap_or(0)
+        }));
+    }
+    drafts.sort_by(|left, right| left["id"].as_str().cmp(&right["id"].as_str()));
+    Ok(drafts)
+}
+
+#[tauri::command]
+pub fn mcp_draft_read(id: String) -> Result<Value, String> {
+    let path = crate::mcp_server::safe_draft_path(&id)?;
+    let metadata = std::fs::metadata(&path).map_err(|error| format!("Unable to inspect MCP draft: {error}"))?;
+    if metadata.len() > 2_097_152 {
+        return Err("MCP draft exceeds the 2 MB safety limit.".to_string());
+    }
+    let contents = std::fs::read_to_string(path).map_err(|error| format!("Unable to read MCP draft: {error}"))?;
+    let template: Value = serde_json::from_str(&contents).map_err(|error| format!("Invalid MCP draft JSON: {error}"))?;
+    crate::mcp_server::validate_template(&template)?;
+    Ok(template)
+}
+
+#[tauri::command]
+pub fn mcp_draft_remove(id: String) -> Result<(), String> {
+    let path = crate::mcp_server::safe_draft_path(&id)?;
+    if !path.exists() {
+        return Err("MCP draft was already removed.".to_string());
+    }
+    std::fs::remove_file(path).map_err(|error| format!("Unable to remove MCP draft: {error}"))
 }

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { LabelTemplate, ProductRecord, TemplateItem, RotationHandleType } from '../types';
 import { TierEngine } from '../utils/tierEngine';
 import { PricingEngine, isPriceRelatedElement } from '../utils/pricingEngine';
-import { generateBarcodeBars, getBarcodeSvgPath } from '../utils/barcodeGenerator';
+import { generateBarcodeBars, generateBarcodeSvg, getBarcodeQuietZone, getBarcodeSvgPath, resolveBarcodeSymbology } from '../utils/barcodeGenerator';
 import { generateQrMatrix, getQrSvgPath } from '../utils/qrGenerator';
 import { SmartGuideLine } from '../utils/smartGuides';
 import { PictogramRenderer } from './PictogramRenderer';
@@ -695,19 +695,49 @@ export const LabelRenderer: React.FC<LabelRendererProps> = ({
           );
         }
         const bars = result.bars;
+        if (bars.length === 0) {
+          try {
+            const svg = generateBarcodeSvg(code, item.barcode_type || 'auto', {
+              includeText: item.show_text,
+              barColor: item.bar_color,
+            });
+            return (
+              <div className="w-full h-full flex items-center justify-center bg-white p-1">
+                <img
+                  src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`}
+                  alt={`${item.barcode_type || 'barcode'}: ${code}`}
+                  className="w-full h-full object-contain"
+                  draggable={false}
+                />
+              </div>
+            );
+          } catch (error) {
+            return (
+              <div className="w-full h-full flex items-center justify-center bg-amber-50 text-amber-800 border border-amber-300 text-xs text-center p-1">
+                [Code-barres non pris en charge: {error instanceof Error ? error.message : String(error)}]
+              </div>
+            );
+          }
+        }
         const totalBars = bars.length;
+        const symbology = resolveBarcodeSymbology(code, item.barcode_type || 'auto');
+        const quietZone = getBarcodeQuietZone(symbology);
         const barH = item.show_text ? Math.max(10, itemH - 12 * zoom) : itemH;
         return (
           <div className="w-full h-full flex flex-col items-center justify-center bg-white px-1 py-0.5 select-none">
             <svg
               width={itemW}
               height={barH}
-              viewBox={`0 0 ${totalBars} 100`}
+              viewBox={`0 0 ${totalBars + quietZone.leftModules + quietZone.rightModules} 100`}
               preserveAspectRatio="none"
               className="w-full"
               shapeRendering="crispEdges"
             >
-              <path d={getBarcodeSvgPath(bars, 100)} fill={item.bar_color || '#000000'} />
+              <path
+                d={getBarcodeSvgPath(bars, 100)}
+                transform={`translate(${quietZone.leftModules} 0)`}
+                fill={item.bar_color || '#000000'}
+              />
             </svg>
             {item.show_text && (
               <span

@@ -70,56 +70,122 @@ export const COMMON_HEADER_KEYWORDS = [
   'dept',
 ];
 
+function inferCsvDelimiter(text: string): string {
+  let commaCount = 0;
+  let semicolonCount = 0;
+  let inQuotes = false;
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index];
+    if (char === '"') {
+      if (inQuotes && text[index + 1] === '"') {
+        index++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (!inQuotes && (char === '\r' || char === '\n')) {
+      break;
+    } else if (!inQuotes && char === ',') {
+      commaCount++;
+    } else if (!inQuotes && char === ';') {
+      semicolonCount++;
+    }
+  }
+  return semicolonCount > commaCount ? ';' : ',';
+}
+
+function parseCsvRecords(text: string, delimiter: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  let closedQuote = false;
+  let atFieldStart = true;
+
+  const pushField = () => {
+    row.push(field.trim());
+    field = '';
+    atFieldStart = true;
+    closedQuote = false;
+  };
+  const pushRow = () => {
+    pushField();
+    if (row.some((value) => value.length > 0)) rows.push(row);
+    row = [];
+  };
+
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index];
+    if (inQuotes) {
+      if (char === '"' && text[index + 1] === '"') {
+        field += '"';
+        index++;
+      } else if (char === '"') {
+        inQuotes = false;
+        closedQuote = true;
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (char === '"' && atFieldStart) {
+      inQuotes = true;
+      atFieldStart = false;
+    } else if (char === delimiter) {
+      pushField();
+    } else if (char === '\r' || char === '\n') {
+      if (char === '\r' && text[index + 1] === '\n') index++;
+      pushRow();
+      if (rows.length > 50000) {
+        throw new Error('Classeur trop volumineux : la limite maximale est de 50 000 lignes.');
+      }
+    } else {
+      if (closedQuote && char.trim() !== '') {
+        throw new Error('Fichier CSV invalide : caractères inattendus après un champ entre guillemets.');
+      }
+      if (char === '"' && !atFieldStart) {
+        throw new Error('Fichier CSV invalide : guillemet non échappé dans un champ.');
+      }
+      field += char;
+      if (char.trim() !== '') atFieldStart = false;
+    }
+  }
+  if (inQuotes) throw new Error('Fichier CSV invalide : champ entre guillemets non terminé.');
+  if (field.length > 0 || row.length > 0 || closedQuote) pushRow();
+  if (rows.length > 50000) {
+    throw new Error('Classeur trop volumineux : la limite maximale est de 50 000 lignes.');
+  }
+  return rows;
+}
+
 import ExcelJS from 'exceljs';
 import { PricingEngine } from './pricingEngine';
 
 /**
- * Parses an Excel (.xlsx, .xls) or CSV binary buffer using ExcelJS in read-only mode.
+ * Parses an Excel (.xlsx) or CSV binary buffer using ExcelJS in read-only mode.
  * Strictly enforces limits: maximum 20 MB file size and maximum 50 000 rows before processing.
  */
 export async function parseWorkbookFile(
   data: Uint8Array | ArrayBuffer,
-  fileName?: string
-): Promise<{ headers: string[]; rows: any[][] }> {
+  fileName?: string,
+  worksheetName?: string
+): Promise<{ headers: string[]; rows: any[][]; worksheetNames: string[] }> {
   const byteLength = data.byteLength;
   if (byteLength > 20 * 1024 * 1024) {
     throw new Error('Classeur trop volumineux : la taille maximale autorisée est de 20 Mo.');
   }
 
   const isCsv = fileName ? fileName.toLowerCase().endsWith('.csv') : false;
+  if (fileName && /\.xls$/i.test(fileName) && !/\.xlsx$/i.test(fileName)) {
+    throw new Error('Le format Excel .xls ancien n’est pas pris en charge. Enregistrez le classeur au format .xlsx.');
+  }
   let matrix: any[][] = [];
+  let worksheetNames: string[] = [];
 
   if (isCsv) {
-    const decoder = new TextDecoder('utf-8');
+    const decoder = new TextDecoder('utf-8', { fatal: true });
     const text = decoder.decode(data);
-    const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-    if (lines.length > 50000) {
-      throw new Error('Classeur trop volumineux : la limite maximale est de 50 000 lignes.');
-    }
-    const delimiter = lines[0] && lines[0].includes(';') ? ';' : ',';
-    matrix = lines.map((line) => {
-      const cells: string[] = [];
-      let inQuotes = false;
-      let current = '';
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        if (char === '"') {
-          if (inQuotes && line[i + 1] === '"') {
-            current += '"';
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if (char === delimiter && !inQuotes) {
-          cells.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      cells.push(current.trim());
-      return cells;
-    });
+    matrix = parseCsvRecords(text, inferCsvDelimiter(text));
   } else {
     const workbook = new ExcelJS.Workbook();
     const buffer =
@@ -127,9 +193,13 @@ export async function parseWorkbookFile(
         ? data
         : data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
     await workbook.xlsx.load(buffer as any);
-    const worksheet = workbook.worksheets[0];
+    worksheetNames = workbook.worksheets.map(({ name }) => name);
+    const worksheet = worksheetName
+      ? workbook.getWorksheet(worksheetName)
+      : workbook.worksheets[0];
     if (!worksheet) {
-      return { headers: [], rows: [] };
+      if (worksheetName) throw new Error(`La feuille Excel "${worksheetName}" est introuvable.`);
+      return { headers: [], rows: [], worksheetNames };
     }
 
     if (worksheet.rowCount > 50000) {
@@ -152,7 +222,7 @@ export async function parseWorkbookFile(
   }
 
   if (matrix.length === 0) {
-    return { headers: [], rows: [] };
+    return { headers: [], rows: [], worksheetNames };
   }
 
   if (matrix.length > 50000) {
@@ -160,7 +230,7 @@ export async function parseWorkbookFile(
   }
 
   const { headers, dataRows } = detectHeaderAndDataFromMatrix(matrix);
-  return { headers, rows: dataRows };
+  return { headers, rows: dataRows, worksheetNames };
 }
 
 /**

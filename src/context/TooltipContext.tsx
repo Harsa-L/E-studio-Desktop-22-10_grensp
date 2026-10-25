@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { TooltipSettings, ZoomMethod, RotationHandleType, ElementPlacementStrategy } from '../types';
-import { api } from '../services/api';
+import { api, isTauriEnvironment } from '../services/api';
 
 export interface RulerSettings {
   showHorizontal: boolean;
@@ -90,12 +90,21 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [gridSnapSensitivityMm, setGridSnapSensitivityMmState] = useState<number>(1.0);
   const [themeMode, setThemeModeState] = useState<'light' | 'dark' | 'eink_high_contrast'>('light');
   const [isPreferencesModalOpen, setIsPreferencesModalOpen] = useState(false);
+  const [preferencesHydrated, setPreferencesHydrated] = useState(false);
 
-  // Load preferences from SQLite kv on startup
+  // Load persisted preferences on startup.
   useEffect(() => {
     let isMounted = true;
     (async () => {
       try {
+        let browserTheme: string | null = null;
+        if (!isTauriEnvironment() && typeof window !== 'undefined') {
+          try {
+            browserTheme = window.localStorage.getItem('estudio_theme_mode');
+          } catch (error) {
+            console.error('Unable to read the browser theme preference', error);
+          }
+        }
         const [ttVal, uiVal, rulerVal, gridVal, themeVal] = await Promise.all([
           api.prefsGet('estudio_tooltip_settings_v1'),
           api.prefsGet('estudio_ui_preferences_v1'),
@@ -105,47 +114,74 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
         ]);
         if (!isMounted) return;
         if (ttVal) {
-          try { setTooltipSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(ttVal) }); } catch {}
+          try { setTooltipSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(ttVal) }); }
+          catch (error) { console.error('Stored tooltip preferences are invalid', error); }
         }
         if (uiVal) {
-          try { setUiPreferences({ ...DEFAULT_UI_PREFERENCES, ...JSON.parse(uiVal) }); } catch {}
+          try { setUiPreferences({ ...DEFAULT_UI_PREFERENCES, ...JSON.parse(uiVal) }); }
+          catch (error) { console.error('Stored UI preferences are invalid', error); }
         }
         if (rulerVal) {
-          try { setRulerSettings({ ...DEFAULT_RULER_SETTINGS, ...JSON.parse(rulerVal) }); } catch {}
+          try { setRulerSettings({ ...DEFAULT_RULER_SETTINGS, ...JSON.parse(rulerVal) }); }
+          catch (error) { console.error('Stored ruler preferences are invalid', error); }
         }
         if (gridVal) {
           const num = Number(gridVal);
           if (!isNaN(num) && num > 0) setGridSnapSensitivityMmState(num);
         }
-        if (themeVal && ['light', 'dark', 'eink_high_contrast'].includes(themeVal)) {
-          setThemeModeState(themeVal as any);
+        const persistedTheme = browserTheme || themeVal;
+        if (persistedTheme && ['light', 'dark', 'eink_high_contrast'].includes(persistedTheme)) {
+          setThemeModeState(persistedTheme as 'light' | 'dark' | 'eink_high_contrast');
         }
+        setPreferencesHydrated(true);
       } catch (err) {
-        console.warn('Failed to load preferences from SQLite', err);
+        console.error('Failed to load studio preferences', err);
       }
     })();
     return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
-    api.prefsSet('estudio_tooltip_settings_v1', JSON.stringify(tooltipSettings)).catch(() => {});
-  }, [tooltipSettings]);
+    if (!preferencesHydrated) return;
+    api.prefsSet('estudio_tooltip_settings_v1', JSON.stringify(tooltipSettings))
+      .catch((error) => console.error('Unable to persist tooltip preferences', error));
+  }, [tooltipSettings, preferencesHydrated]);
 
   useEffect(() => {
-    api.prefsSet('estudio_ui_preferences_v1', JSON.stringify(uiPreferences)).catch(() => {});
-  }, [uiPreferences]);
+    if (!preferencesHydrated) return;
+    api.prefsSet('estudio_ui_preferences_v1', JSON.stringify(uiPreferences))
+      .catch((error) => console.error('Unable to persist UI preferences', error));
+  }, [uiPreferences, preferencesHydrated]);
 
   useEffect(() => {
-    api.prefsSet('estudio_ruler_settings_v1', JSON.stringify(rulerSettings)).catch(() => {});
-  }, [rulerSettings]);
+    if (!preferencesHydrated) return;
+    api.prefsSet('estudio_ruler_settings_v1', JSON.stringify(rulerSettings))
+      .catch((error) => console.error('Unable to persist ruler preferences', error));
+  }, [rulerSettings, preferencesHydrated]);
 
   useEffect(() => {
-    api.prefsSet('estudio_grid_snap_mm', String(gridSnapSensitivityMm)).catch(() => {});
-  }, [gridSnapSensitivityMm]);
+    if (!preferencesHydrated) return;
+    api.prefsSet('estudio_grid_snap_mm', String(gridSnapSensitivityMm))
+      .catch((error) => console.error('Unable to persist grid snap preference', error));
+  }, [gridSnapSensitivityMm, preferencesHydrated]);
 
   useEffect(() => {
-    api.prefsSet('estudio_theme_mode', themeMode).catch(() => {});
-  }, [themeMode]);
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.theme = themeMode;
+      document.documentElement.style.colorScheme = themeMode === 'light' ? 'light' : 'dark';
+    }
+    if (!preferencesHydrated) return;
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('estudio_theme_mode', themeMode);
+      }
+    } catch (error) {
+      console.error('Unable to persist the browser theme preference', error);
+    }
+    api.prefsSet('estudio_theme_mode', themeMode).catch((error) => {
+      console.error('Unable to persist the studio theme preference', error);
+    });
+  }, [themeMode, preferencesHydrated]);
 
   const updateTooltipSettings = (partial: Partial<TooltipSettings>) => {
     setTooltipSettings((prev) => ({ ...prev, ...partial }));

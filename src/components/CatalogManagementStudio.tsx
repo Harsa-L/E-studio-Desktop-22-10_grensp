@@ -22,10 +22,15 @@ import {
   RefreshCw,
   FolderArchive,
   Eye,
+  Database,
 } from 'lucide-react';
 import { desktopFileService } from '../services/desktopFileService';
 import { resolveCanonicalKey } from '../utils/mappingDictionary';
 import { CatalogImportCollision, prepareCatalogImport } from '../utils/catalogImport';
+import { api, ExternalDbConfig, isTauriEnvironment } from '../services/api';
+import { open } from '@tauri-apps/plugin-dialog';
+import { useLocalization } from '../context/LocalizationContext';
+import { translateDatabaseImport } from '../i18n/localization';
 
 export interface CollisionItem extends CatalogImportCollision {}
 
@@ -40,6 +45,8 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
   templates,
   onGenerateFromDatabase,
 }) => {
+  const { locale } = useLocalization();
+  const databaseText = (key: Parameters<typeof translateDatabaseImport>[1]) => translateDatabaseImport(locale, key);
   const [activeTab, setActiveTab] = useState<'catalog' | 'import_wizard' | 'reports'>('catalog');
   const [products, setProducts] = useState<ProductRecord[]>(() => catalogRepository.getProducts());
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +54,7 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Import wizard state
-  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importFile, setImportFile] = useState<Pick<File, 'name'> | null>(null);
   const [parsedHeaders, setParsedHeaders] = useState<string[]>([]);
   const [parsedRows, setParsedRows] = useState<any[]>([]);
   const [fieldMappings, setFieldMappings] = useState<Record<string, string>>({});
@@ -57,6 +64,26 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
   const [collisions, setCollisions] = useState<CollisionItem[]>([]);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [pendingWorksheetImport, setPendingWorksheetImport] = useState<{
+    data: Uint8Array;
+    fileName: string;
+    names: string[];
+  } | null>(null);
+  const [selectedWorksheet, setSelectedWorksheet] = useState('');
+  const [dbConfig, setDbConfig] = useState<ExternalDbConfig>({
+    driver: 'postgres',
+    host: '',
+    port: 5432,
+    database: '',
+    schema: 'public',
+    username: '',
+    password: '',
+    sslCaPath: '',
+    path: '',
+  });
+  const [dbTables, setDbTables] = useState<string[]>([]);
+  const [dbTable, setDbTable] = useState('');
+  const [isDbBusy, setIsDbBusy] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const restoreInputRef = useRef<HTMLInputElement>(null);
@@ -96,9 +123,14 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
     setSelectedIds(next);
   };
 
-  const processWorkbookData = async (data: Uint8Array, fileName: string) => {
+  const processWorkbookData = async (data: Uint8Array, fileName: string, worksheetName?: string) => {
     try {
-      const { headers, rows } = await parseWorkbookFile(data, fileName);
+      const { headers, rows, worksheetNames } = await parseWorkbookFile(data, fileName, worksheetName);
+      if (!worksheetName && worksheetNames.length > 1) {
+        setPendingWorksheetImport({ data, fileName, names: worksheetNames });
+        setSelectedWorksheet(worksheetNames[0]);
+        return;
+      }
 
       if (headers.length === 0 || rows.length === 0) {
         setActionFeedback('Le fichier sélectionné est vide ou ne contient aucune ligne valide.');
@@ -156,10 +188,71 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
     }
   };
 
+  const handleListDatabaseTables = async () => {
+    setIsDbBusy(true);
+    setActionFeedback(null);
+    try {
+      const tables = await api.externalDbListTables(dbConfig);
+      setDbTables(tables);
+      setDbTable(tables[0] || '');
+      setActionFeedback(tables.length ? `${tables.length} table(s) trouvée(s).` : 'Aucune table importable trouvée.');
+    } catch (error) {
+      setActionFeedback(`Connexion à la base impossible : ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsDbBusy(false);
+    }
+  };
+
+  const handleSelectSqliteFile = async () => {
+    try {
+      const selection = await open({
+        multiple: false,
+        directory: false,
+        filters: [{ name: 'Base SQLite', extensions: ['sqlite', 'sqlite3', 'db'] }],
+      });
+      if (typeof selection === 'string') {
+        setDbConfig({ ...dbConfig, path: selection });
+        setDbTables([]);
+        setDbTable('');
+      }
+    } catch (error) {
+      setActionFeedback(`Sélection du fichier SQLite impossible : ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const handleImportDatabaseTable = async () => {
+    if (!dbTable) {
+      setActionFeedback('Sélectionnez une table à importer.');
+      return;
+    }
+    setIsDbBusy(true);
+    setActionFeedback(null);
+    try {
+      const preview = await api.externalDbFetchTable(dbConfig, dbTable);
+      if (preview.truncated) {
+        setActionFeedback('La table dépasse la limite de sécurité de 5 000 lignes. Utilisez une vue ou filtrez la source; aucun import partiel n’a été préparé.');
+        return;
+      }
+      if (preview.headers.length === 0 || preview.rows.length === 0) {
+        setActionFeedback('La table sélectionnée ne contient aucune ligne importable.');
+        return;
+      }
+      setParsedHeaders(preview.headers);
+      setParsedRows(preview.rows);
+      setFieldMappings({});
+      setImportFile({ name: `${dbConfig.database || dbConfig.path} · ${dbTable}` });
+      setWizardStep(2);
+    } catch (error) {
+      setActionFeedback(`Lecture de la table impossible : ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsDbBusy(false);
+    }
+  };
+
   const handlePickNativeFile = async () => {
     try {
       const res = await desktopFileService.openBinary([
-        { name: 'Feuille de calcul', extensions: ['xlsx', 'xls', 'csv'] },
+        { name: 'Feuille de calcul', extensions: ['xlsx', 'csv'] },
       ]);
       if (res) {
         setImportFile({ name: res.name } as any);
@@ -548,6 +641,189 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
                       className="hidden"
                     />
                   </div>
+                  <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+                    <div className="flex items-start gap-3">
+                      <Database className="mt-0.5 h-5 w-5 shrink-0 text-blue-400" />
+                      <div>
+                        <h3 className="text-sm font-bold text-white">{databaseText('title')}</h3>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {databaseText('readOnlyNotice')}
+                        </p>
+                      </div>
+                    </div>
+                    {!isTauriEnvironment() ? (
+                      <p className="rounded-lg border border-amber-900/60 bg-amber-950/30 p-3 text-xs text-amber-200">
+                        {databaseText('browserNotice')}
+                      </p>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <label className="space-y-1 text-xs text-slate-300">
+                            {databaseText('databaseType')}
+                            <select
+                              value={dbConfig.driver}
+                              onChange={(event) => {
+                                const driver = event.target.value as ExternalDbConfig['driver'];
+                                setDbConfig({
+                                  ...dbConfig,
+                                  driver,
+                                  port: driver === 'postgres' ? 5432 : driver === 'mysql' ? 3306 : null,
+                                });
+                                setDbTables([]);
+                                setDbTable('');
+                              }}
+                              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white"
+                            >
+                              <option value="sqlite">SQLite</option>
+                              <option value="postgres">PostgreSQL</option>
+                              <option value="mysql">MySQL</option>
+                            </select>
+                          </label>
+                          {dbConfig.driver === 'sqlite' ? (
+                            <label className="space-y-1 text-xs text-slate-300">
+                              {databaseText('databasePath')}
+                              <div className="flex gap-2">
+                                <input
+                                  value={dbConfig.path}
+                                  onChange={(event) => setDbConfig({ ...dbConfig, path: event.target.value })}
+                                  placeholder="/chemin/vers/catalogue.sqlite"
+                                  className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => void handleSelectSqliteFile()}
+                                  className="shrink-0 rounded-lg border border-slate-700 px-3 py-2 text-slate-300 hover:bg-slate-800"
+                                >
+                                  {databaseText('chooseFile')}
+                                </button>
+                              </div>
+                            </label>
+                          ) : (
+                            <>
+                              <label className="space-y-1 text-xs text-slate-300">
+                                {databaseText('host')}
+                                <input
+                                  value={dbConfig.host}
+                                  onChange={(event) => setDbConfig({ ...dbConfig, host: event.target.value })}
+                                  autoComplete="off"
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white"
+                                />
+                              </label>
+                              <label className="space-y-1 text-xs text-slate-300">
+                                {databaseText('port')}
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="65535"
+                                  value={dbConfig.port ?? ''}
+                                  onChange={(event) => setDbConfig({ ...dbConfig, port: event.target.value ? Number(event.target.value) : null })}
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white"
+                                />
+                              </label>
+                              <label className="space-y-1 text-xs text-slate-300">
+                                {databaseText('databaseName')}
+                                <input
+                                  value={dbConfig.database}
+                                  onChange={(event) => setDbConfig({ ...dbConfig, database: event.target.value })}
+                                  autoComplete="off"
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white"
+                                />
+                              </label>
+                              {dbConfig.driver === 'postgres' && (
+                                <label className="space-y-1 text-xs text-slate-300">
+                                  {databaseText('schema')}
+                                  <input
+                                    value={dbConfig.schema}
+                                    onChange={(event) => setDbConfig({ ...dbConfig, schema: event.target.value })}
+                                    autoComplete="off"
+                                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white"
+                                  />
+                                </label>
+                              )}
+                              <label className="space-y-1 text-xs text-slate-300">
+                                {databaseText('username')}
+                                <input
+                                  value={dbConfig.username}
+                                  onChange={(event) => setDbConfig({ ...dbConfig, username: event.target.value })}
+                                  autoComplete="off"
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white"
+                                />
+                              </label>
+                              <label className="space-y-1 text-xs text-slate-300">
+                                {databaseText('password')}
+                                <input
+                                  type="password"
+                                  value={dbConfig.password}
+                                  onChange={(event) => setDbConfig({ ...dbConfig, password: event.target.value })}
+                                  autoComplete="new-password"
+                                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white"
+                                />
+                              </label>
+                              <label className="space-y-1 text-xs text-slate-300 sm:col-span-2">
+                                {databaseText('tlsAuthority')}
+                                <div className="flex gap-2">
+                                  <input
+                                    value={dbConfig.sslCaPath}
+                                    onChange={(event) => setDbConfig({ ...dbConfig, sslCaPath: event.target.value })}
+                                    placeholder="/chemin/vers/ca.pem"
+                                    autoComplete="off"
+                                    className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      const selected = await open({
+                                        multiple: false,
+                                        filters: [{ name: 'Certificat CA', extensions: ['pem', 'crt', 'cer'] }],
+                                      });
+                                      if (typeof selected === 'string') {
+                                        setDbConfig((current) => ({ ...current, sslCaPath: selected }));
+                                      }
+                                    }}
+                                    className="shrink-0 rounded-lg border border-slate-700 px-3 py-2 text-slate-300 hover:bg-slate-800"
+                                  >
+                                    {databaseText('chooseFile')}
+                                  </button>
+                                </div>
+                                <span className="block text-[10px] text-slate-500">
+                                  {databaseText('tlsVerification')}
+                                </span>
+                              </label>
+                            </>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={handleListDatabaseTables}
+                            disabled={isDbBusy}
+                            className="rounded-lg border border-blue-700 px-4 py-2 text-xs font-semibold text-blue-200 hover:bg-blue-950/50 disabled:opacity-50"
+                          >
+                            {isDbBusy ? databaseText('connecting') : databaseText('listTables')}
+                          </button>
+                          {dbTables.length > 0 && (
+                            <>
+                              <select
+                                value={dbTable}
+                                onChange={(event) => setDbTable(event.target.value)}
+                                className="min-w-48 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white"
+                              >
+                                {dbTables.map((table) => <option key={table} value={table}>{table}</option>)}
+                              </select>
+                              <button
+                                type="button"
+                                onClick={handleImportDatabaseTable}
+                                disabled={isDbBusy || !dbTable}
+                                className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+                              >
+                                {databaseText('loadMapping')}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </section>
                 </div>
               )}
 
@@ -779,6 +1055,50 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
           </div>
         )}
       </main>
+      {pendingWorksheetImport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+          <section className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+            <h2 className="text-base font-semibold text-white">Choisir une feuille Excel</h2>
+            <p className="mt-1 text-sm text-slate-300">
+              Sélectionnez la feuille qui contient les données du catalogue.
+            </p>
+            <select
+              aria-label="Feuille Excel du catalogue"
+              className="mt-4 w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white"
+              value={selectedWorksheet}
+              onChange={(event) => setSelectedWorksheet(event.target.value)}
+            >
+              {pendingWorksheetImport.names.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+            {actionFeedback && <p role="alert" className="mt-3 text-sm text-amber-300">{actionFeedback}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200"
+                onClick={() => setPendingWorksheetImport(null)}
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                onClick={async () => {
+                  await processWorkbookData(
+                    pendingWorksheetImport.data,
+                    pendingWorksheetImport.fileName,
+                    selectedWorksheet
+                  );
+                  setPendingWorksheetImport(null);
+                }}
+              >
+                Importer la feuille
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 };

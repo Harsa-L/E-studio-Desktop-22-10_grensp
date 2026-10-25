@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { LabelTemplate, ProductRecord, ImpositionConfig, PrintJob } from '../types';
 import { Rule } from '../rulesEngine/types';
 import { DEFAULT_RULES } from '../rulesEngine/defaultRules';
@@ -14,6 +14,7 @@ import { PricingEngine } from '../utils/pricingEngine';
 import { DataMappingModal } from './DataMappingModal';
 import { PptxExporter } from '../utils/pptxExporter';
 import { ZplExporter } from '../utils/zplExporter';
+import { fetchLabelaryPreview } from '../services/labelaryPreviewService';
 import { generateBarcodeBars } from '../utils/barcodeGenerator';
 import { generateQrMatrix } from '../utils/qrGenerator';
 import { AVERY_STANDARD_CATALOG } from '../utils/averyCatalog';
@@ -35,6 +36,7 @@ import { AuditLogService } from '../services/auditLogService';
 import { PrintJobHistoryModal } from './PrintJobHistoryModal';
 import { PreFlightEngine } from '../utils/preFlightEngine';
 import { renderImposedPdfJob } from '../utils/pdfJobRenderer';
+import { useLocalization } from '../context/LocalizationContext';
 import {
   History,
   ChevronLeft,
@@ -86,6 +88,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
   initialProducts,
   initialBatchName,
 }) => {
+  const { t } = useLocalization();
   const [products, setProducts] = useState<ProductRecord[]>(() => {
     if (initialProducts && initialProducts.length > 0) return initialProducts;
     return databaseService.getProducts();
@@ -132,6 +135,12 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
     zpl_dpi: 203 as 203 | 300 | 600,
   });
   const [printerConfigReady, setPrinterConfigReady] = useState(false);
+  const [externalPreviewUrl, setExternalPreviewUrl] = useState<string | null>(null);
+  const [externalPreviewLoading, setExternalPreviewLoading] = useState(false);
+  const [externalPreviewError, setExternalPreviewError] = useState<string | null>(null);
+  const [showLabelaryConsent, setShowLabelaryConsent] = useState(false);
+  const [showExternalPreview, setShowExternalPreview] = useState(false);
+  const [labelaryConsentChecked, setLabelaryConsentChecked] = useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -285,6 +294,13 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
   const [mappingModalOpen, setMappingModalOpen] = useState(false);
   const [rawHeaders, setRawHeaders] = useState<string[]>([]);
   const [rawRows, setRawRows] = useState<any[]>([]);
+  const [worksheetImport, setWorksheetImport] = useState<{
+    data: Uint8Array;
+    fileName: string;
+    worksheetNames: string[];
+  } | null>(null);
+  const [selectedWorksheet, setSelectedWorksheet] = useState('');
+  const [dataImportError, setDataImportError] = useState<string | null>(null);
 
   // Imposition sheet configuration (defaults to template.default_imposition or landscape A4)
   const [impositionConfig, setImpositionConfig] = useState<ImpositionConfig>(() => {
@@ -320,6 +336,44 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
   }, [products, searchTerm]);
 
   const currentProduct = filteredProducts[currentIndex] || filteredProducts[0] || null;
+
+  useEffect(() => {
+    setShowExternalPreview(false);
+    setExternalPreviewError(null);
+    setExternalPreviewUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return null;
+    });
+  }, [currentProduct?.id]);
+
+  useEffect(() => () => {
+    if (externalPreviewUrl) URL.revokeObjectURL(externalPreviewUrl);
+  }, [externalPreviewUrl]);
+
+  const requestLabelaryPreview = async () => {
+    if (!currentProduct) return;
+    setExternalPreviewLoading(true);
+    setExternalPreviewError(null);
+    try {
+      const zpl = ZplExporter.generateLabelZpl(template, currentProduct, {
+        dpi: printerConfig.zpl_dpi,
+        quantity: 1,
+        includeComments: false,
+      });
+      const image = await fetchLabelaryPreview(
+        zpl,
+        printerConfig.zpl_dpi,
+        template.width_mm,
+        template.height_mm
+      );
+      setExternalPreviewUrl(URL.createObjectURL(image));
+      setShowExternalPreview(true);
+    } catch (error) {
+      setExternalPreviewError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setExternalPreviewLoading(false);
+    }
+  };
 
   // Print & Preview Scope Mode (Defaults to Selected Item Only to avoid entire catalog overhauls!)
   const [printScope, setPrintScope] = useState<'selected_only' | 'checked_only' | 'all'>('selected_only');
@@ -496,6 +550,39 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
     });
   }, [products, template]);
 
+  const openDataMapping = (headers: string[], rows: any[][]) => {
+    const rawObjects = rows.map((row) => {
+      const obj: Record<string, any> = {};
+      headers.forEach((header, index) => {
+        obj[header] = row[index];
+      });
+      return obj;
+    });
+    setRawHeaders(headers);
+    setRawRows(rawObjects);
+    setMappingModalOpen(true);
+  };
+
+  const handleWorksheetSelection = async () => {
+    if (!worksheetImport || !selectedWorksheet) return;
+    try {
+      const { headers, rows } = await parseWorkbookFile(
+        worksheetImport.data,
+        worksheetImport.fileName,
+        selectedWorksheet
+      );
+      setWorksheetImport(null);
+      setDataImportError(null);
+      if (rows.length === 0) {
+        setDataImportError(`La feuille "${selectedWorksheet}" ne contient aucune ligne de données.`);
+        return;
+      }
+      openDataMapping(headers, rows);
+    } catch (error) {
+      setDataImportError(error instanceof Error ? error.message : String(error));
+    }
+  };
+
   // Excel / CSV File Import with Data Mapping Tool
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -505,22 +592,21 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
     reader.onload = async (loadEvent) => {
       try {
         const data = new Uint8Array(loadEvent.target?.result as ArrayBuffer);
-        const { headers, rows } = await parseWorkbookFile(data, file.name);
+        const { headers, rows, worksheetNames } = await parseWorkbookFile(data, file.name);
 
-        if (rows.length > 0) {
-          const rawObjects = rows.map((row) => {
-            const obj: Record<string, any> = {};
-            headers.forEach((h, idx) => {
-              obj[h] = row[idx];
-            });
-            return obj;
-          });
-          setRawHeaders(headers);
-          setRawRows(rawObjects);
-          setMappingModalOpen(true);
+        setDataImportError(null);
+        if (worksheetNames.length > 1) {
+          setWorksheetImport({ data, fileName: file.name, worksheetNames });
+          setSelectedWorksheet(worksheetNames[0]);
+          return;
         }
-      } catch (err) {
-        console.error("Erreur lors de l'importation du fichier Excel/CSV :", err);
+        if (rows.length > 0) {
+          openDataMapping(headers, rows);
+        } else {
+          setDataImportError('Le fichier ne contient aucune ligne de données à importer.');
+        }
+      } catch (error) {
+        setDataImportError(error instanceof Error ? error.message : String(error));
       }
     };
     reader.readAsArrayBuffer(file);
@@ -1025,6 +1111,10 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             const barB = parseInt(barColorHex.substring(4, 6), 16) || 0;
 
             const barcodeResult = generateBarcodeBars(rawCode, barcodeType);
+            if (barcodeResult.error) throw new Error(`Invalid ${barcodeType} barcode: ${barcodeResult.error}`);
+            if (barcodeResult.bars.length === 0) {
+              throw new Error(`PDF output does not support barcode symbology "${barcodeType}" yet.`);
+            }
             const bars = barcodeResult.bars;
             const textToShow = barcodeResult.formattedCode;
 
@@ -1337,7 +1427,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               <label className="cursor-pointer px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition">
                 <Upload className="w-3.5 h-3.5 text-slate-600" />
                 <span>Importer Données</span>
-                <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="hidden" />
+                <input type="file" accept=".xlsx,.csv" onChange={handleFileUpload} className="hidden" />
               </label>
             </ContextTooltip>
 
@@ -1485,7 +1575,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   }`}
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>Catalogue ({products.length})</span>
+                  <span>{t('dataTab')} ({products.length})</span>
                 </button>
               </ContextTooltip>
               <ContextTooltip
@@ -1502,7 +1592,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   }`}
                 >
                   <TrendingDown className="w-3.5 h-3.5 text-blue-500" />
-                  <span>Paliers & Dégressif</span>
+                  <span>{t('tiersTab')}</span>
                 </button>
               </ContextTooltip>
               <ContextTooltip
@@ -1519,7 +1609,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   }`}
                 >
                   <Boxes className="w-3.5 h-3.5 text-purple-500" />
-                  <span>Assortiments & Variantes</span>
+                  <span>{t('assortmentsTab')}</span>
                 </button>
               </ContextTooltip>
             </div>
@@ -1545,7 +1635,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   }`}
                 >
                   <LayoutGrid className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Multi-Slots & Règles</span>
+                  <span>{t('multiSlotsTab')}</span>
                 </button>
               </ContextTooltip>
               <ContextTooltip
@@ -1562,7 +1652,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   }`}
                 >
                   <Grid className="w-3.5 h-3.5" />
-                  <span>Imposition Planche</span>
+                  <span>{t('sheetImpositionTab')}</span>
                 </button>
               </ContextTooltip>
               <ContextTooltip
@@ -1579,7 +1669,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   }`}
                 >
                   <Compass className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Calibration Blueprint</span>
+                  <span>{t('calibrationTab')}</span>
                 </button>
               </ContextTooltip>
             </div>
@@ -1605,7 +1695,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   }`}
                 >
                   <Eye className="w-3.5 h-3.5 text-indigo-500" />
-                  <span>Aperçu BÀT Unitaire</span>
+                  <span>{t('proofTab')}</span>
                 </button>
               </ContextTooltip>
             </div>
@@ -1888,6 +1978,23 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                     <FileText className="w-3.5 h-3.5" />
                     <span>PDF cet article</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (showExternalPreview && externalPreviewUrl) {
+                        setShowExternalPreview(false);
+                      } else if (externalPreviewUrl) {
+                        setShowExternalPreview(true);
+                      } else {
+                        setLabelaryConsentChecked(false);
+                        setShowLabelaryConsent(true);
+                      }
+                    }}
+                    disabled={externalPreviewLoading}
+                    className="px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 disabled:opacity-50 text-xs font-semibold"
+                  >
+                    {externalPreviewLoading ? 'Simulation…' : showExternalPreview ? 'Aperçu local' : 'Simulation Labelary'}
+                  </button>
                 </div>
               )}
             </div>
@@ -1903,7 +2010,23 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                 backgroundPosition: '0 0, 12px 12px',
               }}
             >
-              {currentProduct ? (
+              {externalPreviewError && (
+                <div role="alert" className="absolute top-16 z-10 max-w-xl rounded-lg border border-rose-300 bg-white p-3 text-xs text-rose-800 shadow">
+                  Échec de la simulation Labelary : {externalPreviewError}
+                </div>
+              )}
+              {showExternalPreview && externalPreviewUrl ? (
+                <div className="flex max-h-full max-w-full flex-col items-center gap-3 overflow-auto">
+                  <div className="max-w-2xl rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-xs text-amber-950">
+                    Simulation externe Labelary ({printerConfig.zpl_dpi} dpi). Le rendu réseau n’est pas une épreuve de production ; confirmez sur l’imprimante et avec un lecteur.
+                  </div>
+                  <img
+                    src={externalPreviewUrl}
+                    alt="Simulation externe de l’étiquette par Labelary"
+                    className="max-h-[70vh] max-w-full bg-white shadow-2xl ring-1 ring-slate-300"
+                  />
+                </div>
+              ) : currentProduct ? (
                 <div className="shadow-2xl ring-1 ring-slate-300">
                   <LabelRenderer
                     template={template}
@@ -2479,6 +2602,43 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
       )}
 
       {/* Excel / CSV Built-in Data Mapping Modal */}
+      {worksheetImport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+          <section className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <h2 className="text-base font-semibold text-slate-900">Choisir une feuille Excel</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Le classeur contient plusieurs feuilles. Sélectionnez celle qui contient les lignes d’étiquettes.
+            </p>
+            <select
+              aria-label="Feuille Excel à importer"
+              className="mt-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+              value={selectedWorksheet}
+              onChange={(event) => setSelectedWorksheet(event.target.value)}
+            >
+              {worksheetImport.worksheetNames.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+            {dataImportError && <p role="alert" className="mt-3 text-sm text-red-700">{dataImportError}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setWorksheetImport(null)}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleWorksheetSelection()}
+                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Continuer
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       {mappingModalOpen && (
         <DataMappingModal
           rawHeaders={rawHeaders}
@@ -2486,6 +2646,14 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
           onApplyMapping={handleApplyMapping}
           onCancel={() => setMappingModalOpen(false)}
         />
+      )}
+      {dataImportError && !worksheetImport && (
+        <div role="alert" className="fixed bottom-4 right-4 z-50 max-w-lg rounded-lg border border-red-200 bg-white px-4 py-3 text-sm text-red-800 shadow-lg">
+          <div className="flex items-start justify-between gap-4">
+            <span>{dataImportError}</span>
+            <button type="button" onClick={() => setDataImportError(null)} aria-label="Dismiss import error">×</button>
+          </div>
+        </div>
       )}
 
       {/* Mapping Dictionary Modal */}
@@ -2929,6 +3097,51 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {showLabelaryConsent && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-4" role="presentation">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="labelary-consent-title"
+            className="w-full max-w-lg rounded-xl border border-slate-300 bg-white p-5 shadow-2xl"
+          >
+            <h2 id="labelary-consent-title" className="text-base font-bold text-slate-900">Envoyer la source à Labelary ?</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              Pour cette simulation, E-Studio enverra le ZPL généré pour l’article sélectionné ainsi que les dimensions et la résolution à l’API tierce Labelary. Le contenu peut inclure des données produit ou des informations métier. E-Studio n’envoie rien avant votre confirmation.
+            </p>
+            <label className="mt-4 flex items-start gap-2 text-sm text-slate-800">
+              <input
+                type="checkbox"
+                checked={labelaryConsentChecked}
+                onChange={(event) => setLabelaryConsentChecked(event.target.checked)}
+                className="mt-1"
+              />
+              <span>J’autorise l’envoi de cette étiquette à Labelary pour une simulation, sans la considérer comme une preuve de production.</span>
+            </label>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowLabelaryConsent(false)}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={!labelaryConsentChecked || externalPreviewLoading}
+                onClick={() => {
+                  setShowLabelaryConsent(false);
+                  void requestLabelaryPreview();
+                }}
+                className="rounded-lg bg-indigo-700 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Confirmer et simuler
+              </button>
+            </div>
+          </section>
         </div>
       )}
 

@@ -78,6 +78,36 @@ describe('PreFlightEngine Unit Tests', () => {
     expect(report.status).toBe('ready');
   });
 
+  it('allows matrix barcode formats in PDF while continuing to block unsupported ZPL output', () => {
+    const gs1QrItem = {
+      id: 'gs1-qr-target-test',
+      type: 'barcode',
+      x_mm: 10,
+      y_mm: 10,
+      w_mm: 35,
+      h_mm: 20,
+      rotation: 0,
+      z_index: 1,
+      locked: false,
+      binding_key: 'PRODUCT_SCAN',
+      code: '',
+      barcode_type: 'gs1_qrcode',
+      show_text: false,
+      bar_color: '#000000',
+    } as unknown as TemplateItem;
+    const product = {
+      ...sampleProduct,
+      PRODUCT_SCAN: '(01)09506000134352(17)250101',
+    };
+    const template = { ...baseTemplate, items: [...baseTemplate.items, gs1QrItem] };
+
+    const pdfReport = PreFlightEngine.analyzeTemplate(template, product, 'pdf');
+    const zplReport = PreFlightEngine.analyzeTemplate(template, product, 'zpl');
+
+    expect(pdfReport.issues.some((issue) => issue.id === 'barcode_target_unsupported_gs1-qr-target-test')).toBe(false);
+    expect(zplReport.issues.some((issue) => issue.id === 'barcode_zpl_unsupported_gs1-qr-target-test')).toBe(true);
+  });
+
   it('fails if width_mm or height_mm <= 0', () => {
     const invalidTemplate: LabelTemplate = {
       ...baseTemplate,
@@ -177,6 +207,39 @@ describe('PreFlightEngine Unit Tests', () => {
     expect(report.passed).toBe(true);
   });
 
+  it('warns when a linear barcode module is below the conservative print-width threshold', () => {
+    const template: LabelTemplate = {
+      ...baseTemplate,
+      items: [
+        {
+          id: 'narrow-barcode',
+          type: 'barcode',
+          x_mm: 10,
+          y_mm: 10,
+          w_mm: 15,
+          h_mm: 15,
+          rotation: 0,
+          z_index: 1,
+          locked: false,
+          barcode_type: 'code128',
+          code: '123456789012345678901234567890',
+          use_static_value: true,
+          show_text: false,
+          bar_color: '#000000',
+        } as unknown as TemplateItem,
+        ...baseTemplate.items,
+      ],
+    };
+
+    const report = PreFlightEngine.analyzeTemplate(template, sampleProduct, 'pdf');
+
+    expect(report.issues).toContainEqual(expect.objectContaining({
+      id: 'barcode_min_module_narrow-barcode',
+      severity: 'warning',
+      category: 'barcode',
+    }));
+  });
+
   it('blocks a batch when a strict required price tier is missing', () => {
     const template: LabelTemplate = {
       ...baseTemplate,
@@ -256,6 +319,109 @@ describe('PreFlightEngine Unit Tests', () => {
     const report = PreFlightEngine.analyzeTemplate(zplTemplateWithRichText, sampleProduct, 'zpl');
     expect(report.passed).toBe(false);
     expect(report.issues.some((i) => i.id.startsWith('zpl_unsupported_'))).toBe(true);
+  });
+
+  it('allows ellipses on ZPL target because they have native graphic output', () => {
+    const templateWithEllipse: LabelTemplate = {
+      ...baseTemplate,
+      items: [
+        ...baseTemplate.items,
+        {
+          id: 'ellipse',
+          type: 'ellipse',
+          x_mm: 10,
+          y_mm: 10,
+          w_mm: 12,
+          h_mm: 8,
+          rotation: 0,
+          z_index: 2,
+          locked: false,
+          fill_color: '#ffffff',
+          border_color: '#000000',
+          border_width: 0.5,
+        },
+      ],
+    };
+    const report = PreFlightEngine.analyzeTemplate(templateWithEllipse, sampleProduct, 'zpl');
+    expect(report.issues.some((issue) => issue.id === 'zpl_unsupported_ellipse')).toBe(false);
+  });
+
+  it('allows quarter-turned ZPL text and rejects unsupported element rotations', () => {
+    const quarterTurnedText = {
+      ...baseTemplate,
+      items: baseTemplate.items.map((item) => ({ ...item, rotation: 90 })),
+    };
+    const textReport = PreFlightEngine.analyzeTemplate(quarterTurnedText, sampleProduct, 'zpl');
+    expect(textReport.issues.some((issue) => issue.id.startsWith('zpl_unsupported_rotation_'))).toBe(false);
+
+    const freeRotatedText = {
+      ...baseTemplate,
+      items: baseTemplate.items.map((item) => ({ ...item, rotation: 45 })),
+    };
+    const freeRotationReport = PreFlightEngine.analyzeTemplate(freeRotatedText, sampleProduct, 'zpl');
+    expect(freeRotationReport.issues.some((issue) => issue.id === 'zpl_unsupported_rotation_price1')).toBe(true);
+
+    const templateWithRotatedEllipse: LabelTemplate = {
+      ...baseTemplate,
+      items: [
+        ...baseTemplate.items,
+        {
+          id: 'rotated_ellipse',
+          type: 'ellipse',
+          x_mm: 10,
+          y_mm: 10,
+          w_mm: 12,
+          h_mm: 8,
+          rotation: 90,
+          z_index: 2,
+          locked: false,
+          fill_color: '#ffffff',
+          border_color: '#000000',
+          border_width: 0.5,
+        },
+      ],
+    };
+    const report = PreFlightEngine.analyzeTemplate(templateWithRotatedEllipse, sampleProduct, 'zpl');
+    expect(report.issues).toContainEqual(expect.objectContaining({
+      id: 'zpl_unsupported_rotation_rotated_ellipse',
+      severity: 'error',
+      category: 'compatibility',
+    }));
+  });
+
+  it('warns when ZPL output flattens line styles or colors', () => {
+    const templateWithStyledLine: LabelTemplate = {
+      ...baseTemplate,
+      items: [
+        ...baseTemplate.items,
+        {
+          id: 'styled_line',
+          type: 'line',
+          x_mm: 10,
+          y_mm: 10,
+          w_mm: 20,
+          h_mm: 1,
+          rotation: 0,
+          z_index: 2,
+          locked: false,
+          color: '#2563eb',
+          thickness: 0.5,
+          style: 'dashed',
+        },
+      ],
+    };
+    const report = PreFlightEngine.analyzeTemplate(templateWithStyledLine, sampleProduct, 'zpl');
+    expect(report.issues).toContainEqual(expect.objectContaining({
+      id: 'zpl_line_color_styled_line',
+      severity: 'warning',
+      category: 'compatibility',
+    }));
+    expect(report.issues).toContainEqual(expect.objectContaining({
+      id: 'zpl_line_style_styled_line',
+      severity: 'warning',
+      category: 'compatibility',
+    }));
+    expect(report.passed).toBe(true);
   });
 
   it('warns that ZPL output will ignore item transparency', () => {

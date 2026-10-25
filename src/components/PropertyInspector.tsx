@@ -17,6 +17,8 @@ import {
 import { DOMAIN_FIELDS } from '../domainFields';
 import { useMappingDictionary } from '../context/MappingDictionaryContext';
 import { isPriceRelatedElement, sanitizeNonPriceElement } from '../utils/pricingEngine';
+import { TypedQrPayloadWizard } from './TypedQrPayloadWizard';
+import { BARCODE_SYMBOLOGIES, BARCODE_SYMBOLOGY_LABELS } from '../utils/barcodeGenerator';
 import {
   AVAILABLE_FONTS,
   FONT_WEIGHTS,
@@ -124,6 +126,7 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
 
   const count = selectedItems.length;
   const [arePropertiesFolded, setArePropertiesFolded] = React.useState(false);
+  const [isTypedQrWizardOpen, setIsTypedQrWizardOpen] = React.useState(false);
   const foldButton = (
     <button
       type="button"
@@ -1982,12 +1985,14 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                 onChange={(e) => update({ barcode_type: e.target.value as any })}
                 className="w-full mt-0.5 px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs"
               >
-                <option value="auto">Automatique (EAN-8 / EAN-13 selon le code)</option>
-                <option value="ean8">EAN-8 (petits emballages)</option>
-                <option value="ean13">EAN-13 (commerce de détail)</option>
-                <option value="gtin14">GTIN-14 / ITF-14 (cartons)</option>
-                <option value="gs1_128">GS1-128 (logistique, données GS1)</option>
-                <option value="code128">Code 128 (Logistique & Alphanumérique)</option>
+                {BARCODE_SYMBOLOGIES.map((symbology) => (
+                  <option key={symbology} value={symbology}>
+                    {BARCODE_SYMBOLOGY_LABELS[symbology]}
+                    {['qrcode', 'datamatrix', 'pdf417', 'micropdf417', 'azteccode', 'maxicode'].includes(symbology)
+                      ? ' · aperçu'
+                      : ''}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -2039,6 +2044,13 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                 className="w-full mt-0.5 px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs font-mono"
               />
             </div>
+            <button
+              type="button"
+              onClick={() => setIsTypedQrWizardOpen(true)}
+              className="w-full rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-blue-100"
+            >
+              Build typed QR content
+            </button>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-[11px] text-slate-500">Couleur modules</label>
@@ -3398,6 +3410,15 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
           </div>
         )}
       </div>
+      {isTypedQrWizardOpen && selectedItem.type === 'qrcode' && (
+        <TypedQrPayloadWizard
+          onClose={() => setIsTypedQrWizardOpen(false)}
+          onApply={(content) => {
+            update({ content });
+            setIsTypedQrWizardOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -17,12 +17,17 @@ import {
   Cpu,
   Database,
   History,
+  FileCode2,
 } from 'lucide-react';
 import { desktopFileService } from '../services/desktopFileService';
 import { PrintJobHistoryModal } from './PrintJobHistoryModal';
 import { PreFlightEngine } from '../utils/preFlightEngine';
 import { api } from '../services/api';
 import { catalogRepository } from '../services/catalogRepository';
+import { ZplSourceWorkbench } from './ZplSourceWorkbench';
+import { importZplTemplate } from '../utils/zplTemplateImport';
+import { useLocalization } from '../context/LocalizationContext';
+import { translateDashboardAction } from '../i18n/localization';
 
 interface HomeDashboardProps {
   templates: LabelTemplate[];
@@ -31,7 +36,7 @@ interface HomeDashboardProps {
   onOpenNewWizard: () => void;
   onDuplicateTemplate: (template: LabelTemplate) => void;
   onDeleteTemplate: (templateId: string) => void;
-  onImportTemplate: (template: LabelTemplate) => void;
+  onImportTemplate: (template: LabelTemplate) => Promise<LabelTemplate>;
   onOpenRulesModal: () => void;
   onOpenAuditLogs?: () => void;
   onOpenFontManager?: () => void;
@@ -55,6 +60,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   onOpenCatalog,
   onRefreshTemplates,
 }) => {
+  const { t, locale } = useLocalization();
+  const dashboardText = (key: Parameters<typeof translateDashboardAction>[1]) =>
+    translateDashboardAction(locale, key);
   const [searchTerm, setSearchTerm] = useState('');
   const [devTestResult, setDevTestResult] = useState<string | null>(null);
   const [dbOpMessage, setDbOpMessage] = useState<string | null>(null);
@@ -163,26 +171,37 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
   const [importError, setImportError] = useState<string | null>(null);
   const [showJobHistory, setShowJobHistory] = useState(false);
+  const [showZplWorkbench, setShowZplWorkbench] = useState(false);
 
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const json = JSON.parse(event.target?.result as string);
+    try {
+      const isZpl = /\.(zpl|txt)$/i.test(file.name);
+      const contents = isZpl
+        ? new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(await file.arrayBuffer())
+        : await file.text();
+      if (isZpl) {
+        const { template, diagnostics } = importZplTemplate(contents, file.name);
+        const importedTemplate = await onImportTemplate(template);
+        onSelectTemplateToEdit(importedTemplate);
+        setImportError(diagnostics.length
+          ? `Import ZPL effectué avec ${diagnostics.length} avertissement(s) : ${diagnostics.slice(0, 3).join(' ')}`
+          : `Source ZPL importée dans le canvas : ${template.items.length} objet(s) reconnu(s).`);
+      } else {
+        const json = JSON.parse(contents);
         if (json && json.name && json.width_mm && json.height_mm) {
           setImportError(null);
-          onImportTemplate(json);
+          const importedTemplate = await onImportTemplate(json);
+          onSelectTemplateToEdit(importedTemplate);
         } else {
           setImportError('Fichier JSON de gabarit invalide (propriétés manquantes).');
         }
-      } catch (err) {
-        setImportError('Erreur lors de la lecture du fichier JSON: ' + String(err));
       }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+    } catch (error) {
+      setImportError(`Import impossible : ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   const handleExportTemplate = async (template: LabelTemplate) => {
@@ -201,32 +220,42 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           <div>
             <div className="flex items-center gap-2 text-blue-400 mb-1 font-semibold text-xs uppercase tracking-wider">
               <Tag className="w-4 h-4" />
-              <span>Conception & Production d'Étiquettes Retail</span>
+              <span>{t('productLine')}</span>
             </div>
             <h1 className="text-xl font-bold text-white tracking-tight">
               E-Studio Desktop
             </h1>
             <p className="text-xs text-slate-400 mt-1 max-w-xl">
-              Conception vectorielle en millimètres réels, résolution locale de catalogue Excel/CSV, validation pré-presse déterministe et imposition sur planches.
+              {locale === 'fr'
+                ? 'Conception vectorielle en millimètres réels, résolution locale de catalogue Excel/CSV, validation pré-presse déterministe et imposition sur planches.'
+                : 'Design labels in real millimeters, work with local Excel/CSV catalogs, run deterministic preflight checks, and impose print sheets.'}
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
+              onClick={() => setShowZplWorkbench(true)}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
+              title={dashboardText('zplWorkbench')}
+            >
+              <FileCode2 className="w-3.5 h-3.5 text-amber-300" />
+              <span>{dashboardText('zplWorkbench')}</span>
+            </button>
+            <button
               onClick={onOpenCatalog}
               className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm transition"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              <span>Catalogue & Import</span>
+              <span>{dashboardText('catalogImport')}</span>
             </button>
 
             <button
               onClick={() => setShowJobHistory(true)}
               className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
-              title="Consulter l'historique des travaux d'impression et le spooler SQLite"
+              title={dashboardText('printHistory')}
             >
               <History className="w-3.5 h-3.5 text-purple-400" />
-              <span>Spooler</span>
+              <span>{dashboardText('printHistory')}</span>
             </button>
 
             <button
@@ -250,30 +279,30 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
             >
               <Plus className="w-4 h-4" />
-              <span>Créer un Gabarit</span>
+              <span>{t('createTemplate')}</span>
             </button>
 
             <label className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition">
               <Upload className="w-3.5 h-3.5" />
-              <span>Importer JSON</span>
-              <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
+              <span>{t('importTemplates')}</span>
+              <input type="file" accept=".json,.zpl,.txt,application/json,text/plain" onChange={handleImportFile} className="hidden" />
             </label>
 
             <button
               onClick={handleBackupDatabase}
               className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
-              title="Sauvegarder l'intégralité des données en fichier JSON (base locale non chiffrée)"
+              title={dashboardText('unencryptedDatabase')}
             >
               <Download className="w-3.5 h-3.5 text-blue-400" />
-              <span>Sauvegarder la base (locale non chiffrée)</span>
+              <span>{dashboardText('databaseBackup')}</span>
             </button>
 
             <label
               className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition"
-              title="Restaurer les données depuis une sauvegarde JSON (base locale non chiffrée)"
+              title={dashboardText('unencryptedDatabase')}
             >
               <Upload className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Restaurer la base (locale non chiffrée)</span>
+              <span>{dashboardText('databaseRestore')}</span>
               <input type="file" accept=".json" onChange={handleRestoreDatabase} className="hidden" />
             </label>
 
@@ -283,7 +312,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition"
               >
                 <Database className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Restaurer SQLite</span>
+                <span>{dashboardText('nativeDatabaseRestore')}</span>
               </button>
             )}
 
@@ -297,6 +326,12 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </button>
           </div>
         </div>
+
+        {importError && (
+          <div className="mx-8 mt-3 rounded-xl border border-amber-500/40 bg-amber-950/30 px-4 py-2 text-xs text-amber-200" role="status">
+            {importError}
+          </div>
+        )}
 
         {dbOpMessage && (
           <div className="mt-4 bg-slate-900 border border-blue-500/50 text-blue-200 text-xs px-4 py-2.5 rounded-xl flex items-center justify-between shadow-md">
@@ -329,7 +364,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <h2 className="text-base font-bold text-white">
-              Gabarits d'Étiquettes Enregistrés
+              {t('savedTemplates')}
             </h2>
             <span className="bg-slate-800 text-slate-300 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-slate-700">
               {filteredTemplates.length}
@@ -341,7 +376,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Filtrer les gabarits..."
+                placeholder={t('searchTemplates')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9 pr-4 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -356,7 +391,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             <div className="w-16 h-16 rounded-2xl bg-blue-950/40 border border-blue-800/40 flex items-center justify-center text-blue-400 mb-4">
               <Tag className="w-8 h-8" />
             </div>
-            <h3 className="text-base font-bold text-white mb-1">Aucun gabarit créé pour le moment</h3>
+            <h3 className="text-base font-bold text-white mb-1">{t('noTemplates')}</h3>
             <p className="text-xs text-slate-400 max-w-md mb-6">
               L'espace de travail est prêt. Créez votre premier gabarit d'étiquette sur-mesure (prix, promo, code-barres) ou importez un modèle existant.
             </p>
@@ -366,12 +401,12 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition"
               >
                 <Plus className="w-4 h-4" />
-                <span>Créer un nouveau gabarit</span>
+                <span>{t('createTemplate')}</span>
               </button>
               <label className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer transition">
                 <Upload className="w-4 h-4" />
-                <span>Importer un gabarit JSON</span>
-                <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
+                <span>{t('importTemplates')}</span>
+                <input type="file" accept=".json,.zpl,.txt,application/json,text/plain" onChange={handleImportFile} className="hidden" />
               </label>
             </div>
           </div>
@@ -409,12 +444,12 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                       {(() => {
                         const status = PreFlightEngine.computeTemplateStatus(template);
                         if (status === 'ready') {
-                          return <span className="text-emerald-400 font-semibold text-[11px]">● Prêt</span>;
+                          return <span className="text-emerald-400 font-semibold text-[11px]">● {t('ready')}</span>;
                         }
                         if (status === 'warning') {
-                          return <span className="text-amber-400 font-semibold text-[11px]">● À vérifier</span>;
+                          return <span className="text-amber-400 font-semibold text-[11px]">● {t('review')}</span>;
                         }
-                        return <span className="text-slate-500 font-semibold text-[11px]">● Brouillon</span>;
+                        return <span className="text-slate-500 font-semibold text-[11px]">● {t('draft')}</span>;
                       })()}
                     </div>
                   </div>
@@ -433,14 +468,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                     <button
                       onClick={() => onDuplicateTemplate(template)}
                       className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
-                      title="Dupliquer le gabarit"
+                      title={t('duplicateTemplate')}
                     >
                       <Copy className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleExportTemplate(template)}
                       className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
-                      title="Exporter en JSON"
+                      title={t('exportJson')}
                     >
                       <Download className="w-3.5 h-3.5" />
                     </button>
@@ -451,7 +486,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                         }
                       }}
                       className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition"
-                      title="Supprimer"
+                      title={t('deleteTemplate')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -463,14 +498,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                       className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg flex items-center gap-1 transition"
                     >
                       <Edit3 className="w-3 h-3" />
-                      <span>Éditer</span>
+                      <span>{t('edit')}</span>
                     </button>
                     <button
                       onClick={() => onSelectTemplateToGenerate(template)}
                       className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg flex items-center gap-1 shadow-sm transition"
                     >
                       <Printer className="w-3 h-3" />
-                      <span>Planche</span>
+                      <span>{t('printSheet')}</span>
                     </button>
                   </div>
                 </div>
@@ -484,6 +519,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         isOpen={showJobHistory}
         onClose={() => setShowJobHistory(false)}
       />
+      <ZplSourceWorkbench isOpen={showZplWorkbench} onClose={() => setShowZplWorkbench(false)} />
     </div>
   );
 };

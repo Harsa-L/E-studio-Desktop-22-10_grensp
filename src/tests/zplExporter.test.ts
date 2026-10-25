@@ -86,4 +86,61 @@ describe('ZplExporter Unit Tests', () => {
     expect(zpl).not.toContain('3250390123456');
     expect(zpl).not.toContain('1234567890128');
   });
+
+  it('emits elements in visual z-index order without mutating the template', () => {
+    const visuallyOrderedTemplate: LabelTemplate = {
+      ...template,
+      items: [
+        {
+          id: 'top',
+          type: 'text',
+          x_mm: 1,
+          y_mm: 1,
+          w_mm: 20,
+          h_mm: 8,
+          rotation: 0,
+          z_index: 9,
+          locked: false,
+          text: 'TOP LAYER',
+          font_family: 'A',
+          font_size_pt: 10,
+          font_weight: 'normal',
+          font_style: 'normal',
+          text_decoration: 'none',
+          text_color: '#000000',
+          alignment: 'left',
+          valign: 'top',
+          wrap: false,
+          overflow: 'clip',
+        },
+        {
+          id: 'bottom',
+          type: 'text',
+          x_mm: 1,
+          y_mm: 1,
+          w_mm: 20,
+          h_mm: 8,
+          rotation: 0,
+          z_index: 1,
+          locked: false,
+          text: 'BOTTOM LAYER',
+          font_family: 'A',
+          font_size_pt: 10,
+          font_weight: 'normal',
+          font_style: 'normal',
+          text_decoration: 'none',
+          text_color: '#000000',
+          alignment: 'left',
+          valign: 'top',
+          wrap: false,
+          overflow: 'clip',
+        },
+      ],
+    };
+    const originalOrder = visuallyOrderedTemplate.items.map((item) => item.id);
+    const zpl = ZplExporter.generateLabelZpl(visuallyOrderedTemplate, product, { dpi: 203 });
+
+    expect(zpl.indexOf('BOTTOM LAYER')).toBeLessThan(zpl.indexOf('TOP LAYER'));
+    expect(visuallyOrderedTemplate.items.map((item) => item.id)).toEqual(originalOrder);
+  });
 });

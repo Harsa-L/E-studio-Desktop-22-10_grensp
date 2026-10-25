@@ -1,5 +1,7 @@
 pub mod commands;
 pub mod db;
+pub mod external_db;
+pub mod mcp_server;
 pub mod printing;
 
 use std::sync::Mutex;
@@ -30,6 +32,7 @@ pub fn run() {
             commands::catalog_search,
             commands::catalog_upsert,
             commands::catalog_replace_all,
+            commands::catalog_commit_import,
             commands::job_insert,
             commands::job_list,
             commands::audit_append,
@@ -42,6 +45,11 @@ pub fn run() {
             commands::database_restore,
             commands::backup_db,
             commands::restore_db,
+            external_db::external_db_list_tables,
+            external_db::external_db_fetch_table,
+            commands::mcp_draft_list,
+            commands::mcp_draft_read,
+            commands::mcp_draft_remove,
             printing::print_capabilities,
             printing::print_list_queues,
             printing::print_submit_pdf,

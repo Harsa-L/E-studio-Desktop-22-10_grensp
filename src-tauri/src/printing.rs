@@ -298,8 +298,9 @@ pub fn print_refresh_job(state: State<'_, DbState>, id: String) -> Result<Value,
 
     let queue = job["target"]
         .as_str()
-        .ok_or_else(|| "Stored CUPS queue is missing.".to_string())?;
-    validate_queue(queue)?;
+        .ok_or_else(|| "Stored CUPS queue is missing.".to_string())?
+        .to_string();
+    validate_queue(&queue)?;
     let native_id = job["native_job_id"]
         .as_str()
         .ok_or_else(|| "Stored CUPS job ID is missing.".to_string())?;
@@ -308,7 +309,7 @@ pub fn print_refresh_job(state: State<'_, DbState>, id: String) -> Result<Value,
             .arg("-W")
             .arg("not-completed")
             .arg("-o")
-            .arg(queue),
+            .arg(&queue),
     )?;
     if !pending.status.success() {
         return Err(command_error("Could not query the CUPS queue", &pending));
@@ -329,7 +330,7 @@ pub fn print_refresh_job(state: State<'_, DbState>, id: String) -> Result<Value,
             .arg("-W")
             .arg("completed")
             .arg("-o")
-            .arg(queue),
+            .arg(&queue),
     )?;
     if !completed.status.success() {
         return Err(command_error(
@@ -368,8 +369,9 @@ pub fn print_retry_job(state: State<'_, DbState>, id: String) -> Result<Value, S
             {
                 let queue = job["target"]
                     .as_str()
-                    .ok_or_else(|| "Stored CUPS queue is missing.".to_string())?;
-                validate_queue(queue)?;
+                    .ok_or_else(|| "Stored CUPS queue is missing.".to_string())?
+                    .to_string();
+                validate_queue(&queue)?;
                 validate_pdf(&bytes)?;
                 job = claim_retry_job(&state, &id)?;
                 let output = match run_command(

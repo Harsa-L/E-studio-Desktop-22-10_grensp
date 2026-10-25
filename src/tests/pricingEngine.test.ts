@@ -347,6 +347,11 @@ describe('PricingEngine Unit Tests', () => {
       PRODUCT_SCAN: '4006381333931',
     };
     expect(PricingEngine.resolveBarcodeValue(barcodeItem, prodWithScan, { sample: false })).toBe('4006381333931');
+    expect(PricingEngine.resolveBarcodeValue(
+      { code: barcodeItem.code, use_static_value: true },
+      { id: 'p6', ITEMNAME: 'Imported static barcode', PRODUCT_SCAN: '4006381333931' },
+      { sample: false }
+    )).toBe('3250390123456');
   });
 
   it('secondary_currency returns empty string if exchange rate is missing or zero on real product', () => {

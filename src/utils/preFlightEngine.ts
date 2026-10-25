@@ -1,6 +1,6 @@
 import { ImpositionConfig, LabelTemplate, TemplateItem, ProductRecord } from '../types';
 import { PricingEngine, isPriceRelatedElement } from './pricingEngine';
-import { generateBarcodeBars, resolveBarcodeSymbology } from './barcodeGenerator';
+import { generateBarcodeBars, getBarcodeQuietZone, isZplBarcodeSupported, resolveBarcodeSymbology } from './barcodeGenerator';
 import { ImpositionCalculator } from './impositionCalculator';
 import { TierEngine } from './tierEngine';
 
@@ -375,7 +375,7 @@ export class PreFlightEngine {
         }
 
         // Keep retail EAN symbologies above their minimum module-width thresholds.
-        if (barcodeType === 'ean13' && item.w_mm < 29.83) {
+        if ((barcodeType === 'ean13' || barcodeType === 'upca') && item.w_mm < 29.83) {
           issues.push({
             id: `barcode_min_width_${item.id}`,
             severity: 'error',
@@ -409,18 +409,161 @@ export class PreFlightEngine {
               itemId: item.id,
             });
           }
+          if (target !== 'zpl' && validation.bars.length > 0) {
+            const quietZone = getBarcodeQuietZone(barcodeType);
+            const moduleWidthMm = item.w_mm /
+              (validation.bars.length + quietZone.leftModules + quietZone.rightModules);
+            if (moduleWidthMm < 0.19) {
+              issues.push({
+                id: `barcode_min_module_${item.id}`,
+                severity: 'warning',
+                category: 'barcode',
+                message: `Module de code-barres étroit (${moduleWidthMm.toFixed(3)} mm < 0.19 mm). Augmentez la largeur ou vérifiez l’impression et la lecture sur le matériel cible.`,
+                itemId: item.id,
+              });
+            }
+          }
+          if (target === 'zpl' && !isZplBarcodeSupported(requestedType)) {
+            issues.push({
+              id: `barcode_zpl_unsupported_${item.id}`,
+              severity: 'error',
+              category: 'compatibility',
+              message: `La sortie ZPL ne prend pas en charge ${barcodeType} dans cette application.`,
+              itemId: item.id,
+            });
+          }
         }
       }
 
       // Target compatibility checks
       if (target === 'zpl') {
-        const zplUnsupported = ['rich_text', 'curved_text', 'image', 'pictogram', 'ellipse', 'restricted_area'];
+        const normalizedColor = (value: unknown) => String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+        const isBlack = (value: unknown) => ['#000', '#000000', 'black', 'rgb(0,0,0)'].includes(normalizedColor(value));
+        const isWhite = (value: unknown) => ['#fff', '#ffffff', 'white', 'rgb(255,255,255)'].includes(normalizedColor(value));
+        const zplUnsupported = ['rich_text', 'curved_text', 'image', 'pictogram', 'restricted_area'];
         if (zplUnsupported.includes(item.type)) {
           issues.push({
             id: `zpl_unsupported_${item.id}`,
             severity: 'error',
             category: 'compatibility',
             message: `L'élément de type "${item.type}" n'est pas représentable en impression thermique directe ZPL.`,
+            itemId: item.id,
+          });
+        }
+
+        if (item.type === 'text' && !isBlack(item.text_color)) {
+          issues.push({
+            id: `zpl_text_color_${item.id}`,
+            severity: 'warning',
+            category: 'compatibility',
+            message: 'Le texte ZPL est imprimé en noir ; sa couleur de texte ne sera pas conservée.',
+            itemId: item.id,
+          });
+        }
+        if (item.type === 'text' && item.font_family && !['0', 'a'].includes(item.font_family.trim().toLowerCase())) {
+          issues.push({
+            id: `zpl_text_font_${item.id}`,
+            severity: 'warning',
+            category: 'compatibility',
+            message: 'L’export ZPL utilise la police résidente Zebra A0 ; la police configurée dans le concepteur ne sera pas conservée.',
+            itemId: item.id,
+          });
+        }
+        if (item.type === 'text' && item.font_weight !== 'normal') {
+          issues.push({
+            id: `zpl_text_weight_${item.id}`,
+            severity: 'warning',
+            category: 'compatibility',
+            message: 'La graisse typographique configurée n’est pas reproduite par la police ZPL A0.',
+            itemId: item.id,
+          });
+        }
+        if (item.type === 'text' && item.font_style !== 'normal') {
+          issues.push({
+            id: `zpl_text_style_${item.id}`,
+            severity: 'warning',
+            category: 'compatibility',
+            message: 'Le style italique configuré n’est pas reproduit par la police ZPL A0.',
+            itemId: item.id,
+          });
+        }
+        if (item.type === 'text' && (item.text_decoration || 'none') !== 'none') {
+          issues.push({
+            id: `zpl_text_decoration_${item.id}`,
+            severity: 'warning',
+            category: 'compatibility',
+            message: 'Le soulignement ou le barré configuré n’est pas reproduit par l’export ZPL actuel.',
+            itemId: item.id,
+          });
+        }
+        if (item.type === 'text' && item.valign !== 'top') {
+          issues.push({
+            id: `zpl_text_valign_${item.id}`,
+            severity: 'warning',
+            category: 'compatibility',
+            message: 'L’alignement vertical du texte n’est pas reproduit par l’export ZPL actuel.',
+            itemId: item.id,
+          });
+        }
+        if (item.type === 'text' && item.letter_spacing_pt) {
+          issues.push({
+            id: `zpl_text_letter_spacing_${item.id}`,
+            severity: 'warning',
+            category: 'compatibility',
+            message: 'L’espacement de lettres configuré n’est pas reproduit par l’export ZPL actuel.',
+            itemId: item.id,
+          });
+        }
+        if ((item.type === 'shape' || item.type === 'ellipse') &&
+          ((!isBlack(item.fill_color) && !isWhite(item.fill_color) && normalizedColor(item.fill_color) !== 'transparent') ||
+            !isBlack(item.border_color))) {
+          issues.push({
+            id: `zpl_shape_color_${item.id}`,
+            severity: 'warning',
+            category: 'compatibility',
+            message: 'ZPL imprime en monochrome ; les couleurs de remplissage ou de contour non prises en charge seront converties ou ignorées.',
+            itemId: item.id,
+          });
+        }
+        if (item.type === 'line') {
+          if (!isBlack(item.color)) {
+            issues.push({
+              id: `zpl_line_color_${item.id}`,
+              severity: 'warning',
+              category: 'compatibility',
+              message: 'La ligne ZPL est imprimée en noir ; sa couleur ne sera pas conservée.',
+              itemId: item.id,
+            });
+          }
+          if (item.style !== 'solid') {
+            issues.push({
+              id: `zpl_line_style_${item.id}`,
+              severity: 'warning',
+              category: 'compatibility',
+              message: 'Les styles de ligne pointillés et tiretés sont imprimés en trait plein en ZPL.',
+              itemId: item.id,
+            });
+          }
+        }
+        if (item.type === 'qrcode' && (!isBlack(item.module_color) || !isWhite(item.background_color))) {
+          issues.push({
+            id: `zpl_qrcode_color_${item.id}`,
+            severity: 'warning',
+            category: 'compatibility',
+            message: 'Le QR code ZPL est monochrome noir sur blanc ; ses couleurs configurées ne seront pas conservées.',
+            itemId: item.id,
+          });
+        }
+
+        const zplPositionedTypes = ['text', 'price_block', 'tier_price', 'barcode', 'qrcode', 'shape', 'ellipse', 'line'];
+        const normalizedRotation = ((item.rotation % 360) + 360) % 360;
+        const quarterTurnText = item.type === 'text' && [90, 180, 270].includes(normalizedRotation);
+        if (zplPositionedTypes.includes(item.type) && normalizedRotation !== 0 && !quarterTurnText) {
+          issues.push({
+            id: `zpl_unsupported_rotation_${item.id}`,
+            severity: 'error',
+            category: 'compatibility',
+            message: `La rotation de l'élément "${item.id}" n'est pas prise en charge par l'export ZPL.`,
             itemId: item.id,
           });
         }
