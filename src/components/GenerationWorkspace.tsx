@@ -3,9 +3,9 @@ import { LabelTemplate, ProductRecord, ImpositionConfig, PrintJob } from '../typ
 import { Rule } from '../rulesEngine/types';
 import { DEFAULT_RULES } from '../rulesEngine/defaultRules';
 import {
-  prepareRuleProcessedLabels,
   validateProductionRules,
 } from '../rulesEngine/productionPipeline';
+import { prepareProductionBatchWithRules } from '../services/productionBatchService';
 import { catalogRepository as databaseService } from '../services/catalogRepository';
 import { LabelRenderer } from './LabelRenderer';
 import { ImpositionCalculator } from '../utils/impositionCalculator';
@@ -204,21 +204,14 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
   const prepareProductionBatch = async (target: 'pdf' | 'zpl' | 'pptx', dpi: number) => {
     const activeRules = await readCurrentProductionRules();
-    const cleanProducts = effectivePrintItems.map((product) => sanitizeRenderProduct(product));
-    const prepared = prepareRuleProcessedLabels(
+    return prepareProductionBatchWithRules(
       template,
-      cleanProducts,
+      effectivePrintItems,
       activeRules,
       target,
       dpi,
       new Date().toISOString()
     );
-    return {
-      products: prepared.map((label) => label.product),
-      templates: prepared.map((label) => label.template),
-      audits: prepared.map((label) => label.auditTrail),
-      rules: activeRules,
-    };
   };
 
   const openPrintModal = async (format: 'pdf' | 'zpl') => {
@@ -458,16 +451,16 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
       );
     }
     try {
-      const prepared = prepareRuleProcessedLabels(
+      const prepared = prepareProductionBatchWithRules(
         template,
-        effectivePrintItems.map((product) => sanitizeRenderProduct(product)),
+        effectivePrintItems,
         productionRules,
         target,
         target === 'zpl' ? zplDpi : 300
       );
-      const reports = prepared.map((label, index) => PreFlightEngine.analyzeBatch(
-        label.template,
-        [label.product],
+      const reports = prepared.templates.map((productTemplate, index) => PreFlightEngine.analyzeBatch(
+        productTemplate,
+        [prepared.products[index]],
         target,
         target === 'pdf' ? impositionConfig : undefined
       ).issues.map((issue) => ({ ...issue, id: `${issue.id}_${index}` })));

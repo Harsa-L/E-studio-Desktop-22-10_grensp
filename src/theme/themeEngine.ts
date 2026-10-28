@@ -1,3 +1,5 @@
+import { getContrastRatio } from '../utils/colorContrastEngine';
+
 export type ThemeMode = 'light' | 'dark' | 'graphite' | 'eink_high_contrast';
 export type DensityMode = 'compact' | 'standard' | 'comfortable';
 
@@ -156,6 +158,13 @@ const THEME_COLOR_KEYS: ThemeColorKey[] = [
 
 const HEX_COLOR_PATTERN = /^#[\da-f]{6}$/i;
 const MAX_THEME_JSON_LENGTH = 65536;
+const CUSTOM_THEME_TEXT_CONTRAST_MINIMUM = 4.5;
+
+export interface CustomThemeContrastWarning {
+  foreground: ThemeColorKey;
+  background: ThemeColorKey;
+  ratio: number;
+}
 
 export function validateCustomTheme(value: unknown): value is CustomTheme {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -174,6 +183,38 @@ export function validateCustomTheme(value: unknown): value is CustomTheme {
     const color = (theme.colors as Record<string, unknown>)[key];
     return typeof color === 'string' && HEX_COLOR_PATTERN.test(color);
   });
+}
+
+export function getCustomThemeContrastWarnings(theme: CustomTheme): CustomThemeContrastWarning[] {
+  if (!validateCustomTheme(theme)) throw new Error('Cannot audit an invalid theme.');
+  const pairs: Array<[ThemeColorKey, ThemeColorKey]> = [
+    ['ink', 'paper'],
+    ['ink', 'surface'],
+    ['ink', 'workbench'],
+    ['ink', 'appBg'],
+    ['muted', 'paper'],
+    ['muted', 'surface'],
+    ['muted', 'workbench'],
+    ['muted', 'appBg'],
+  ];
+  const warnings = pairs.flatMap(([foreground, background]) => {
+    const ratio = getContrastRatio(theme.colors[foreground], theme.colors[background]);
+    return ratio < CUSTOM_THEME_TEXT_CONTRAST_MINIMUM ? [{ foreground, background, ratio }] : [];
+  });
+  const shellForeground = getShellTextColor(theme.colors);
+  const shellRatio = getContrastRatio(shellForeground.color, theme.colors.shell);
+  if (shellRatio < CUSTOM_THEME_TEXT_CONTRAST_MINIMUM) {
+    warnings.push({ foreground: shellForeground.key, background: 'shell', ratio: shellRatio });
+  }
+  return warnings;
+}
+
+function getShellTextColor(colors: ThemeColors): { key: 'paper' | 'ink'; color: string } {
+  const paperRatio = getContrastRatio(colors.paper, colors.shell);
+  const inkRatio = getContrastRatio(colors.ink, colors.shell);
+  return paperRatio >= inkRatio
+    ? { key: 'paper', color: colors.paper }
+    : { key: 'ink', color: colors.ink };
 }
 
 export function parseCustomThemeJson(serialized: string): CustomTheme {
@@ -221,9 +262,11 @@ export function resolveThemeTokens(
   const preset = THEME_PRESETS[mode];
   const accent = accentOverride || preset.accent;
   const densityScale = DENSITY_PRESETS[density];
+  const shellText = getShellTextColor(preset);
 
   return {
     '--studio-chrome': preset.shell,
+    '--studio-shell-ink': shellText.color,
     '--studio-paper': preset.paper,
     '--studio-paper-alt': preset.paperAlt,
     '--studio-workbench': preset.workbench,
@@ -268,6 +311,7 @@ export function resolveCustomThemeTokens(theme: CustomTheme, density: DensityMod
   THEME_COLOR_KEYS.forEach((key) => {
     tokens[colorTokenMap[key]] = theme.colors[key];
   });
+  tokens['--studio-shell-ink'] = getShellTextColor(theme.colors).color;
   tokens['--studio-accent-soft'] = `rgba(${red}, ${green}, ${blue}, 0.12)`;
   return tokens;
 }

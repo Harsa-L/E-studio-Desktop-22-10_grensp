@@ -18,6 +18,7 @@ import { DOMAIN_FIELDS } from '../domainFields';
 import { useMappingDictionary } from '../context/MappingDictionaryContext';
 import { isPriceRelatedElement, sanitizeNonPriceElement } from '../utils/pricingEngine';
 import { TypedQrPayloadWizard } from './TypedQrPayloadWizard';
+import { Gs1PayloadWizard } from './Gs1PayloadWizard';
 import { BARCODE_SYMBOLOGIES, BARCODE_SYMBOLOGY_LABELS } from '../utils/barcodeGenerator';
 import {
   AVAILABLE_FONTS,
@@ -127,6 +128,7 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
   const count = selectedItems.length;
   const [arePropertiesFolded, setArePropertiesFolded] = React.useState(false);
   const [isTypedQrWizardOpen, setIsTypedQrWizardOpen] = React.useState(false);
+  const [isGs1WizardOpen, setIsGs1WizardOpen] = React.useState(false);
   const foldButton = (
     <button
       type="button"
@@ -2004,6 +2006,15 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                 className="w-full mt-0.5 px-2 py-1 bg-slate-50 border border-slate-300 rounded font-mono text-xs"
               />
             </div>
+            {['gs1_128', 'databarexpanded', 'gs1_qrcode', 'gs1_datamatrix'].includes(selectedItem.barcode_type || '') && (
+              <button
+                type="button"
+                onClick={() => setIsGs1WizardOpen(true)}
+                className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100"
+              >
+                Build GS1 content
+              </button>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-[11px] text-slate-500">Couleur des Barres</label>
@@ -3416,6 +3427,16 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
           onApply={(content) => {
             update({ content });
             setIsTypedQrWizardOpen(false);
+          }}
+        />
+      )}
+      {isGs1WizardOpen && selectedItem.type === 'barcode' && (
+        <Gs1PayloadWizard
+          initialPayload={selectedItem.code || ''}
+          onClose={() => setIsGs1WizardOpen(false)}
+          onApply={(payload) => {
+            update({ code: payload });
+            setIsGs1WizardOpen(false);
           }}
         />
       )}

@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   createCustomTheme,
+  getCustomThemeContrastWarnings,
   parseCustomThemeJson,
   serializeCustomTheme,
   THEME_PRESETS,
@@ -170,9 +171,10 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
   const rotationSnapAngle = uiPreferences?.rotationSnapAngle || 15;
   const currentPlacementStrategy: ElementPlacementStrategy =
     uiPreferences?.elementPlacementStrategy || 'ergonomic_smart';
+  const themeContrastWarnings = themeDraft ? getCustomThemeContrastWarnings(themeDraft) : [];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div data-studio-theme-surface="true" className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
@@ -506,6 +508,13 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
                   )}
 
                   {themeMessage && <p role="status" className="text-[10px] text-slate-600">{themeMessage}</p>}
+                  {themeContrastWarnings.length > 0 && (
+                    <p role="status" className="rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[10px] text-amber-900">
+                      Contrast warning: {themeContrastWarnings.map(({ foreground, background, ratio }) =>
+                        `${foreground}/${background} ${ratio}:1`
+                      ).join(', ')}. Text should reach 4.5:1 for WCAG AA.
+                    </p>
+                  )}
                   <div className="flex justify-end gap-2 border-t border-slate-200 pt-2">
                     <button type="button" onClick={() => downloadThemeFile(themeDraft)} disabled={!themeDraft.name.trim()} className="inline-flex items-center gap-1.5 rounded border border-slate-300 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50">
                       <Download className="h-3 w-3" /> Export JSON
