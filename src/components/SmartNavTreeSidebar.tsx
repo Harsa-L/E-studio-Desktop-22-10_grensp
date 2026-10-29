@@ -123,11 +123,11 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
   // Collapsed Minimalist Dock
   if (isCollapsed) {
     return (
-      <aside className="designer-tree w-12 bg-slate-900 border-r border-slate-800 flex flex-col items-center py-3 select-none shrink-0 z-20 transition-all duration-300">
+      <aside className="designer-tree w-12 bg-[var(--surface-panel)] border-r border-[var(--border-subtle)] flex flex-col items-center py-3 select-none shrink-0 z-20 transition-all duration-300">
         <ContextTooltip title="Déplier le panneau latéral" content="Afficher l'arborescence des calques, le catalogue de données et les règles" category="Navigation">
           <button
             onClick={onToggleCollapse}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg mb-4 transition"
+            className="p-2 text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg mb-4 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
             aria-label="Expand Navigation"
           >
             <ChevronRight className="w-4 h-4" />
@@ -141,8 +141,8 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                 setActiveTab('layers');
                 onToggleCollapse();
               }}
-              className={`w-full py-2.5 rounded-lg flex items-center justify-center transition ${
-                activeTab === 'layers' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+              className={`w-full py-2.5 rounded-lg flex items-center justify-center transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
+                activeTab === 'layers' ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)]' : 'text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)]'
               }`}
             >
               <Layers className="w-4 h-4" />
@@ -155,8 +155,8 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                 setActiveTab('data');
                 onToggleCollapse();
               }}
-              className={`w-full py-2.5 rounded-lg flex items-center justify-center transition ${
-                activeTab === 'data' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+              className={`w-full py-2.5 rounded-lg flex items-center justify-center transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
+                activeTab === 'data' ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)]' : 'text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)]'
               }`}
             >
               <Database className="w-4 h-4" />
@@ -169,8 +169,8 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                 setActiveTab('rules');
                 onToggleCollapse();
               }}
-              className={`w-full py-2.5 rounded-lg flex items-center justify-center transition ${
-                activeTab === 'rules' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+              className={`w-full py-2.5 rounded-lg flex items-center justify-center transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
+                activeTab === 'rules' ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)]' : 'text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)]'
               }`}
             >
               <Sliders className="w-4 h-4" />
@@ -183,7 +183,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
           <ContextTooltip title="Ajouter Texte" content="Insérer un nouveau champ texte" category="Ajout">
             <button
               onClick={() => onAddNewItem('text')}
-              className="w-full py-2 rounded-lg bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white flex items-center justify-center transition"
+              className="w-full py-2 rounded-lg bg-[var(--surface-raised)] hover:bg-[var(--action-primary)] text-[var(--content-secondary)] hover:text-[var(--action-primary-fg)] flex items-center justify-center transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -195,18 +195,18 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
 
   // Expanded Smart Tree & Catalog Sidebar
   return (
-    <aside className="designer-tree w-72 bg-slate-900 border-r border-slate-800 flex flex-col text-slate-200 select-none shrink-0 z-20 transition-all duration-300 shadow-none">
+    <aside className="designer-tree w-72 bg-[var(--surface-panel)] border-r border-[var(--border-subtle)] flex flex-col text-[var(--content-primary)] select-none shrink-0 z-20 transition-all duration-300 shadow-none">
       {/* Header & Tabs */}
-      <div className="p-3 border-b border-slate-800 flex flex-col gap-2.5">
+      <div className="p-3 border-b border-[var(--border-subtle)] flex flex-col gap-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-            <h2 className="font-bold text-xs uppercase tracking-wider text-slate-300">Structure</h2>
+            <span className="w-2 h-2 rounded-full bg-[var(--action-primary)] animate-pulse" />
+            <h2 className="font-bold text-xs uppercase tracking-wider text-[var(--content-primary)]">Structure</h2>
           </div>
           <ContextTooltip title="Replier le panneau" content="Gagner plus d'espace sur le canevas (Raccourci: [ )" category="Navigation">
             <button
               onClick={onToggleCollapse}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              className="p-1 rounded text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
               aria-label="Collapse Navigation"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -215,17 +215,17 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div role="tablist" aria-label="Sections du panneau latéral" className="grid grid-cols-3 gap-1 bg-slate-950 p-0.5 rounded-lg text-xs font-semibold">
+        <div role="tablist" aria-label="Sections du panneau latéral" className="grid grid-cols-3 gap-1 bg-[var(--surface-raised)] p-0.5 rounded-lg text-xs font-semibold border border-[var(--border-subtle)]">
           <button
             role="tab"
             aria-selected={activeTab === 'layers'}
             id="tab-layers"
             aria-controls="panel-layers"
             onClick={() => setActiveTab('layers')}
-            className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition ${
+            className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
               activeTab === 'layers'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs font-bold'
+                : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -238,10 +238,10 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
             id="tab-data"
             aria-controls="panel-data"
             onClick={() => setActiveTab('data')}
-            className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition ${
+            className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
               activeTab === 'data'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs font-bold'
+                : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
             }`}
           >
             <Database className="w-3.5 h-3.5" />
@@ -254,10 +254,10 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
             id="tab-rules"
             aria-controls="panel-rules"
             onClick={() => setActiveTab('rules')}
-            className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition ${
+            className={`py-1.5 rounded-md flex items-center justify-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
               activeTab === 'rules'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs font-bold'
+                : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -267,14 +267,14 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
 
         {/* Search input */}
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--content-muted)]" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={activeTab === 'layers' ? 'Filtrer les calques...' : 'Chercher un champ...'}
             aria-label={activeTab === 'layers' ? 'Filtrer les calques' : 'Chercher un champ dans le catalogue'}
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-hidden focus:border-indigo-500 transition"
+            className="w-full bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg pl-8 pr-3 py-1 text-xs text-[var(--content-primary)] placeholder-[var(--content-muted)] focus:outline-none focus:border-[var(--action-primary)] transition"
           />
         </div>
       </div>
@@ -288,7 +288,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
           className="flex-1 overflow-y-auto p-2 space-y-1"
         >
           {filteredItems.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 text-xs italic">
+            <div className="text-center py-8 text-[var(--content-muted)] text-xs italic">
               Aucun élément trouvé
             </div>
           ) : (
@@ -310,21 +310,21 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                     }
                   }}
                   onClick={(e) => onSelectItem(item.id, e.shiftKey || e.metaKey || e.ctrlKey)}
-                  className={`group px-2 py-1.5 rounded-lg text-xs flex items-center justify-between gap-1.5 cursor-pointer transition border focus:outline-none focus:ring-1 focus:ring-indigo-400 ${
+                  className={`group px-2 py-1.5 rounded-lg text-xs flex items-center justify-between gap-1.5 cursor-pointer transition border focus:outline-none focus:ring-1 focus:ring-[var(--action-focus-ring)] ${
                     isSelected
-                      ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-xs'
-                      : 'bg-slate-800/40 border-transparent hover:bg-slate-800 hover:border-slate-700 text-slate-300'
+                      ? 'bg-[var(--action-primary)]/15 border-[var(--action-primary)] text-[var(--content-primary)] shadow-xs'
+                      : 'bg-[var(--surface-raised)]/40 border-transparent hover:bg-[var(--surface-hover)] hover:border-[var(--border-subtle)] text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="p-1 rounded bg-slate-950/60 shrink-0">
+                    <span className="p-1 rounded bg-[var(--surface-base)] shrink-0">
                       {getItemIcon(item.type)}
                     </span>
                     <div className="truncate min-w-0">
-                      <div className="font-semibold text-xs truncate leading-tight">
+                      <div className="font-semibold text-xs truncate leading-tight text-[var(--content-primary)]">
                         {getItemTitle(item)}
                       </div>
-                      <div className="text-[10px] text-slate-400 truncate">
+                      <div className="text-[10px] text-[var(--content-muted)] truncate font-mono tabular-nums">
                         {item.type} • {item.x_mm}×{item.y_mm} mm
                       </div>
                     </div>
@@ -338,8 +338,8 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                         e.stopPropagation();
                         onUpdateItem(item.id, { locked: !isLocked });
                       }}
-                      className={`p-1 rounded hover:bg-slate-700 transition ${
-                        isLocked ? 'text-amber-400' : 'text-slate-400 hover:text-white'
+                      className={`p-1 rounded hover:bg-[var(--surface-hover)] transition focus-visible:ring-1 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
+                        isLocked ? 'text-amber-400' : 'text-[var(--content-muted)] hover:text-[var(--content-primary)]'
                       }`}
                       title={isLocked ? 'Déverrouiller' : 'Verrouiller'}
                       aria-label={isLocked ? `Déverrouiller le calque ${getItemTitle(item)}` : `Verrouiller le calque ${getItemTitle(item)}`}
@@ -353,7 +353,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                         e.stopPropagation();
                         onReorderItem(item.id, 'up');
                       }}
-                      className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700 transition"
+                      className="p-1 rounded text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] transition focus-visible:ring-1 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                       title="Monter le calque"
                       aria-label="Monter le calque"
                     >
@@ -366,7 +366,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                         e.stopPropagation();
                         onReorderItem(item.id, 'down');
                       }}
-                      className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700 transition"
+                      className="p-1 rounded text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] transition focus-visible:ring-1 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                       title="Descendre le calque"
                       aria-label="Descendre le calque"
                     >
@@ -379,7 +379,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                         e.stopPropagation();
                         onDuplicateItem(item.id);
                       }}
-                      className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700 transition"
+                      className="p-1 rounded text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] transition focus-visible:ring-1 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                       title="Dupliquer"
                       aria-label="Dupliquer le calque"
                     >
@@ -392,7 +392,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
                         e.stopPropagation();
                         onDeleteItem(item.id);
                       }}
-                      className="p-1 rounded text-slate-400 hover:text-red-400 hover:bg-slate-700 transition"
+                      className="p-1 rounded text-[var(--content-muted)] hover:text-rose-400 hover:bg-rose-500/20 transition focus-visible:ring-1 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                       title="Supprimer"
                       aria-label="Supprimer le calque"
                     >
@@ -409,7 +409,7 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
       {/* Tab 2: Catalogue de Données Dynamiques */}
       {activeTab === 'data' && (
         <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
-          <div className="p-2 rounded bg-indigo-950/40 border border-indigo-900/60 text-[11px] text-indigo-300 mb-2">
+          <div className="p-2 rounded bg-[var(--action-primary)]/10 border border-[var(--action-primary)]/20 text-[11px] text-[var(--action-primary)] mb-2">
             Cliquez sur un champ pour l'insérer instantanément sur le gabarit.
           </div>
 
@@ -417,23 +417,23 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
             <div
               key={field.key}
               onClick={() => onAddNewItem(field.type, field.key)}
-              className="p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 cursor-pointer transition flex items-center justify-between group"
+              className="p-2 rounded-lg bg-[var(--surface-raised)]/40 hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] cursor-pointer transition flex items-center justify-between group"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-[10px] text-indigo-400 font-bold bg-slate-950 px-1 py-0.5 rounded">
+                  <span className="font-mono text-[10px] text-[var(--action-primary)] font-bold bg-[var(--surface-base)] px-1 py-0.5 rounded border border-[var(--border-subtle)]">
                     {field.key}
                   </span>
-                  <span className="text-xs font-semibold text-slate-200 truncate">{field.label}</span>
+                  <span className="text-xs font-semibold text-[var(--content-primary)] truncate">{field.label}</span>
                 </div>
-                <div className="text-[10px] text-slate-400 mt-0.5 truncate italic">
+                <div className="text-[10px] text-[var(--content-muted)] mt-0.5 truncate italic">
                   Ex: {field.sample}
                 </div>
               </div>
 
               <button
                 type="button"
-                className="p-1 bg-indigo-600/80 group-hover:bg-indigo-600 text-white rounded opacity-0 group-hover:opacity-100 transition shrink-0"
+                className="p-1 bg-[var(--action-primary)]/80 group-hover:bg-[var(--action-primary)] text-[var(--action-primary-fg)] rounded opacity-0 group-hover:opacity-100 transition shrink-0"
                 title="Insérer ce champ"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -446,46 +446,46 @@ export const SmartNavTreeSidebar: React.FC<SmartNavTreeSidebarProps> = ({
       {/* Tab 3: Règles TCA & Conditions d'affichage */}
       {activeTab === 'rules' && (
         <div className="flex-1 overflow-y-auto p-3 space-y-3 text-xs">
-          <div className="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60">
+          <div className="p-2.5 rounded-lg bg-[var(--surface-raised)]/60 border border-[var(--border-subtle)]">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="font-bold text-slate-200 flex items-center gap-1.5">
+              <span className="font-bold text-[var(--content-primary)] flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 Condition Promo Active
               </span>
-              <span className="text-[10px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded font-mono">
+              <span className="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded font-mono">
                 Auto
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Affiche le prix barré et le badge promotionnel uniquement si <code className="text-indigo-300">DISCPRICE &gt; 0</code>.
+            <p className="text-[11px] text-[var(--content-secondary)] leading-relaxed">
+              Affiche le prix barré et le badge promotionnel uniquement si <code className="text-[var(--action-primary)]">DISCPRICE &gt; 0</code>.
             </p>
           </div>
 
-          <div className="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60">
+          <div className="p-2.5 rounded-lg bg-[var(--surface-raised)]/60 border border-[var(--border-subtle)]">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="font-bold text-slate-200 flex items-center gap-1.5">
+              <span className="font-bold text-[var(--content-primary)] flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5 text-purple-400" />
                 Origine & Traçabilité
               </span>
-              <span className="text-[10px] bg-indigo-950 text-indigo-300 px-1.5 py-0.5 rounded font-mono">
+              <span className="text-[10px] bg-[var(--action-primary)]/15 text-[var(--action-primary)] border border-[var(--action-primary)]/20 px-1.5 py-0.5 rounded font-mono">
                 TCA-2
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Positionne automatiquement le pictogramme drapeau selon la valeur du champ <code className="text-indigo-300">ORIGIN</code>.
+            <p className="text-[11px] text-[var(--content-secondary)] leading-relaxed">
+              Positionne automatiquement le pictogramme drapeau selon la valeur du champ <code className="text-[var(--action-primary)]">ORIGIN</code>.
             </p>
           </div>
         </div>
       )}
 
       {/* Footer Add Tool */}
-      <div className="p-2 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between text-xs">
-        <span className="text-slate-400 text-[11px]">
+      <div className="p-2 border-t border-[var(--border-subtle)] bg-[var(--surface-raised)]/60 flex items-center justify-between text-xs">
+        <span className="text-[var(--content-muted)] text-[11px] tabular-nums">
           {template.items.length} élément{template.items.length > 1 ? 's' : ''}
         </span>
         <button
           onClick={() => onAddNewItem('text')}
-          className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-md flex items-center gap-1 text-[11px] transition shadow-xs"
+          className="px-2 py-1 bg-[var(--action-primary)] hover:bg-[var(--action-hover)] text-[var(--action-primary-fg)] font-semibold rounded-md flex items-center gap-1 text-[11px] transition shadow-xs focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Ajouter</span>

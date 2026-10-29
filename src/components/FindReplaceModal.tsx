@@ -1,34 +1,40 @@
 import React, { useState, useMemo } from 'react';
-import { TemplateItem, TextItemProperties, CurvedTextItemProperties, TierPriceItemProperties, BarcodeItemProperties, QRCodeItemProperties, RestrictedAreaItemProperties, ShapeItemProperties, EllipseItemProperties, LineItemProperties, PictogramItemProperties } from '../types';
-import { Search, Replace, X, ArrowLeft, ArrowRight, Check, Type, Palette, FileText } from 'lucide-react';
+import {
+  TemplateItem,
+  TextItemProperties,
+  BarcodeItemProperties,
+  QRCodeItemProperties,
+  TierPriceItemProperties,
+  ShapeItemProperties,
+  LineItemProperties,
+  RestrictedAreaItemProperties,
+} from '../types';
+import { Search, Replace, ArrowRight, ArrowLeft, Check, X, FileText, Type, Palette } from 'lucide-react';
 
 interface FindReplaceModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: TemplateItem[];
-  selectedItemIds: string[];
-  onSelectItems: (ids: string[]) => void;
   onUpdateMultipleItems: (updatedItems: TemplateItem[]) => void;
+  onSelectItems: (ids: string[]) => void;
 }
+
+type SearchTargetType = 'text' | 'font' | 'color';
 
 export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
   isOpen,
   onClose,
   items,
-  selectedItemIds,
-  onSelectItems,
   onUpdateMultipleItems,
+  onSelectItems,
 }) => {
-  const [searchTarget, setSearchTarget] = useState<'text' | 'font' | 'color'>('text');
+  const [searchTarget, setSearchTarget] = useState<SearchTargetType>('text');
   const [searchQuery, setSearchQuery] = useState('');
   const [replaceQuery, setReplaceQuery] = useState('');
   const [matchCase, setMatchCase] = useState(false);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
-  // Compute matching items
   const matchingItems = useMemo(() => {
     if (!searchQuery.trim()) return [];
 
@@ -109,44 +115,57 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
   const performReplaceOnItem = (item: TemplateItem): TemplateItem => {
     const updated = { ...item } as any;
 
-    const regex = new RegExp(
-      searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-      matchCase ? 'g' : 'gi'
-    );
-
     if (searchTarget === 'text') {
-      if (typeof updated.text === 'string') {
-        updated.text = updated.text.replace(regex, replaceQuery);
+      const replaceRegex = new RegExp(
+        searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+        matchCase ? 'g' : 'gi'
+      );
+
+      if ('text' in updated && typeof updated.text === 'string') {
+        updated.text = updated.text.replace(replaceRegex, replaceQuery);
       }
-      if (typeof updated.code === 'string') {
-        updated.code = updated.code.replace(regex, replaceQuery);
+      if ('code' in updated && typeof updated.code === 'string') {
+        updated.code = updated.code.replace(replaceRegex, replaceQuery);
       }
-      if (typeof updated.content === 'string') {
-        updated.content = updated.content.replace(regex, replaceQuery);
+      if ('content' in updated && typeof updated.content === 'string') {
+        updated.content = updated.content.replace(replaceRegex, replaceQuery);
       }
-      if (typeof updated.prefix_text === 'string') {
-        updated.prefix_text = updated.prefix_text.replace(regex, replaceQuery);
+      if ('prefix_text' in updated && typeof updated.prefix_text === 'string') {
+        updated.prefix_text = updated.prefix_text.replace(replaceRegex, replaceQuery);
       }
-      if (typeof updated.unit_label === 'string') {
-        updated.unit_label = updated.unit_label.replace(regex, replaceQuery);
+      if ('unit_label' in updated && typeof updated.unit_label === 'string') {
+        updated.unit_label = updated.unit_label.replace(replaceRegex, replaceQuery);
       }
-      if (typeof updated.label === 'string') {
-        updated.label = updated.label.replace(regex, replaceQuery);
+      if ('label' in updated && typeof updated.label === 'string') {
+        updated.label = updated.label.replace(replaceRegex, replaceQuery);
       }
-    } else if (searchTarget === 'font') {
-      if (typeof updated.font_family === 'string') {
-        updated.font_family = replaceQuery || updated.font_family;
-      }
-    } else if (searchTarget === 'color') {
-      const colorProps = ['text_color', 'fill_color', 'border_color', 'color', 'bar_color', 'module_color', 'background_color', 'zone_color'];
-      colorProps.forEach((prop) => {
-        if (typeof updated[prop] === 'string') {
-          updated[prop] = updated[prop].replace(regex, replaceQuery);
-        }
-      });
     }
 
-    return updated as TemplateItem;
+    if (searchTarget === 'font') {
+      if ('font_family' in updated) {
+        updated.font_family = replaceQuery;
+      }
+    }
+
+    if (searchTarget === 'color') {
+      const isMatch = (val?: string) => {
+        if (!val) return false;
+        return matchCase
+          ? val === searchQuery
+          : val.toLowerCase() === searchQuery.toLowerCase();
+      };
+
+      if (isMatch(updated.text_color)) updated.text_color = replaceQuery;
+      if (isMatch(updated.fill_color)) updated.fill_color = replaceQuery;
+      if (isMatch(updated.border_color)) updated.border_color = replaceQuery;
+      if (isMatch(updated.color)) updated.color = replaceQuery;
+      if (isMatch(updated.bar_color)) updated.bar_color = replaceQuery;
+      if (isMatch(updated.module_color)) updated.module_color = replaceQuery;
+      if (isMatch(updated.background_color)) updated.background_color = replaceQuery;
+      if (isMatch(updated.zone_color)) updated.zone_color = replaceQuery;
+    }
+
+    return updated;
   };
 
   const handleReplaceCurrent = () => {
@@ -168,18 +187,26 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
     setTimeout(() => setFeedback(null), 2500);
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="find-replace-title"
+      className="fixed inset-0 bg-[var(--scrim,rgba(0,0,0,0.6))] backdrop-blur-xs flex items-center justify-center z-50 p-4 select-none"
+    >
+      <div className="bg-[var(--surface-panel)] rounded-xl shadow-2xl border border-[var(--border-default)] w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 text-[var(--content-primary)]">
         {/* Header */}
-        <div className="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div className="px-5 py-4 bg-[var(--surface-raised)] border-b border-[var(--border-subtle)] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-blue-400" />
-            <h2 className="text-sm font-bold">Rechercher & Remplacer Globale</h2>
+            <Search className="w-4 h-4 text-[var(--action-primary-bg)]" />
+            <h2 id="find-replace-title" className="text-sm font-bold text-[var(--content-primary)]">Rechercher & Remplacer Globale</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-white rounded-lg transition"
+            aria-label="Fermer"
+            className="p-1 text-[var(--content-muted)] hover:text-[var(--content-primary)] rounded-lg hover:bg-[var(--surface-hover)] transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -188,15 +215,15 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
         <div className="p-5 space-y-4">
           {/* Target type switcher */}
           <div>
-            <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Cible de la recherche</label>
-            <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-lg">
+            <label className="text-xs font-semibold text-[var(--content-secondary)] mb-1.5 block">Cible de la recherche</label>
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-[var(--surface-raised)] rounded-lg border border-[var(--border-subtle)]">
               <button
                 type="button"
                 onClick={() => setSearchTarget('text')}
                 className={`py-1.5 px-2 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 transition ${
                   searchTarget === 'text'
-                    ? 'bg-white text-blue-700 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[var(--action-primary-bg)] text-[var(--action-primary-fg)] shadow-2xs font-bold'
+                    : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
@@ -207,8 +234,8 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                 onClick={() => setSearchTarget('font')}
                 className={`py-1.5 px-2 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 transition ${
                   searchTarget === 'font'
-                    ? 'bg-white text-blue-700 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[var(--action-primary-bg)] text-[var(--action-primary-fg)] shadow-2xs font-bold'
+                    : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
                 }`}
               >
                 <Type className="w-3.5 h-3.5" />
@@ -219,8 +246,8 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                 onClick={() => setSearchTarget('color')}
                 className={`py-1.5 px-2 text-xs font-medium rounded-md flex items-center justify-center gap-1.5 transition ${
                   searchTarget === 'color'
-                    ? 'bg-white text-blue-700 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[var(--action-primary-bg)] text-[var(--action-primary-fg)] shadow-2xs font-bold'
+                    : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
                 }`}
               >
                 <Palette className="w-3.5 h-3.5" />
@@ -231,7 +258,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
 
           {/* Search Query */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">
+            <label className="text-xs font-semibold text-[var(--content-primary)] block mb-1">
               {searchTarget === 'text' && 'Texte à rechercher'}
               {searchTarget === 'font' && 'Nom de la police originale (ex: Arial)'}
               {searchTarget === 'color' && 'Code couleur Hex d\'origine (ex: #000000)'}
@@ -250,13 +277,13 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                   ? 'ex: Arial, Inter'
                   : 'ex: #000000'
               }
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none"
+              className="w-full px-3 py-2 bg-[var(--surface-input)] border border-[var(--border-default)] text-[var(--content-primary)] rounded-lg text-xs font-medium focus:ring-2 focus:ring-[var(--focus-ring)] outline-none"
             />
           </div>
 
           {/* Replace Query */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">
+            <label className="text-xs font-semibold text-[var(--content-primary)] block mb-1">
               Remplacer par
             </label>
             <input
@@ -270,23 +297,23 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                   ? 'ex: Plus Jakarta Sans'
                   : 'ex: #0f172a'
               }
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none"
+              className="w-full px-3 py-2 bg-[var(--surface-input)] border border-[var(--border-default)] text-[var(--content-primary)] rounded-lg text-xs font-medium focus:ring-2 focus:ring-[var(--focus-ring)] outline-none"
             />
           </div>
 
           {/* Options & Matches Count */}
           <div className="flex items-center justify-between pt-1">
-            <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-[var(--content-secondary)]">
               <input
                 type="checkbox"
                 checked={matchCase}
                 onChange={(e) => setMatchCase(e.target.checked)}
-                className="rounded text-blue-600 focus:ring-blue-500"
+                className="rounded text-[var(--action-primary-bg)] focus:ring-[var(--focus-ring)]"
               />
               <span>Respecter la casse (Match Case)</span>
             </label>
 
-            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
+            <span className="text-xs font-bold text-[var(--action-primary-bg)] bg-[var(--action-primary-bg)]/10 px-2.5 py-1 rounded-full border border-[var(--action-primary-bg)]/30 font-mono">
               {matchingItems.length > 0
                 ? `${currentMatchIndex + 1} / ${matchingItems.length} résultat(s)`
                 : '0 résultat'}
@@ -294,20 +321,20 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
           </div>
 
           {feedback && (
-            <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-lg flex items-center gap-2 animate-in fade-in">
-              <Check className="w-4 h-4 text-emerald-600" />
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold rounded-lg flex items-center gap-2 animate-in fade-in">
+              <Check className="w-4 h-4 text-emerald-400" />
               <span>{feedback}</span>
             </div>
           )}
 
           {/* Actions */}
-          <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-200">
+          <div className="pt-2 flex items-center justify-between gap-2 border-t border-[var(--border-subtle)]">
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={handlePrev}
                 disabled={matchingItems.length === 0}
-                className="p-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                className="p-2 border border-[var(--border-default)] rounded-lg text-[var(--content-primary)] bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] disabled:opacity-40 transition shadow-2xs"
                 title="Résultat précédent"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
@@ -316,7 +343,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                 type="button"
                 onClick={handleNext}
                 disabled={matchingItems.length === 0}
-                className="p-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                className="p-2 border border-[var(--border-default)] rounded-lg text-[var(--content-primary)] bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] disabled:opacity-40 transition shadow-2xs"
                 title="Résultat suivant"
               >
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -328,7 +355,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                 type="button"
                 onClick={handleReplaceCurrent}
                 disabled={matchingItems.length === 0}
-                className="px-3 py-2 border border-slate-300 hover:bg-slate-100 text-slate-800 font-semibold text-xs rounded-lg disabled:opacity-40 transition"
+                className="px-3 py-2 border border-[var(--border-default)] bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] text-[var(--content-primary)] font-semibold text-xs rounded-lg disabled:opacity-40 transition shadow-2xs"
               >
                 Remplacer
               </button>
@@ -336,7 +363,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                 type="button"
                 onClick={handleReplaceAll}
                 disabled={matchingItems.length === 0}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg flex items-center gap-1.5 shadow-xs disabled:opacity-40 transition"
+                className="px-4 py-2 bg-[var(--action-primary-bg)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-fg)] font-semibold text-xs rounded-lg flex items-center gap-1.5 shadow-xs disabled:opacity-40 transition"
               >
                 <Replace className="w-3.5 h-3.5" />
                 <span>Tout Remplacer</span>

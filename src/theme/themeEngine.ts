@@ -61,6 +61,23 @@ export interface SemanticColorTokens {
     printTrim: string;
     printSafeArea: string;
   };
+  print: {
+    bleedBoundary: string;
+    trimLine: string;
+    safeArea: string;
+    registrationMarks: string;
+    lowResWarning: string;
+    outOfBounds: string;
+    missingFont: string;
+  };
+  heatmap: {
+    densityLow: string;
+    densityHigh: string;
+    qualitySevere: string;
+    qualityTarget: string;
+    overlapNone: string;
+    overlapSevere: string;
+  };
   viz: {
     series1: string;
     series2: string;
@@ -123,6 +140,64 @@ export interface CustomTheme {
   colors: ThemeColors;
 }
 
+export interface DensityScale {
+  spacing: string;
+  panelPadding: string;
+  inputHeight: string;
+  radiusSm: string;
+  radiusMd: string;
+  radiusLg: string;
+  fontScale: number;
+}
+
+export const DENSITY_PRESETS: Record<DensityMode, DensityScale> = {
+  compact: {
+    spacing: '6px',
+    panelPadding: '8px',
+    inputHeight: '30px',
+    radiusSm: '6px',
+    radiusMd: '8px',
+    radiusLg: '10px',
+    fontScale: 0.9375,
+  },
+  standard: {
+    spacing: '10px',
+    panelPadding: '12px',
+    inputHeight: '34px',
+    radiusSm: '8px',
+    radiusMd: '10px',
+    radiusLg: '14px',
+    fontScale: 1,
+  },
+  comfortable: {
+    spacing: '14px',
+    panelPadding: '16px',
+    inputHeight: '38px',
+    radiusSm: '10px',
+    radiusMd: '12px',
+    radiusLg: '16px',
+    fontScale: 1.0625,
+  },
+};
+
+export const THEME_COLOR_KEYS: ThemeColorKey[] = [
+  'shell',
+  'paper',
+  'paperAlt',
+  'workbench',
+  'surface',
+  'surfaceStrong',
+  'line',
+  'ink',
+  'muted',
+  'accent',
+  'appBg',
+];
+
+const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
+const CUSTOM_THEME_TEXT_CONTRAST_MINIMUM = 4.5;
+const MAX_THEME_JSON_LENGTH = 65536;
+
 export const THEME_DEFINITIONS: Record<ThemeId, ThemeDefinition> = {
   // A. Graphite Studio — Primary Dark Theme (Recommended Default)
   graphite: {
@@ -178,6 +253,23 @@ export const THEME_DEFINITIONS: Record<ThemeId, ThemeDefinition> = {
         printBleed: '#D946EF',
         printTrim: '#F97316',
         printSafeArea: '#22C55E',
+      },
+      print: {
+        bleedBoundary: '#D946EF',
+        trimLine: '#F97316',
+        safeArea: '#22C55E',
+        registrationMarks: '#64748B',
+        lowResWarning: '#FBBF24',
+        outOfBounds: '#F87171',
+        missingFont: '#FB923C',
+      },
+      heatmap: {
+        densityLow: '#38BDF8',
+        densityHigh: '#F43F5E',
+        qualitySevere: '#EF4444',
+        qualityTarget: '#10B981',
+        overlapNone: 'rgba(56, 189, 248, 0.15)',
+        overlapSevere: 'rgba(239, 68, 68, 0.85)',
       },
       viz: {
         series1: '#6EA8FE',
@@ -245,6 +337,23 @@ export const THEME_DEFINITIONS: Record<ThemeId, ThemeDefinition> = {
         printTrim: '#C2410C',
         printSafeArea: '#16733A',
       },
+      print: {
+        bleedBoundary: '#A21CAF',
+        trimLine: '#C2410C',
+        safeArea: '#16733A',
+        registrationMarks: '#94A3B8',
+        lowResWarning: '#D97706',
+        outOfBounds: '#DC2626',
+        missingFont: '#EA580C',
+      },
+      heatmap: {
+        densityLow: '#0284C7',
+        densityHigh: '#E11D48',
+        qualitySevere: '#DC2626',
+        qualityTarget: '#16A34A',
+        overlapNone: 'rgba(2, 132, 199, 0.15)',
+        overlapSevere: 'rgba(220, 38, 38, 0.85)',
+      },
       viz: {
         series1: '#245FD6',
         series2: '#087F8C',
@@ -310,6 +419,23 @@ export const THEME_DEFINITIONS: Record<ThemeId, ThemeDefinition> = {
         printBleed: '#D946EF',
         printTrim: '#F97316',
         printSafeArea: '#10B981',
+      },
+      print: {
+        bleedBoundary: '#D946EF',
+        trimLine: '#F97316',
+        safeArea: '#10B981',
+        registrationMarks: '#64748B',
+        lowResWarning: '#FBBF24',
+        outOfBounds: '#F87171',
+        missingFont: '#FB923C',
+      },
+      heatmap: {
+        densityLow: '#2DD4BF',
+        densityHigh: '#F43F5E',
+        qualitySevere: '#EF4444',
+        qualityTarget: '#10B981',
+        overlapNone: 'rgba(45, 212, 191, 0.15)',
+        overlapSevere: 'rgba(239, 68, 68, 0.85)',
       },
       viz: {
         series1: '#5CC8B0',
@@ -377,6 +503,23 @@ export const THEME_DEFINITIONS: Record<ThemeId, ThemeDefinition> = {
         printTrim: '#F97316',
         printSafeArea: '#34D399',
       },
+      print: {
+        bleedBoundary: '#D946EF',
+        trimLine: '#F97316',
+        safeArea: '#34D399',
+        registrationMarks: '#64748B',
+        lowResWarning: '#FBBF24',
+        outOfBounds: '#F87171',
+        missingFont: '#FB923C',
+      },
+      heatmap: {
+        densityLow: '#38BDF8',
+        densityHigh: '#F43F5E',
+        qualitySevere: '#EF4444',
+        qualityTarget: '#10B981',
+        overlapNone: 'rgba(56, 189, 248, 0.15)',
+        overlapSevere: 'rgba(239, 68, 68, 0.85)',
+      },
       viz: {
         series1: '#65A8FF',
         series2: '#38BDF8',
@@ -388,7 +531,7 @@ export const THEME_DEFINITIONS: Record<ThemeId, ThemeDefinition> = {
     },
   },
 
-  // Light Mode mapping
+  // Light Mode mapping (alias for precision-light)
   light: {
     id: 'light',
     label: 'Precision Light',
@@ -443,6 +586,23 @@ export const THEME_DEFINITIONS: Record<ThemeId, ThemeDefinition> = {
         printTrim: '#C2410C',
         printSafeArea: '#16733A',
       },
+      print: {
+        bleedBoundary: '#A21CAF',
+        trimLine: '#C2410C',
+        safeArea: '#16733A',
+        registrationMarks: '#94A3B8',
+        lowResWarning: '#D97706',
+        outOfBounds: '#DC2626',
+        missingFont: '#EA580C',
+      },
+      heatmap: {
+        densityLow: '#0284C7',
+        densityHigh: '#E11D48',
+        qualitySevere: '#DC2626',
+        qualityTarget: '#16A34A',
+        overlapNone: 'rgba(2, 132, 199, 0.15)',
+        overlapSevere: 'rgba(220, 38, 38, 0.85)',
+      },
       viz: {
         series1: '#245FD6',
         series2: '#087F8C',
@@ -454,11 +614,11 @@ export const THEME_DEFINITIONS: Record<ThemeId, ThemeDefinition> = {
     },
   },
 
-  // Dark Engineering Mode mapping
+  // Dark Mode mapping (classic blue dark)
   dark: {
     id: 'dark',
-    label: 'Dark Engineering',
-    description: 'High contrast engineering dark mode',
+    label: 'Dark Mode',
+    description: 'High-contrast nocturnal studio workspace',
     colorScheme: 'dark',
     semantic: {
       surface: {
@@ -508,6 +668,23 @@ export const THEME_DEFINITIONS: Record<ThemeId, ThemeDefinition> = {
         printBleed: '#D946EF',
         printTrim: '#F97316',
         printSafeArea: '#22C55E',
+      },
+      print: {
+        bleedBoundary: '#D946EF',
+        trimLine: '#F97316',
+        safeArea: '#22C55E',
+        registrationMarks: '#64748B',
+        lowResWarning: '#FBBF24',
+        outOfBounds: '#F87171',
+        missingFont: '#FB923C',
+      },
+      heatmap: {
+        densityLow: '#38BDF8',
+        densityHigh: '#F43F5E',
+        qualitySevere: '#EF4444',
+        qualityTarget: '#10B981',
+        overlapNone: 'rgba(56, 189, 248, 0.15)',
+        overlapSevere: 'rgba(239, 68, 68, 0.85)',
       },
       viz: {
         series1: '#5EA5FF',
@@ -575,6 +752,23 @@ export const THEME_DEFINITIONS: Record<ThemeId, ThemeDefinition> = {
         printTrim: '#000000',
         printSafeArea: '#000000',
       },
+      print: {
+        bleedBoundary: '#000000',
+        trimLine: '#000000',
+        safeArea: '#000000',
+        registrationMarks: '#000000',
+        lowResWarning: '#000000',
+        outOfBounds: '#000000',
+        missingFont: '#000000',
+      },
+      heatmap: {
+        densityLow: '#888888',
+        densityHigh: '#000000',
+        qualitySevere: '#000000',
+        qualityTarget: '#FFFFFF',
+        overlapNone: 'rgba(0, 0, 0, 0.1)',
+        overlapSevere: 'rgba(0, 0, 0, 0.9)',
+      },
       viz: {
         series1: '#000000',
         series2: '#333333',
@@ -609,13 +803,13 @@ export const THEME_PRESETS: Record<ThemeMode, ThemePreset> = {
   'precision-light': {
     id: 'precision-light',
     label: 'Precision Light',
-    description: 'High-clarity light theme for print and inspection',
+    description: 'High-clarity light theme for print preparation & daylight',
     shell: '#f5f6f8',
     paper: '#ffffff',
-    paperAlt: '#edf0f4',
+    paperAlt: '#f8fafc',
     workbench: '#e6e9ef',
-    surface: '#ffffff',
-    surfaceStrong: '#edf0f4',
+    surface: '#edf0f4',
+    surfaceStrong: '#e2e8f0',
     line: '#d5dae2',
     ink: '#202631',
     muted: '#505a69',
@@ -627,13 +821,13 @@ export const THEME_PRESETS: Record<ThemeMode, ThemePreset> = {
   'midnight-teal': {
     id: 'midnight-teal',
     label: 'Midnight Teal',
-    description: 'Restrained premium creative atmosphere',
+    description: 'Restrained premium creative atmosphere where artwork dominates',
     shell: '#101719',
     paper: '#182225',
-    paperAlt: '#1c282c',
+    paperAlt: '#1a2528',
     workbench: '#1f292b',
-    surface: '#182225',
-    surfaceStrong: '#223034',
+    surface: '#223034',
+    surfaceStrong: '#263b3b',
     line: '#394a4e',
     ink: '#e8f0ef',
     muted: '#a2b5b3',
@@ -645,13 +839,13 @@ export const THEME_PRESETS: Record<ThemeMode, ThemePreset> = {
   'engineering-blue': {
     id: 'engineering-blue',
     label: 'Engineering Blue',
-    description: 'Technical CAD-like workspace for measurement and barcode accuracy',
+    description: 'Technical CAD-like workspace for measurement & diagnostics',
     shell: '#151a22',
     paper: '#1d2531',
-    paperAlt: '#232d3b',
+    paperAlt: '#212b38',
     workbench: '#222b38',
-    surface: '#1d2531',
-    surfaceStrong: '#293444',
+    surface: '#293444',
+    surfaceStrong: '#2b3a50',
     line: '#3d4a5d',
     ink: '#e8edf5',
     muted: '#a4b3c6',
@@ -663,13 +857,13 @@ export const THEME_PRESETS: Record<ThemeMode, ThemePreset> = {
   light: {
     id: 'light',
     label: 'Precision Light',
-    description: 'Clean workshop palette',
+    description: 'Clean workshop palette with high-contrast surfaces',
     shell: '#f5f6f8',
     paper: '#ffffff',
-    paperAlt: '#edf0f4',
+    paperAlt: '#f8fafc',
     workbench: '#e6e9ef',
-    surface: '#ffffff',
-    surfaceStrong: '#edf0f4',
+    surface: '#edf0f4',
+    surfaceStrong: '#e2e8f0',
     line: '#d5dae2',
     ink: '#202631',
     muted: '#505a69',
@@ -680,14 +874,14 @@ export const THEME_PRESETS: Record<ThemeMode, ThemePreset> = {
   },
   dark: {
     id: 'dark',
-    label: 'Dark Engineering',
-    description: 'High contrast engineering mode',
+    label: 'Dark Mode',
+    description: 'High-contrast nocturnal studio workspace',
     shell: '#0b1220',
     paper: '#111c2d',
-    paperAlt: '#0f172a',
+    paperAlt: '#162338',
     workbench: '#172236',
-    surface: '#111c2d',
-    surfaceStrong: '#1a2a3d',
+    surface: '#1a2a3d',
+    surfaceStrong: '#22364e',
     line: '#2d3c52',
     ink: '#e2e8f0',
     muted: '#9aa9b8',
@@ -700,15 +894,15 @@ export const THEME_PRESETS: Record<ThemeMode, ThemePreset> = {
     id: 'eink_high_contrast',
     label: 'E Ink',
     description: 'Maximum clarity monochrome print review',
-    shell: '#000000',
+    shell: '#ffffff',
     paper: '#ffffff',
-    paperAlt: '#ffffff',
+    paperAlt: '#f8fafc',
     workbench: '#ffffff',
     surface: '#ffffff',
-    surfaceStrong: '#ffffff',
+    surfaceStrong: '#f0f0f0',
     line: '#000000',
     ink: '#000000',
-    muted: '#000000',
+    muted: '#333333',
     accent: '#000000',
     appBg: '#ffffff',
     accentSoft: 'rgba(0, 0, 0, 0.08)',
@@ -716,85 +910,18 @@ export const THEME_PRESETS: Record<ThemeMode, ThemePreset> = {
   },
 };
 
-export const DENSITY_PRESETS: Record<
-  DensityMode,
-  {
-    radiusSm: string;
-    radiusMd: string;
-    radiusLg: string;
-    spacing: string;
-    panelPadding: string;
-    inputHeight: string;
-    fontScale: number;
-  }
-> = {
-  compact: {
-    radiusSm: '6px',
-    radiusMd: '8px',
-    radiusLg: '12px',
-    spacing: '8px',
-    panelPadding: '10px',
-    inputHeight: '30px',
-    fontScale: 0.92,
-  },
-  standard: {
-    radiusSm: '8px',
-    radiusMd: '10px',
-    radiusLg: '14px',
-    spacing: '10px',
-    panelPadding: '12px',
-    inputHeight: '34px',
-    fontScale: 1,
-  },
-  comfortable: {
-    radiusSm: '10px',
-    radiusMd: '12px',
-    radiusLg: '16px',
-    spacing: '12px',
-    panelPadding: '14px',
-    inputHeight: '38px',
-    fontScale: 1.08,
-  },
-};
-
-export function validThemeMode(value: unknown): value is ThemeMode {
-  return (
-    value === 'graphite' ||
-    value === 'precision-light' ||
-    value === 'midnight-teal' ||
-    value === 'engineering-blue' ||
-    value === 'light' ||
-    value === 'dark' ||
-    value === 'eink_high_contrast'
-  );
-}
-
-export function validDensity(value: unknown): value is DensityMode {
-  return value === 'compact' || value === 'standard' || value === 'comfortable';
-}
-
-const THEME_COLOR_KEYS: ThemeColorKey[] = [
-  'shell',
-  'paper',
-  'paperAlt',
-  'workbench',
-  'surface',
-  'surfaceStrong',
-  'line',
-  'ink',
-  'muted',
-  'accent',
-  'appBg',
-];
-
-const HEX_COLOR_PATTERN = /^#[\da-f]{6}$/i;
-const MAX_THEME_JSON_LENGTH = 65536;
-const CUSTOM_THEME_TEXT_CONTRAST_MINIMUM = 4.5;
-
 export interface CustomThemeContrastWarning {
   foreground: ThemeColorKey;
   background: ThemeColorKey;
   ratio: number;
+}
+
+export function validThemeMode(value: unknown): value is ThemeMode {
+  return typeof value === 'string' && value in THEME_PRESETS;
+}
+
+export function validDensity(value: unknown): value is DensityMode {
+  return typeof value === 'string' && value in DENSITY_PRESETS;
 }
 
 export function validateCustomTheme(value: unknown): value is CustomTheme {
@@ -948,6 +1075,17 @@ export function resolveSemanticTokens(
     '--print-bleed': s.overlay.printBleed,
     '--print-trim': s.overlay.printTrim,
     '--print-safe-area': s.overlay.printSafeArea,
+    '--print-registration': s.print.registrationMarks,
+    '--print-lowres-warning': s.print.lowResWarning,
+    '--print-out-of-bounds': s.print.outOfBounds,
+    '--print-missing-font': s.print.missingFont,
+
+    '--heatmap-density-low': s.heatmap.densityLow,
+    '--heatmap-density-high': s.heatmap.densityHigh,
+    '--heatmap-quality-severe': s.heatmap.qualitySevere,
+    '--heatmap-quality-target': s.heatmap.qualityTarget,
+    '--heatmap-overlap-none': s.heatmap.overlapNone,
+    '--heatmap-overlap-severe': s.heatmap.overlapSevere,
 
     '--viz-series-1': s.viz.series1,
     '--viz-series-2': s.viz.series2,
@@ -967,7 +1105,30 @@ export function resolveSemanticTokens(
     '--text-muted': s.content.muted,
     '--border': s.border.default,
     '--accent': actionPrimary,
+    '--accent-hover': s.action.primaryHover,
+    '--accent-foreground': s.action.primaryForeground,
     '--selection': s.state.selection,
+    '--success': s.state.success,
+    '--warning': s.state.warning,
+    '--danger': s.state.error,
+    '--info': s.state.info,
+
+    // Tailwind dynamic mappings so all existing classes adapt seamlessly
+    '--color-slate-950': s.surface.app,
+    '--color-slate-900': s.surface.panel,
+    '--color-slate-800': s.surface.raised,
+    '--color-slate-700': s.border.default,
+    '--color-slate-600': s.border.strong,
+    '--color-slate-500': s.content.disabled,
+    '--color-slate-400': s.content.muted,
+    '--color-slate-300': s.content.secondary,
+    '--color-slate-200': s.content.primary,
+    '--color-slate-100': s.content.primary,
+    '--color-slate-50': s.content.primary,
+    '--color-blue-600': actionPrimary,
+    '--color-blue-700': s.action.primaryPressed,
+    '--color-blue-500': s.action.primaryHover,
+    '--color-blue-400': s.state.focus,
   };
 }
 
@@ -1061,6 +1222,14 @@ export function resolveCustomSemanticTokens(theme: CustomTheme): Record<string, 
     '--text-secondary': theme.colors.muted,
     '--border': theme.colors.line,
     '--accent': theme.colors.accent,
+    // Dynamic Tailwind variable overrides for custom theme
+    '--color-slate-950': theme.colors.appBg,
+    '--color-slate-900': theme.colors.paper,
+    '--color-slate-800': theme.colors.surfaceStrong,
+    '--color-slate-700': theme.colors.line,
+    '--color-slate-200': theme.colors.ink,
+    '--color-slate-100': theme.colors.ink,
+    '--color-blue-600': theme.colors.accent,
   };
 }
 

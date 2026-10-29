@@ -330,19 +330,19 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
       <div
         ref={dialogRef}
         data-studio-theme-surface="true"
-        className="w-full max-w-5xl h-[86vh] max-h-[820px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden text-slate-900 animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-5xl h-[86vh] max-h-[820px] bg-[var(--surface-panel)] rounded-2xl shadow-2xl border border-[var(--border-default)] flex flex-col overflow-hidden text-[var(--content-primary)] animate-in fade-in zoom-in-95 duration-150"
       >
         {/* Top Header Bar */}
-        <header className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-4 shrink-0">
+        <header className="px-5 py-3.5 bg-[var(--surface-raised)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-[var(--action-primary-bg)] text-[var(--action-primary-fg)] flex items-center justify-center shadow-xs shrink-0 font-bold">
               <Sliders className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h2 id={titleId} className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight leading-tight truncate">
+              <h2 id={titleId} className="font-extrabold text-sm sm:text-base text-[var(--content-primary)] tracking-tight leading-tight truncate">
                 {accessibilityText('title') || 'Préférences du Studio & Accessibilité'}
               </h2>
-              <p id={descriptionId} className="text-xs text-slate-500 truncate">
+              <p id={descriptionId} className="text-xs text-[var(--content-muted)] truncate">
                 {accessibilityText('subtitle') || 'Personnalisation de l\'ergonomie, du canevas, de l\'affichage et des règles'}
               </p>
             </div>
@@ -351,7 +351,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
           {/* Quick Search in Settings */}
           <div className="flex items-center gap-2">
             <div className="relative hidden sm:block w-64">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--content-muted)]" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -359,14 +359,14 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
                 onChange={(e) => setSearchFilter(e.target.value)}
                 placeholder="Rechercher un réglage... (Ctrl+K)"
                 aria-label="Rechercher un réglage"
-                className="w-full bg-white border border-slate-300 rounded-lg pl-8.5 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+                className="w-full bg-[var(--surface-input)] border border-[var(--border-default)] rounded-lg pl-8.5 pr-7 py-1.5 text-xs text-[var(--content-primary)] placeholder-[var(--content-muted)] focus:outline-hidden focus:border-[var(--focus-ring)] focus:ring-1 focus:ring-[var(--focus-ring)] transition"
               />
               {searchFilter && (
                 <button
                   type="button"
                   onClick={() => setSearchFilter('')}
                   aria-label="Effacer la recherche"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--content-muted)] hover:text-[var(--content-primary)] p-0.5"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -377,7 +377,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
               type="button"
               onClick={onClose}
               aria-label={accessibilityText('close') || 'Fermer la fenêtre'}
-              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition"
+              className="p-2 text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg transition"
               title="Fermer (Échap)"
             >
               <X className="w-5 h-5" />
@@ -392,9 +392,9 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
             role="tablist"
             aria-orientation="vertical"
             aria-label="Catégories des préférences"
-            className="w-64 bg-slate-50/80 border-r border-slate-200 flex flex-col shrink-0 overflow-y-auto p-2.5 gap-1 select-none"
+            className="w-64 bg-[var(--surface-raised)] border-r border-[var(--border-subtle)] flex flex-col shrink-0 overflow-y-auto p-2.5 gap-1 select-none"
           >
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 py-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--content-muted)] px-2 py-1">
               Catégories ({filteredCategories.length})
             </span>
 
@@ -412,20 +412,20 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
                   onClick={() => setActiveCategory(cat.id)}
                   className={`w-full text-left p-2.5 rounded-xl transition flex items-start gap-2.5 border ${
                     isSelected
-                      ? 'bg-white border-indigo-200 text-indigo-950 shadow-xs ring-1 ring-indigo-500/10'
-                      : 'border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      ? 'bg-[var(--surface-panel)] border-[var(--action-primary-bg)] text-[var(--content-primary)] shadow-xs ring-1 ring-[var(--action-primary-bg)]/20'
+                      : 'border-transparent text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)]'
                   }`}
                 >
                   <div
                     className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                      isSelected ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-slate-200 text-slate-600'
+                      isSelected ? 'bg-[var(--action-primary-bg)] text-[var(--action-primary-fg)] shadow-2xs' : 'bg-[var(--surface-hover)] text-[var(--content-muted)]'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
-                      <span className={`text-xs font-bold truncate ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
+                      <span className={`text-xs font-bold truncate ${isSelected ? 'text-[var(--content-primary)]' : 'text-[var(--content-secondary)]'}`}>
                         {cat.label}
                       </span>
                     </div>
@@ -451,24 +451,24 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
             id={`panel-${activeCategory}`}
             role="tabpanel"
             aria-labelledby={`tab-${activeCategory}`}
-            className="flex-1 overflow-y-auto p-5 sm:p-6 bg-white space-y-6 text-xs text-slate-700"
+            className="flex-1 overflow-y-auto p-5 sm:p-6 bg-[var(--surface-panel)] space-y-6 text-xs text-[var(--content-primary)]"
           >
             {/* 1. SECTION: THÈME & APPARENCE */}
             {activeCategory === 'theme' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-indigo-600" />
+                  <h3 className="text-sm font-bold text-[var(--content-primary)] flex items-center gap-2">
+                    <Palette className="w-4 h-4 text-[var(--action-primary-bg)]" />
                     <span>{accessibilityText('themeSection') || 'Thème & Apparence du Studio'}</span>
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-[var(--content-muted)] mt-0.5">
                     Sélectionnez un style visuel adapté à votre environnement d'éclairage et ajustez la densité des outils.
                   </p>
                 </div>
 
                 {/* Preset Themes Grid */}
                 <div className="space-y-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--content-muted)]">
                     Palettes Officielles (Système 4-Palettes Professionnel)
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1757,20 +1757,20 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
         </div>
 
         {/* Bottom Footer Bar */}
-        <footer className="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+        <footer className="px-5 py-3.5 bg-[var(--surface-raised)] border-t border-[var(--border-subtle)] flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2">
             {!showResetConfirm ? (
               <button
                 type="button"
                 onClick={() => setShowResetConfirm(true)}
-                className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded-lg flex items-center gap-1.5 transition"
+                className="px-3 py-1.5 text-xs font-medium text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-1.5 transition"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Rétablir les valeurs par défaut</span>
               </button>
             ) : (
-              <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
-                <span className="text-[11px] text-amber-900 font-semibold">Réinitialiser cette section ?</span>
+              <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg">
+                <span className="text-[11px] text-amber-400 font-semibold">Réinitialiser cette section ?</span>
                 <button
                   type="button"
                   onClick={handleResetSectionDefaults}
@@ -1781,7 +1781,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
                 <button
                   type="button"
                   onClick={() => setShowResetConfirm(false)}
-                  className="px-1.5 py-0.5 text-slate-600 hover:text-slate-900 text-[10px]"
+                  className="px-1.5 py-0.5 text-[var(--content-muted)] hover:text-[var(--content-primary)] text-[10px]"
                 >
                   Annuler
                 </button>
@@ -1793,7 +1793,7 @@ export const AccessibilityPreferencesModal: React.FC<AccessibilityPreferencesMod
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-xs transition"
+              className="px-4 py-2 bg-[var(--action-primary-bg)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-fg)] font-bold rounded-xl text-xs shadow-xs transition"
             >
               Enregistrer & Fermer
             </button>

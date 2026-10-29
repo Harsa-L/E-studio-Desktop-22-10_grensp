@@ -193,20 +193,25 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col max-h-[85vh] overflow-hidden text-slate-100 font-sans">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="print-history-title"
+      className="fixed inset-0 z-50 bg-[var(--scrim,rgba(0,0,0,0.6))] backdrop-blur-xs flex items-center justify-center p-4 select-none"
+    >
+      <div className="bg-[var(--surface-panel)] border border-[var(--border-default)] rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col max-h-[85vh] overflow-hidden text-[var(--content-primary)] font-sans">
         {/* Top Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+        <div className="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--surface-raised)]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+            <div className="w-9 h-9 rounded-xl bg-[var(--action-primary-bg)]/20 border border-[var(--action-primary-bg)]/30 flex items-center justify-center text-[var(--action-primary-bg)]">
               <History className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <h2 id="print-history-title" className="text-sm font-bold text-[var(--content-primary)] flex items-center gap-2">
                 <span>Historique des Impressions & Spooler</span>
-                <span className="text-xs text-slate-500 font-normal">({filteredJobs.length} travaux)</span>
+                <span className="text-xs text-[var(--content-muted)] font-normal">({filteredJobs.length} travaux)</span>
               </h2>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-[var(--content-muted)]">
                 Traçabilité des exports PDF et flux ZPL enregistrés dans SQLite
               </p>
             </div>
@@ -216,14 +221,14 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
             <button
               onClick={loadJobs}
               disabled={loading}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+              className="p-1.5 text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg transition"
               title="Rafraîchir la liste"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+              className="p-1.5 text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg transition"
             >
               <X className="w-5 h-5" />
             </button>
@@ -231,10 +236,10 @@ export const PrintJobHistoryModal: React.FC<PrintJobHistoryModalProps> = ({
         </div>
 
         {/* Filter bar */}
-        <div className="px-6 py-3 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between gap-4 flex-wrap">
+        <div className="px-6 py-3 border-b border-[var(--border-subtle)] bg-[var(--surface-raised)] flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4 text-xs">
-            <span className="text-slate-400 font-medium">Format:</span>
-            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+            <span className="text-[var(--content-muted)] font-medium">Format:</span>
+            <div className="flex items-center gap-1 bg-[var(--surface-input)] p-1 rounded-lg border border-[var(--border-default)]">
               {(['all', 'pdf', 'zpl'] as const).map((fmt) => (
                 <button
                   key={fmt}

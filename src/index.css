@@ -3,7 +3,7 @@
 :root {
   color-scheme: dark;
 
-  /* Density & Dimensions */
+  /* Density & Dimensions (Standard Density Default) */
   --studio-radius-sm: 8px;
   --studio-radius-md: 10px;
   --studio-radius-lg: 14px;
@@ -66,6 +66,10 @@
   --canvas-page-border: #727c8d;
   --canvas-grid-minor: #687385;
   --canvas-grid-major: #8792a5;
+  --canvas-rulers: #191c23;
+  --canvas-ruler-text: #b8c3d4;
+  --canvas-guides: #36cfc9;
+  --canvas-smart-guides: #ff7a59;
 
   /* Editor Overlays */
   --selection-stroke: #78a9ff;
@@ -78,6 +82,18 @@
   --print-bleed: #d946ef;
   --print-trim: #f97316;
   --print-safe-area: #22c55e;
+  --print-registration: #64748b;
+  --print-lowres-warning: #fbbf24;
+  --print-out-of-bounds: #f87171;
+  --print-missing-font: #fb923c;
+
+  /* Heatmap Overlays */
+  --heatmap-density-low: #38bdf8;
+  --heatmap-density-high: #f43f5e;
+  --heatmap-quality-severe: #ef4444;
+  --heatmap-quality-target: #10b981;
+  --heatmap-overlap-none: rgba(56, 189, 248, 0.15);
+  --heatmap-overlap-severe: rgba(239, 68, 68, 0.85);
 
   /* Data Visualization Series */
   --viz-series-1: #6ea8fe;
@@ -97,12 +113,52 @@
   --text-secondary: var(--content-secondary);
   --text-muted: var(--content-muted);
   --border: var(--border-default);
+  --border-strong: var(--border-strong);
   --accent: var(--action-primary-bg);
+  --accent-hover: var(--action-primary-hover);
   --accent-soft: var(--studio-accent-soft);
+  --accent-foreground: var(--action-primary-fg);
   --selection: var(--selection-stroke);
+  --success: var(--status-success);
+  --warning: var(--status-warning);
+  --danger: var(--status-error);
+  --info: var(--status-info);
   --scrim: rgb(0 0 0 / 60%);
+
+  /* Spacing Scale (Tokens) */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Radius Scale (Tokens) */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 9999px;
+
+  /* Shadows (Tokens) */
+  --shadow-menu: 0 8px 24px rgb(0 0 0 / 22%), 0 2px 6px rgb(0 0 0 / 8%);
+  --shadow-dialog: 0 20px 60px rgb(0 0 0 / 32%), 0 4px 16px rgb(0 0 0 / 12%);
+
+  /* Motion & Easing (Tokens) */
+  --duration-fast: 90ms;
+  --duration-ui: 150ms;
+  --duration-panel: 200ms;
+  --ease-ui: cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* =========================================================================
+   A. GRAPHITE STUDIO — PRIMARY DARK THEME (RECOMMENDED DEFAULT)
+   ========================================================================= */
 [data-theme="graphite"] {
   color-scheme: dark;
 
@@ -137,6 +193,10 @@
   --canvas-page-border: #727c8d;
   --canvas-grid-minor: #687385;
   --canvas-grid-major: #8792a5;
+  --canvas-rulers: #191c23;
+  --canvas-ruler-text: #b8c3d4;
+  --canvas-guides: #36cfc9;
+  --canvas-smart-guides: #ff7a59;
 
   --selection-stroke: #78a9ff;
   --selection-handle-fill: #ffffff;
@@ -147,8 +207,17 @@
   --print-bleed: #d946ef;
   --print-trim: #f97316;
   --print-safe-area: #22c55e;
+  --print-registration: #64748b;
+  --print-lowres-warning: #fbbf24;
+  --print-out-of-bounds: #f87171;
+  --print-missing-font: #fb923c;
+
+  --scrim: rgb(0 0 0 / 60%);
 }
 
+/* =========================================================================
+   B. PRECISION LIGHT — PROFESSIONAL LIGHT THEME
+   ========================================================================= */
 [data-theme="precision-light"],
 [data-theme="light"] {
   color-scheme: light;
@@ -184,6 +253,10 @@
   --canvas-page-border: #8b95a4;
   --canvas-grid-minor: #cbd2dd;
   --canvas-grid-major: #aeb8c8;
+  --canvas-rulers: #ffffff;
+  --canvas-ruler-text: #505a69;
+  --canvas-guides: #087f8c;
+  --canvas-smart-guides: #c24124;
 
   --selection-stroke: #245fd6;
   --selection-handle-fill: #ffffff;
@@ -194,8 +267,17 @@
   --print-bleed: #a21caf;
   --print-trim: #c2410c;
   --print-safe-area: #16733a;
+  --print-registration: #94a3b8;
+  --print-lowres-warning: #d97706;
+  --print-out-of-bounds: #dc2626;
+  --print-missing-font: #ea580c;
+
+  --scrim: rgb(15 23 42 / 45%);
 }
 
+/* =========================================================================
+   C. MIDNIGHT TEAL — RESTRAINED PREMIUM THEME
+   ========================================================================= */
 [data-theme="midnight-teal"] {
   color-scheme: dark;
 
@@ -242,6 +324,9 @@
   --print-safe-area: #10b981;
 }
 
+/* =========================================================================
+   D. ENGINEERING BLUE — TECHNICAL WORKSPACE
+   ========================================================================= */
 [data-theme="engineering-blue"] {
   color-scheme: dark;
 
@@ -288,42 +373,9 @@
   --print-safe-area: #34d399;
 }
 
-[data-theme="dark"] {
-  color-scheme: dark;
-
-  --surface-app: #0b1220;
-  --surface-panel: #111c2d;
-  --surface-raised: #1a2a3d;
-  --surface-hover: #172236;
-  --surface-input: #0f172a;
-
-  --content-primary: #e2e8f0;
-  --content-secondary: #cbd5e1;
-  --content-muted: #9aa9b8;
-  --content-disabled: #64748b;
-
-  --border-subtle: #1e293b;
-  --border-default: #2d3c52;
-  --border-strong: #475569;
-
-  --action-primary-bg: #5ea5ff;
-  --action-primary-hover: #82b7ff;
-  --action-primary-pressed: #3b82f6;
-  --action-primary-fg: #0b1220;
-  --focus-ring: #60a5fa;
-
-  --status-success: #4ade80;
-  --status-warning: #fbbf24;
-  --status-error: #f87171;
-  --status-info: #5ea5ff;
-
-  --canvas-pasteboard: #172236;
-  --canvas-page: #ffffff;
-  --canvas-page-border: #2d3c52;
-  --canvas-grid-minor: #334155;
-  --canvas-grid-major: #475569;
-}
-
+/* =========================================================================
+   E INK HIGH CONTRAST MODE
+   ========================================================================= */
 [data-theme="eink_high_contrast"] {
   color-scheme: light;
 
@@ -360,18 +412,63 @@
   --canvas-grid-major: #999999;
 }
 
+/* =========================================================================
+   DENSITY MODES
+   ========================================================================= */
+[data-density="compact"] {
+  --studio-spacing: 6px;
+  --studio-panel-padding: 8px;
+  --studio-input-height: 30px;
+  --studio-radius-sm: 6px;
+  --studio-radius-md: 8px;
+  --studio-radius-lg: 10px;
+  --studio-font-scale: 0.9375;
+}
+
+[data-density="standard"] {
+  --studio-spacing: 10px;
+  --studio-panel-padding: 12px;
+  --studio-input-height: 34px;
+  --studio-radius-sm: 8px;
+  --studio-radius-md: 10px;
+  --studio-radius-lg: 14px;
+  --studio-font-scale: 1;
+}
+
+[data-density="comfortable"] {
+  --studio-spacing: 14px;
+  --studio-panel-padding: 16px;
+  --studio-input-height: 38px;
+  --studio-radius-sm: 10px;
+  --studio-radius-md: 12px;
+  --studio-radius-lg: 16px;
+  --studio-font-scale: 1.0625;
+}
+
+/* =========================================================================
+   BASE STYLING & ACCESSIBILITY
+   ========================================================================= */
 body {
-  background: var(--surface-app, var(--studio-app-bg));
-  color: var(--content-primary, var(--studio-ink));
+  background: var(--surface-app);
+  color: var(--content-primary);
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html {
   font-size: calc(16px * var(--studio-font-scale, 1));
 }
 
+/* WCAG 2.2 Focus Indicators */
+:focus-visible {
+  outline: 2px solid var(--focus-ring, #6ea8fe) !important;
+  outline-offset: 2px !important;
+}
+
+/* Form Controls Density Integration */
 html[data-density] :is(
   input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='hidden']):not([type='file']),
   select,
@@ -380,26 +477,119 @@ html[data-density] :is(
   min-height: var(--studio-input-height, 34px);
 }
 
-:focus-visible {
-  outline: 2px solid var(--focus-ring, #6ea8fe);
-  outline-offset: 2px;
+/* Tabular Numerals for Alignment */
+input[type='number'],
+.font-mono,
+[data-tabular-nums] {
+  font-variant-numeric: tabular-nums;
 }
 
-/* Base Component Roles */
-.panel {
-  background: var(--surface-panel);
+/* =========================================================================
+   UNIVERSAL COMPONENT ROLES
+   ========================================================================= */
+.panel,
+[data-studio-panel] {
+  background-color: var(--surface-panel);
   border: 1px solid var(--border-subtle);
   color: var(--content-primary);
 }
 
-.canvas-pasteboard {
-  background: var(--canvas-pasteboard);
+.canvas-pasteboard,
+[data-studio-pasteboard] {
+  background-color: var(--canvas-pasteboard);
 }
 
-.document-page {
-  background: var(--canvas-page);
-  color: #111111;
+.document-page,
+[data-studio-page] {
+  background-color: var(--canvas-page) !important;
+  color: #111111 !important;
   border: 1px solid var(--canvas-page-border);
+}
+
+/* Universal Modal Backdrop & Surface Alignment */
+[role="dialog"] {
+  background-color: var(--scrim, rgba(0, 0, 0, 0.65));
+}
+
+[role="dialog"] > div[data-studio-theme-surface="true"],
+[role="dialog"] > div.bg-white,
+[role="dialog"] > div.bg-slate-900 {
+  background-color: var(--surface-panel) !important;
+  color: var(--content-primary) !important;
+  border-color: var(--border-default) !important;
+}
+
+[role="dialog"] header,
+[role="dialog"] .modal-header {
+  background-color: var(--surface-raised) !important;
+  color: var(--content-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+[role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+[role="dialog"] select,
+[role="dialog"] textarea {
+  background-color: var(--surface-input) !important;
+  color: var(--content-primary) !important;
+  border-color: var(--border-default) !important;
+}
+
+/* Studio Workspaces & Shell Transitions */
+[data-studio-workspace],
+[data-studio-shell],
+.designer-stage,
+.designer-ribbon,
+.designer-tree {
+  transition: background-color var(--duration-ui) var(--ease-ui),
+              border-color var(--duration-ui) var(--ease-ui),
+              color var(--duration-ui) var(--ease-ui);
+}
+
+[data-studio-shell] {
+  background-color: var(--surface-panel);
+  border-color: var(--border-subtle) !important;
+  color: var(--content-primary);
+}
+
+[data-studio-workspace] {
+  background-color: var(--surface-app);
+  color: var(--content-primary);
+}
+
+[data-studio-workspace='designer'] .designer-stage {
+  background-color: var(--canvas-pasteboard);
+  background-image:
+    radial-gradient(color-mix(in srgb, var(--canvas-grid-minor) 50%, transparent) 1px, transparent 1px),
+    radial-gradient(color-mix(in srgb, var(--canvas-grid-minor) 50%, transparent) 1px, var(--canvas-pasteboard) 1px);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+}
+
+[data-studio-workspace='designer'] .designer-stage[data-heatmap-active='true'] {
+  background-color: #10151a;
+  background-image: radial-gradient(#3a4a50 1.25px, transparent 1.25px), radial-gradient(#3a4a50 1.25px, #10151a 1.25px);
+}
+
+[data-studio-workspace='designer'] > .designer-ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  min-height: 44px;
+  max-height: 48px;
+  background-color: var(--surface-panel);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-left: 8px;
+  padding-right: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+[data-studio-workspace='designer'] .designer-tree,
+[data-studio-workspace='designer'] :is(.designer-inspector, .designer-inspector-panel) {
+  background-color: var(--surface-panel);
+  color: var(--content-primary);
+  border-color: var(--border-subtle) !important;
 }
 
 /* Reduced Motion Respect */
@@ -412,144 +602,23 @@ html[data-density] :is(
   }
 }
 
-/* Transitions for Theme Switching */
-[data-studio-workspace],
-[data-studio-shell],
-.designer-stage,
-.designer-ribbon,
-.designer-tree {
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
-}
-
-/* Studio Workspaces */
-[data-studio-workspace='library'],
-[data-studio-workspace='catalog'],
-[data-studio-workspace='production'],
-[data-studio-workspace='projects'],
-[data-studio-workspace='designer'] {
-  color: var(--content-primary, var(--studio-ink));
-  background-color: var(--surface-app, var(--studio-app-bg));
-}
-
-[data-studio-shell] {
-  background: var(--surface-panel, var(--studio-chrome));
-  border-color: var(--border-subtle, var(--studio-line)) !important;
-  color: var(--content-primary, var(--studio-shell-ink));
-}
-
-[data-studio-workspace='designer'] {
-  background: var(--surface-app, var(--studio-workbench));
-}
-
-[data-studio-workspace='designer'] > header,
-[data-studio-workspace='designer'] > .designer-ribbon,
-[data-studio-workspace='designer'] .designer-tree,
-[data-studio-workspace='designer'] :is(.designer-inspector, .designer-inspector-panel) {
-  border-color: var(--border-subtle, var(--studio-line)) !important;
-}
-
-[data-studio-workspace='designer'] > .designer-ribbon {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 12px;
-  min-height: 44px;
-  max-height: 48px;
-  background: var(--surface-panel, var(--studio-paper-alt));
-  border-bottom: 1px solid var(--border-subtle, var(--studio-line));
-  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 5%);
-  padding-left: 8px;
-  padding-right: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-[data-studio-workspace='designer'] .designer-insert-tools {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-[data-studio-workspace='designer'] .designer-ribbon button {
-  min-height: 28px;
-  border-radius: 6px;
-  transition: all 120ms ease;
-}
-
-[data-studio-workspace='designer'] .designer-stage {
-  background-color: var(--canvas-pasteboard, var(--studio-workbench));
-  background-image:
-    radial-gradient(color-mix(in srgb, var(--canvas-grid-minor, var(--studio-line)) 60%, transparent) 1px, transparent 1px),
-    radial-gradient(color-mix(in srgb, var(--canvas-grid-minor, var(--studio-line)) 60%, transparent) 1px, var(--canvas-pasteboard, var(--studio-workbench)) 1px);
-  background-size: 24px 24px;
-  background-position: 0 0, 12px 12px;
-}
-
-[data-studio-workspace='designer'] .designer-stage[data-heatmap-active='true'] {
-  background-color: #10151a;
-  background-image: radial-gradient(#3a4a50 1.25px, transparent 1.25px), radial-gradient(#3a4a50 1.25px, #10151a 1.25px);
-}
-
-[data-studio-workspace='designer'] .designer-tree,
-[data-studio-workspace='designer'] :is(.designer-inspector, .designer-inspector-panel) {
-  background-color: var(--surface-panel, var(--studio-surface));
-  color: var(--content-primary, var(--studio-ink));
-  border-color: var(--border-subtle, var(--studio-line)) !important;
-  box-shadow: none;
-}
-
-[data-studio-workspace='designer'] :is(.designer-tree, .designer-inspector-panel) input:not([type='checkbox']):not([type='radio']):not([type='color']),
-[data-studio-workspace='designer'] :is(.designer-tree, .designer-inspector-panel) select,
-[data-studio-workspace='designer'] :is(.designer-tree, .designer-inspector-panel) textarea {
-  background-color: var(--surface-input, var(--surface-app)) !important;
-  color: var(--content-primary) !important;
-  border-color: var(--border-default) !important;
-}
-
-[data-studio-workspace='designer'] :is(.designer-tree, .designer-inspector-panel) input:focus,
-[data-studio-workspace='designer'] :is(.designer-tree, .designer-inspector-panel) select:focus,
-[data-studio-workspace='designer'] :is(.designer-tree, .designer-inspector-panel) textarea:focus {
-  border-color: var(--focus-ring) !important;
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 1px;
-}
-
-[data-studio-workspace='designer'] :is(.designer-tree, .designer-inspector-panel) .border-slate-200,
-[data-studio-workspace='designer'] :is(.designer-tree, .designer-inspector-panel) .border-slate-300 {
-  border-color: var(--border-subtle) !important;
-}
-
-input[type='number'],
-.font-mono,
-[data-tabular-nums] {
-  font-variant-numeric: tabular-nums;
-}
-
-[data-studio-workspace='designer'] > footer {
-  background-color: var(--surface-panel, var(--studio-chrome)) !important;
-  border-color: var(--border-subtle, var(--studio-line)) !important;
-  color: var(--content-primary, var(--studio-paper)) !important;
-}
-
-/* Custom Scrollbars */
+/* Clean Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: color-mix(in srgb, var(--surface-panel) 80%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 85%, transparent);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: 3px;
+  background: var(--border-strong);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--content-muted);
+  background: var(--content-secondary);
 }
 
 /* Universal Print Rules (Canvas & Document Isolation) */

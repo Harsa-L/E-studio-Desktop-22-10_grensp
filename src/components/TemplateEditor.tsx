@@ -1799,9 +1799,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   }, [isDragging, isResizing, isMarqueeSelecting, isPanning, isZoomMarquee, handleMouseMove, handleMouseUp]);
 
   return (
-    <div data-studio-workspace="designer" className="flex flex-col h-full bg-slate-100 overflow-hidden select-none">
+    <div data-studio-workspace="designer" className="flex flex-col h-full overflow-hidden select-none" style={{ backgroundColor: 'var(--surface-base)' }}>
       {/* Top Application Bar */}
-      <header className="h-12 bg-white border-b border-slate-200 px-3 flex items-center justify-between z-30 shrink-0 shadow-none">
+      <header className="h-12 border-b px-3 flex items-center justify-between z-30 shrink-0 shadow-none" style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)' }}>
         <div className="flex items-center gap-3">
           <ContextTooltip
             title="Gabarits d'Étiquettes"
@@ -1811,23 +1811,25 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           >
             <button
               onClick={onBackToHome}
-              className="px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg flex items-center gap-1 transition"
+              className="px-2.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1 transition"
+              style={{ color: 'var(--content-secondary)', backgroundColor: 'transparent' }}
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Gabarits</span>
             </button>
           </ContextTooltip>
-          <div className="h-5 w-px bg-slate-200" />
+          <div className="h-5 w-px" style={{ backgroundColor: 'var(--border-subtle)' }} />
           <div>
-            <h1 className="text-sm font-bold text-slate-900 leading-none truncate max-w-md">{template.name}</h1>
+            <h1 className="text-sm font-bold leading-none truncate max-w-md" style={{ color: 'var(--content-primary)' }}>{template.name}</h1>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[11px] text-slate-500 font-mono">
+              <span className="text-[11px] font-mono tabular-nums" style={{ color: 'var(--content-muted)' }}>
                 {template.width_mm} × {template.height_mm} mm • {template.items.length} éléments
               </span>
               <button
                 type="button"
                 onClick={openCanvasSettings}
-                className="text-[10px] font-semibold text-indigo-700 hover:bg-indigo-50 px-1.5 py-0.5 rounded"
+                className="text-[10px] font-semibold px-1.5 py-0.5 rounded transition"
+                style={{ color: 'var(--action-primary)', backgroundColor: 'transparent' }}
                 title="Modifier la taille du gabarit"
               >
                 Taille…
@@ -1837,10 +1839,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                 onClick={() => setIsPreFlightModalOpen(true)}
                 className={`text-[10px] font-semibold flex items-center gap-1 px-1.5 py-0.5 rounded transition ${
                   preFlightReport.status === 'ready'
-                    ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
+                    ? 'text-emerald-500 bg-emerald-500/10 border border-emerald-500/30'
                     : preFlightReport.status === 'warning'
-                    ? 'text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200'
-                    : 'text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200'
+                    ? 'text-amber-500 bg-amber-500/10 border border-amber-500/30'
+                    : 'text-rose-500 bg-rose-500/10 border border-rose-500/30'
                 }`}
                 title="Cliquer pour afficher l'analyse pré-vol de conformité"
               >
@@ -1853,7 +1855,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         {/* Primary Action Buttons & Undo/Redo/Search/Shortcuts/Preferences */}
         <div className="flex items-center gap-2">
           {/* History Stack Controls */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 mr-1">
+          <div className="flex items-center p-0.5 rounded-lg border mr-1" style={{ backgroundColor: 'var(--surface-input)', borderColor: 'var(--border-subtle)' }}>
             <ContextTooltip
               title="Annuler (Undo)"
               content="Annuler la dernière modification effectuée sur le gabarit"
@@ -1863,12 +1865,13 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               <button
                 onClick={handleUndo}
                 disabled={historyIndex <= 0}
-                className="p-1.5 rounded hover:bg-white text-slate-700 disabled:opacity-30 transition flex items-center gap-1"
+                className="p-1.5 rounded transition flex items-center gap-1 disabled:opacity-30"
+                style={{ color: 'var(--content-primary)' }}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
             </ContextTooltip>
-            <span className="text-[10px] font-mono text-slate-500 font-bold px-1.5 border-x border-slate-200">
+            <span className="text-[10px] font-mono font-bold px-1.5 border-x tabular-nums" style={{ color: 'var(--content-muted)', borderColor: 'var(--border-subtle)' }}>
               {historyIndex + 1}/{history.length}
             </span>
             <ContextTooltip
@@ -1880,7 +1883,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               <button
                 onClick={handleRedo}
                 disabled={historyIndex >= history.length - 1}
-                className="p-1.5 rounded hover:bg-white text-slate-700 disabled:opacity-30 transition flex items-center gap-1"
+                className="p-1.5 rounded transition flex items-center gap-1 disabled:opacity-30"
+                style={{ color: 'var(--content-primary)' }}
               >
                 <RotateCw className="w-3.5 h-3.5" />
               </button>
@@ -1896,11 +1900,12 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           >
             <button
               onClick={() => setIsFindReplaceOpen(true)}
-              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition"
+              className="px-2.5 py-1.5 border text-xs font-semibold rounded-lg flex items-center gap-1.5 transition"
+              style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-default)', color: 'var(--content-primary)' }}
             >
-              <Search className="w-3.5 h-3.5 text-blue-600" />
+              <Search className="w-3.5 h-3.5" style={{ color: 'var(--action-primary)' }} />
               <span>Rechercher...</span>
-              <kbd className="hidden sm:inline-block px-1 py-0.2 bg-white border border-slate-300 rounded font-mono text-[9px] text-slate-500">
+              <kbd className="hidden sm:inline-block px-1 py-0.2 border rounded font-mono text-[9px]" style={{ backgroundColor: 'var(--surface-input)', borderColor: 'var(--border-subtle)', color: 'var(--content-muted)' }}>
                 Ctrl+F
               </kbd>
             </button>
@@ -1915,9 +1920,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           >
             <button
               onClick={() => setIsShortcutsOpen(true)}
-              className="p-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-lg transition"
+              className="p-1.5 border rounded-lg transition"
+              style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-default)', color: 'var(--content-primary)' }}
             >
-              <Keyboard className="w-4 h-4 text-slate-600" />
+              <Keyboard className="w-4 h-4" />
             </button>
           </ContextTooltip>
 
@@ -1930,9 +1936,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           >
             <button
               onClick={openPreferencesModal}
-              className="p-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-lg transition flex items-center justify-center text-amber-700 hover:text-amber-800"
+              className="p-1.5 border rounded-lg transition flex items-center justify-center"
+              style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-default)', color: 'var(--content-primary)' }}
             >
-              <Settings className="w-4 h-4 text-slate-700" />
+              <Settings className="w-4 h-4" />
             </button>
           </ContextTooltip>
 
@@ -1944,20 +1951,21 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             >
               <button
                 onClick={onOpenRulesModal}
-                className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition"
+                className="px-2.5 py-1.5 border text-xs font-semibold rounded-lg flex items-center gap-1.5 transition"
+                style={{ backgroundColor: 'var(--surface-raised)', borderColor: 'var(--border-default)', color: 'var(--action-primary)' }}
               >
-                <Cpu className="w-3.5 h-3.5 text-indigo-600" />
+                <Cpu className="w-3.5 h-3.5" />
                 <span>Règles Omni-Canal</span>
               </button>
             </ContextTooltip>
           )}
 
-          <div className="h-4 w-px bg-slate-200 mx-1" />
+          <div className="h-4 w-px mx-1" style={{ backgroundColor: 'var(--border-subtle)' }} />
 
           {saveStatus !== 'idle' && (
             <span
               role={saveStatus === 'error' ? 'alert' : 'status'}
-              className={`text-xs font-semibold flex items-center gap-1 animate-in fade-in ${saveStatus === 'error' ? 'text-red-600' : 'text-emerald-600'}`}
+              className={`text-xs font-semibold flex items-center gap-1 animate-in fade-in ${saveStatus === 'error' ? 'text-red-500' : 'text-emerald-500'}`}
             >
               {saveStatus === 'saved' && <CheckCircle className="w-4 h-4" />}
               {saveStatus === 'saving' && 'Enregistrement…'}
@@ -1974,9 +1982,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             <button
               onClick={handleSave}
               disabled={saveStatus === 'saving'}
-              className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-2xs"
+              className="px-3 py-1.5 border text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-2xs"
+              style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-default)', color: 'var(--content-primary)' }}
             >
-              <Save className="w-3.5 h-3.5 text-slate-600" />
+              <Save className="w-3.5 h-3.5" />
               <span>{saveStatus === 'saving' ? 'Enregistrement…' : 'Enregistrer'}</span>
             </button>
           </ContextTooltip>
@@ -1987,9 +1996,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           >
             <button
               onClick={exportJson}
-              className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-2xs"
+              className="px-3 py-1.5 border text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-2xs"
+              style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-default)', color: 'var(--content-primary)' }}
             >
-              <Download className="w-3.5 h-3.5 text-slate-600" />
+              <Download className="w-3.5 h-3.5" />
               <span>Export JSON</span>
             </button>
           </ContextTooltip>
@@ -2001,15 +2011,16 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             >
               <button
                 onClick={openZplWorkbench}
-                className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-2xs"
+                className="px-3 py-1.5 border text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-2xs"
+                style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-default)', color: 'var(--content-primary)' }}
               >
-                <FileCode2 className="w-3.5 h-3.5 text-indigo-600" />
+                <FileCode2 className="w-3.5 h-3.5 text-indigo-400" />
                 <span>Source ZPL</span>
               </button>
             </ContextTooltip>
           )}
           {zplWorkbenchError && (
-            <span role="alert" className="max-w-48 text-xs text-rose-600">{zplWorkbenchError}</span>
+            <span role="alert" className="max-w-48 text-xs text-rose-500">{zplWorkbenchError}</span>
           )}
           <ContextTooltip
             title="Atelier d'Imposition & Impression"
@@ -2018,7 +2029,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           >
             <button
               onClick={() => onOpenGeneration(template)}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition"
+              className="px-3.5 py-1.5 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition"
+              style={{ backgroundColor: 'var(--action-primary)' }}
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Générer étiquettes</span>
@@ -2028,139 +2040,147 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       </header>
 
       {/* Ergonomic Tools Ribbon Toolbar */}
-      <div className="designer-ribbon bg-slate-50 border-b border-slate-200 px-2 py-1 flex items-center justify-between shrink-0 overflow-x-auto text-xs gap-2 whitespace-nowrap scrollbar-thin">
+      <div className="designer-ribbon border-b px-2 py-1 flex items-center justify-between shrink-0 overflow-x-auto text-xs gap-2 whitespace-nowrap scrollbar-thin" style={{ backgroundColor: 'var(--surface-raised)', borderColor: 'var(--border-subtle)' }}>
         {/* Insert Palette Clusters */}
         <div className="designer-insert-tools flex items-center gap-3 shrink-0">
           {/* Cluster 1: Typographie & Prix */}
           <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[10px] uppercase font-bold text-slate-400 mr-0.5 tracking-wider select-none shrink-0">
+            <span className="text-[10px] uppercase font-bold mr-0.5 tracking-wider select-none shrink-0" style={{ color: 'var(--content-muted)' }}>
               Textes & Prix
             </span>
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-2xs gap-0.5 shrink-0">
+            <div className="flex items-center border rounded-lg p-0.5 shadow-2xs gap-0.5 shrink-0" style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)' }}>
               <button
                 onClick={() => addItem('text')}
-                className="px-2 py-1 rounded hover:bg-slate-100 font-medium text-slate-700 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded font-medium flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
+                style={{ color: 'var(--content-primary)' }}
                 title="Ajouter un champ texte standard"
               >
-                <Type className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <Type className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                 <span>Texte</span>
               </button>
               <button
                 onClick={() => addItem('rich_text')}
-                className="px-2 py-1 rounded hover:bg-slate-100 font-medium text-slate-700 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded font-medium flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
+                style={{ color: 'var(--content-primary)' }}
                 title="Ajouter un texte riche avec multi-segments"
               >
-                <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                 <span>Texte Riche</span>
               </button>
               <button
                 onClick={() => addItem('price_block')}
-                className="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 font-semibold text-emerald-800 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded font-semibold text-emerald-500 bg-emerald-500/10 flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
                 title="Ajouter un bloc de prix avec centimes flottants"
               >
-                <DollarSign className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                <DollarSign className="w-3.5 h-3.5 shrink-0" />
                 <span>Prix Centimes</span>
               </button>
               <button
                 onClick={() => addItem('tier_price')}
-                className="px-2 py-1 rounded bg-sky-50 hover:bg-sky-100 font-semibold text-sky-800 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded font-semibold text-sky-500 bg-sky-500/10 flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
                 title="Ajouter un tableau de prix par volume/palier"
               >
-                <DollarSign className="w-3.5 h-3.5 text-sky-700 shrink-0" />
+                <DollarSign className="w-3.5 h-3.5 shrink-0" />
                 <span>Paliers Prix</span>
               </button>
               <button
                 onClick={() => addItem('curved_text')}
-                className="px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 font-semibold text-indigo-700 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded font-semibold text-indigo-400 bg-indigo-500/10 flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
                 title="Ajouter un texte circulaire / courbé"
               >
-                <CircleDot className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <CircleDot className="w-3.5 h-3.5 shrink-0" />
                 <span>Courbe</span>
               </button>
             </div>
           </div>
 
-          <div className="h-4 w-px bg-slate-300 shrink-0" />
+          <div className="h-4 w-px shrink-0" style={{ backgroundColor: 'var(--border-subtle)' }} />
 
           {/* Cluster 2: Formes & Codes */}
           <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[10px] uppercase font-bold text-slate-400 mr-0.5 tracking-wider select-none shrink-0">
+            <span className="text-[10px] uppercase font-bold mr-0.5 tracking-wider select-none shrink-0" style={{ color: 'var(--content-muted)' }}>
               Formes & Codes
             </span>
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-2xs gap-0.5 shrink-0">
+            <div className="flex items-center border rounded-lg p-0.5 shadow-2xs gap-0.5 shrink-0" style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)' }}>
               <button
                 onClick={() => addItem('shape')}
-                className="px-2 py-1 rounded hover:bg-slate-100 font-medium text-slate-700 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded font-medium flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
+                style={{ color: 'var(--content-primary)' }}
                 title="Ajouter un rectangle"
               >
-                <Square className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                <Square className="w-3.5 h-3.5 shrink-0" />
                 <span>Rectangle</span>
               </button>
               <button
                 onClick={() => addItem('ellipse')}
-                className="px-2 py-1 rounded hover:bg-slate-100 font-medium text-slate-700 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded font-medium flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
+                style={{ color: 'var(--content-primary)' }}
                 title="Ajouter une ellipse"
               >
-                <Circle className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                <Circle className="w-3.5 h-3.5 shrink-0" />
                 <span>Ellipse</span>
               </button>
               <button
                 onClick={() => addItem('line')}
-                className="px-2 py-1 rounded hover:bg-slate-100 font-medium text-slate-700 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded font-medium flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
+                style={{ color: 'var(--content-primary)' }}
                 title="Ajouter une ligne"
               >
-                <Minus className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                <Minus className="w-3.5 h-3.5 shrink-0" />
                 <span>Ligne</span>
               </button>
               <button
                 onClick={() => addItem('barcode')}
-                className="px-2 py-1 rounded hover:bg-slate-100 font-medium text-slate-700 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded font-medium flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
+                style={{ color: 'var(--content-primary)' }}
                 title="Ajouter un code-barres EAN/Code128"
               >
-                <Barcode className="w-3.5 h-3.5 text-slate-800 shrink-0" />
+                <Barcode className="w-3.5 h-3.5 shrink-0" />
                 <span>Code-barres</span>
               </button>
               <button
                 onClick={() => addItem('qrcode')}
-                className="px-2 py-1 rounded hover:bg-slate-100 font-medium text-slate-700 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded font-medium flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
+                style={{ color: 'var(--content-primary)' }}
                 title="Ajouter un QR Code"
               >
-                <QrCode className="w-3.5 h-3.5 text-slate-800 shrink-0" />
+                <QrCode className="w-3.5 h-3.5 shrink-0" />
                 <span>QR Code</span>
               </button>
             </div>
           </div>
 
-          <div className="h-4 w-px bg-slate-300 shrink-0" />
+          <div className="h-4 w-px shrink-0" style={{ backgroundColor: 'var(--border-subtle)' }} />
 
           {/* Cluster 3: Médias & Sécurité */}
           <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[10px] uppercase font-bold text-slate-400 mr-0.5 tracking-wider select-none shrink-0">
+            <span className="text-[10px] uppercase font-bold mr-0.5 tracking-wider select-none shrink-0" style={{ color: 'var(--content-muted)' }}>
               Médias & Normes
             </span>
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-2xs gap-0.5 shrink-0">
+            <div className="flex items-center border rounded-lg p-0.5 shadow-2xs gap-0.5 shrink-0" style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)' }}>
               <button
                 onClick={() => addItem('image')}
-                className="px-2 py-1 rounded hover:bg-slate-100 font-medium text-slate-700 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded font-medium flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
+                style={{ color: 'var(--content-primary)' }}
                 title="Ajouter une image"
               >
-                <ImageIcon className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                <ImageIcon className="w-3.5 h-3.5 shrink-0" />
                 <span>Image</span>
               </button>
               <button
                 onClick={() => addItem('pictogram')}
-                className="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 font-semibold text-emerald-700 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded text-emerald-500 bg-emerald-500/10 font-semibold flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
                 title="Ajouter un pictogramme réglementaire (Nutri-score, Bio, Eco, etc.)"
               >
-                <Stamp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <Stamp className="w-3.5 h-3.5 shrink-0" />
                 <span>Pictogramme</span>
               </button>
               <button
                 onClick={() => addItem('restricted_area')}
-                className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 font-semibold text-rose-700 flex items-center gap-1 transition whitespace-nowrap shrink-0"
+                className="px-2 py-1 rounded text-rose-500 bg-rose-500/10 font-semibold flex items-center gap-1 transition whitespace-nowrap shrink-0 hover:opacity-80"
                 title="Ajouter une zone restreinte non imprimable"
               >
-                <ShieldAlert className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
                 <span>Zone Restreinte</span>
               </button>
             </div>
@@ -2169,94 +2189,104 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
         {/* Alignment & Style Clipboard Group */}
         {selectedItems.length > 0 && (
-          <div className="designer-selection-tools flex items-center gap-1 border-l border-slate-200 pl-2">
-            <span className="text-[10px] uppercase font-bold text-slate-400 mr-1 tracking-wider select-none">
+          <div className="designer-selection-tools flex items-center gap-1 border-l pl-2" style={{ borderColor: 'var(--border-subtle)' }}>
+            <span className="text-[10px] uppercase font-bold mr-1 tracking-wider select-none" style={{ color: 'var(--content-muted)' }}>
               Agencer
             </span>
-            <div className="flex items-center bg-white border border-slate-200/80 rounded-lg p-0.5 shadow-2xs gap-0.5">
+            <div className="flex items-center border rounded-lg p-0.5 shadow-2xs gap-0.5" style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)' }}>
               {selectedItems.length > 1 && (
                 <>
                   <button
                     onClick={() => handleAlign('left')}
-                    className="p-1 hover:bg-slate-100 rounded text-slate-700"
+                    className="p-1 rounded hover:opacity-80"
+                    style={{ color: 'var(--content-primary)' }}
                     title="Aligner à gauche"
                   >
                     <AlignLeft className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleAlign('center')}
-                    className="p-1 hover:bg-slate-100 rounded text-slate-700"
+                    className="p-1 rounded hover:opacity-80"
+                    style={{ color: 'var(--content-primary)' }}
                     title="Centrer horizontalement"
                   >
                     <AlignCenter className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleAlign('right')}
-                    className="p-1 hover:bg-slate-100 rounded text-slate-700"
+                    className="p-1 rounded hover:opacity-80"
+                    style={{ color: 'var(--content-primary)' }}
                     title="Aligner à droite"
                   >
                     <AlignRight className="w-3.5 h-3.5" />
                   </button>
-                  <div className="h-3 w-px bg-slate-200 mx-0.5" />
+                  <div className="h-3 w-px mx-0.5" style={{ backgroundColor: 'var(--border-subtle)' }} />
                   <button
                     onClick={() => handleAlign('top')}
-                    className="px-1.5 py-0.5 hover:bg-slate-100 rounded text-[10px] font-bold text-slate-700"
+                    className="px-1.5 py-0.5 rounded text-[10px] font-bold hover:opacity-80"
+                    style={{ color: 'var(--content-primary)' }}
                     title="Aligner en haut"
                   >
                     Haut
                   </button>
                   <button
                     onClick={() => handleAlign('middle')}
-                    className="px-1.5 py-0.5 hover:bg-slate-100 rounded text-[10px] font-bold text-slate-700"
+                    className="px-1.5 py-0.5 rounded text-[10px] font-bold hover:opacity-80"
+                    style={{ color: 'var(--content-primary)' }}
                     title="Centrer au milieu"
                   >
                     Milieu
                   </button>
                   <button
                     onClick={() => handleAlign('bottom')}
-                    className="px-1.5 py-0.5 hover:bg-slate-100 rounded text-[10px] font-bold text-slate-700"
+                    className="px-1.5 py-0.5 rounded text-[10px] font-bold hover:opacity-80"
+                    style={{ color: 'var(--content-primary)' }}
                     title="Aligner en bas"
                   >
                     Bas
                   </button>
                   {selectedItems.length >= 3 && (
                     <>
-                      <div className="h-3 w-px bg-slate-200 mx-0.5" />
+                      <div className="h-3 w-px mx-0.5" style={{ backgroundColor: 'var(--border-subtle)' }} />
                       <button
                         onClick={() => handleDistribute('horizontal')}
-                        className="px-1.5 py-0.5 hover:bg-slate-100 rounded text-[10px] font-semibold text-slate-700"
+                        className="px-1.5 py-0.5 rounded text-[10px] font-semibold hover:opacity-80"
+                        style={{ color: 'var(--content-primary)' }}
                         title="Répartir horizontalement"
                       >
                         Répartir H
                       </button>
                       <button
                         onClick={() => handleDistribute('vertical')}
-                        className="px-1.5 py-0.5 hover:bg-slate-100 rounded text-[10px] font-semibold text-slate-700"
+                        className="px-1.5 py-0.5 rounded text-[10px] font-semibold hover:opacity-80"
+                        style={{ color: 'var(--content-primary)' }}
                         title="Répartir verticalement"
                       >
                         Répartir V
                       </button>
                     </>
                   )}
-                  <div className="h-3 w-px bg-slate-200 mx-0.5" />
+                  <div className="h-3 w-px mx-0.5" style={{ backgroundColor: 'var(--border-subtle)' }} />
                 </>
               )}
 
               <button
                 onClick={() => handleCopyStyle()}
-                className="px-2 py-0.5 rounded hover:bg-slate-100 text-slate-700 text-[11px] font-medium flex items-center gap-1 transition"
+                className="px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition hover:opacity-80"
+                style={{ color: 'var(--content-primary)' }}
                 title="Copier style (Ctrl+Alt+C)"
               >
-                <Paintbrush className="w-3 h-3 text-indigo-600" />
+                <Paintbrush className="w-3 h-3 text-indigo-400" />
                 <span>Copier Style</span>
               </button>
               <button
                 onClick={handlePasteStyle}
                 disabled={!copiedStyle}
-                className="px-2 py-0.5 rounded hover:bg-slate-100 text-slate-700 disabled:opacity-30 text-[11px] font-medium flex items-center gap-1 transition"
+                className="px-2 py-0.5 rounded disabled:opacity-30 text-[11px] font-medium flex items-center gap-1 transition hover:opacity-80"
+                style={{ color: 'var(--content-primary)' }}
                 title="Coller style (Ctrl+Alt+V)"
               >
-                <ClipboardCheck className="w-3 h-3 text-emerald-600" />
+                <ClipboardCheck className="w-3 h-3 text-emerald-400" />
                 <span>Coller Style</span>
               </button>
             </div>
@@ -2264,19 +2294,20 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         )}
 
         {/* Repères & Grille Options */}
-        <div className="designer-reference-tools flex items-center gap-1 border-l border-slate-200 pl-2">
-          <span className="text-[10px] uppercase font-bold text-slate-400 mr-1 tracking-wider select-none">
+        <div className="designer-reference-tools flex items-center gap-1 border-l pl-2" style={{ borderColor: 'var(--border-subtle)' }}>
+          <span className="text-[10px] uppercase font-bold mr-1 tracking-wider select-none" style={{ color: 'var(--content-muted)' }}>
             Repères
           </span>
-          <div className="flex items-center bg-white border border-slate-200/80 rounded-lg p-0.5 shadow-2xs gap-1">
+          <div className="flex items-center border rounded-lg p-0.5 shadow-2xs gap-1" style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)' }}>
             {/* Smart Guides */}
             <button
               onClick={() => setSmartGuidesEnabled(!smartGuidesEnabled)}
               className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition ${
                 smartGuidesEnabled
-                  ? 'bg-rose-50 text-rose-700 font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-rose-500/15 text-rose-400 font-bold'
+                  : 'hover:opacity-80'
               }`}
+              style={{ color: smartGuidesEnabled ? undefined : 'var(--content-secondary)' }}
               title="Magnétisme dynamique entre éléments"
             >
               <Magnet className="w-3 h-3" />
@@ -2284,12 +2315,11 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             </button>
 
             {/* Grid Snap & Grid Size */}
-            <div className="flex items-center gap-0.5 bg-slate-50 px-1 py-0.5 rounded border border-slate-200">
+            <div className="flex items-center gap-0.5 px-1 py-0.5 rounded border" style={{ backgroundColor: 'var(--surface-input)', borderColor: 'var(--border-subtle)' }}>
               <button
                 onClick={() => setSnapToGrid(!snapToGrid)}
-                className={`text-[11px] font-semibold flex items-center gap-1 ${
-                  snapToGrid ? 'text-blue-700 font-bold' : 'text-slate-400'
-                }`}
+                className="text-[11px] font-semibold flex items-center gap-1"
+                style={{ color: snapToGrid ? 'var(--action-primary)' : 'var(--content-muted)' }}
                 title="Activer/désactiver la grille"
               >
                 <Grid className="w-3 h-3" />
@@ -2299,7 +2329,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                 <select
                   value={gridSizeMm}
                   onChange={(e) => setGridSizeMm(parseFloat(e.target.value))}
-                  className="text-[10px] font-mono bg-white border border-slate-300 rounded px-1 py-0.2 font-bold text-slate-700 outline-none"
+                  className="text-[10px] font-mono border rounded px-1 py-0.2 font-bold outline-none tabular-nums"
+                  style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-default)', color: 'var(--content-primary)' }}
                 >
                   <option value={0.5}>0.5mm</option>
                   <option value={1}>1mm</option>
@@ -2314,8 +2345,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             <button
               onClick={() => setShowRulers(!showRulers)}
               className={`p-1 rounded text-[11px] font-medium transition ${
-                showRulers ? 'bg-amber-50 text-amber-800 font-bold' : 'text-slate-400 hover:text-slate-800'
+                showRulers ? 'bg-amber-500/20 text-amber-400 font-bold' : 'hover:opacity-80'
               }`}
+              style={{ color: showRulers ? undefined : 'var(--content-secondary)' }}
               title="Afficher / Masquer les règles millimétrées"
             >
               <Ruler className="w-3.5 h-3.5" />
@@ -2326,12 +2358,13 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               onClick={() => setShowCalibrationModal(true)}
               className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition ${
                 template.calibration_image?.visible
-                  ? 'bg-amber-100 text-amber-800 font-bold'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-amber-500/20 text-amber-400 font-bold'
+                  : 'hover:opacity-80'
               }`}
+              style={{ color: template.calibration_image?.visible ? undefined : 'var(--content-secondary)' }}
               title="Calibrer une image de fond réelle"
             >
-              <Crosshair className="w-3 h-3 text-amber-600" />
+              <Crosshair className="w-3 h-3 text-amber-500" />
               <span>Calibrer</span>
             </button>
 
@@ -2341,8 +2374,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               className={`px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 transition ${
                 isHeatmapActive
                   ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  : 'hover:opacity-80'
               }`}
+              style={{ color: isHeatmapActive ? undefined : 'var(--content-secondary)' }}
               title="Activer/Désactiver le calque Heatmap de diagnostic visuel (Touche M)"
             >
               <span className={`w-2 h-2 rounded-full ${isHeatmapActive ? 'bg-slate-950' : 'bg-amber-500'}`} />
@@ -2358,24 +2392,26 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             onClick={() => setIsInspectorDrawerOpen(!isInspectorDrawerOpen)}
             className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition border ${
               isInspectorDrawerOpen && selectedItems.length > 0
-                ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                ? 'border-indigo-400 text-indigo-400'
+                : 'hover:opacity-80'
             }`}
+            style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)', color: 'var(--content-primary)' }}
             title="Afficher/Masquer le tiroir d'inspection contextuel"
           >
             <Sliders className="w-3.5 h-3.5" />
             <span className="hidden md:inline">Inspecteur</span>
           </button>
           {/* Data Binding Simulator */}
-          <div className="flex items-center gap-1 bg-white border border-slate-200/80 rounded-lg px-2 py-1 shadow-2xs">
-            <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-              <Eye className="w-3 h-3 text-slate-400" />
+          <div className="flex items-center gap-1 border rounded-lg px-2 py-1 shadow-2xs" style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)' }}>
+            <span className="text-[11px] font-medium flex items-center gap-1" style={{ color: 'var(--content-secondary)' }}>
+              <Eye className="w-3 h-3 text-blue-400" />
               Données:
             </span>
             {previewDataIndex === null ? (
               <button
                 onClick={() => setPreviewDataIndex(0)}
-                className="text-xs font-semibold text-blue-600 hover:underline"
+                className="text-xs font-semibold hover:underline"
+                style={{ color: 'var(--action-primary)' }}
               >
                 Activer
               </button>
@@ -2387,11 +2423,12 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       prev !== null ? (prev > 0 ? prev - 1 : availablePreviewProducts.length - 1) : 0
                     )
                   }
-                  className="p-0.5 hover:bg-slate-100 rounded text-slate-600"
+                  className="p-0.5 rounded hover:opacity-80"
+                  style={{ color: 'var(--content-primary)' }}
                 >
                   <ChevronLeft className="w-3 h-3" />
                 </button>
-                <span className="font-mono text-[10px] text-slate-700 font-bold px-0.5">
+                <span className="font-mono text-[10px] font-bold px-0.5 tabular-nums" style={{ color: 'var(--content-primary)' }}>
                   #{previewDataIndex + 1}/{availablePreviewProducts.length}
                 </span>
                 <button
@@ -2400,13 +2437,15 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       prev !== null ? (prev < availablePreviewProducts.length - 1 ? prev + 1 : 0) : 0
                     )
                   }
-                  className="p-0.5 hover:bg-slate-100 rounded text-slate-600"
+                  className="p-0.5 rounded hover:opacity-80"
+                  style={{ color: 'var(--content-primary)' }}
                 >
                   <ChevronRight className="w-3 h-3" />
                 </button>
                 <button
                   onClick={() => setPreviewDataIndex(null)}
-                  className="text-[10px] text-slate-400 hover:text-slate-600 ml-0.5"
+                  className="text-[10px] hover:opacity-80 ml-0.5"
+                  style={{ color: 'var(--content-muted)' }}
                 >
                   (Off)
                 </button>
@@ -2415,27 +2454,30 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           </div>
 
           {/* Zoom Widget */}
-          <div className="flex items-center gap-1 bg-white border border-slate-200/80 rounded-lg p-0.5 shadow-2xs">
+          <div className="flex items-center gap-1 border rounded-lg p-0.5 shadow-2xs" style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)' }}>
             <button
               onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}
-              className="p-1 hover:bg-slate-100 rounded text-slate-600"
+              className="p-1 rounded hover:opacity-80"
+              style={{ color: 'var(--content-primary)' }}
               title="Zoom arrière"
             >
               <ZoomOut className="w-3 h-3" />
             </button>
-            <span className="font-mono text-[11px] px-1 font-bold text-slate-700">
+            <span className="font-mono text-[11px] px-1 font-bold tabular-nums" style={{ color: 'var(--content-primary)' }}>
               {Math.round(zoom * 100)}%
             </span>
             <button
               onClick={() => setZoom((z) => Math.min(3.0, z + 0.25))}
-              className="p-1 hover:bg-slate-100 rounded text-slate-600"
+              className="p-1 rounded hover:opacity-80"
+              style={{ color: 'var(--content-primary)' }}
               title="Zoom avant"
             >
               <ZoomIn className="w-3 h-3" />
             </button>
             <button
               onClick={() => setZoom(1.0)}
-              className="px-1 py-0.5 hover:bg-slate-100 rounded text-slate-600 text-[10px] font-bold"
+              className="px-1 py-0.5 rounded text-[10px] font-bold hover:opacity-80"
+              style={{ color: 'var(--content-primary)' }}
               title="Taille réelle (100%)"
             >
               1:1
@@ -2709,16 +2751,17 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             role="dialog"
             aria-modal="true"
             aria-labelledby="canvas-dimensions-title"
-            className="w-full max-w-sm rounded-xl bg-white shadow-2xl border border-slate-200 p-5"
+            className="w-full max-w-sm rounded-xl shadow-2xl border p-5"
+            style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)', color: 'var(--content-primary)' }}
           >
-            <h2 id="canvas-dimensions-title" className="text-sm font-bold text-slate-900">
+            <h2 id="canvas-dimensions-title" className="text-sm font-bold" style={{ color: 'var(--content-primary)' }}>
               Dimensions du gabarit
             </h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs" style={{ color: 'var(--content-muted)' }}>
               Modifiez la taille du canevas en millimètres. Les éléments existants ne sont pas déplacés.
             </p>
             <div className="grid grid-cols-2 gap-3 mt-4">
-              <label className="text-xs font-semibold text-slate-600">
+              <label className="text-xs font-semibold" style={{ color: 'var(--content-secondary)' }}>
                 Largeur (mm)
                 <input
                   type="number"
@@ -2727,10 +2770,11 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   step="0.1"
                   value={canvasWidthDraft}
                   onChange={(event) => setCanvasWidthDraft(event.target.value)}
-                  className="w-full mt-1 rounded-lg border border-slate-300 px-2.5 py-2 font-mono text-sm"
+                  className="w-full mt-1 rounded-lg border px-2.5 py-2 font-mono text-sm tabular-nums"
+                  style={{ backgroundColor: 'var(--surface-input)', borderColor: 'var(--border-default)', color: 'var(--content-primary)' }}
                 />
               </label>
-              <label className="text-xs font-semibold text-slate-600">
+              <label className="text-xs font-semibold" style={{ color: 'var(--content-secondary)' }}>
                 Hauteur (mm)
                 <input
                   type="number"
@@ -2739,7 +2783,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   step="0.1"
                   value={canvasHeightDraft}
                   onChange={(event) => setCanvasHeightDraft(event.target.value)}
-                  className="w-full mt-1 rounded-lg border border-slate-300 px-2.5 py-2 font-mono text-sm"
+                  className="w-full mt-1 rounded-lg border px-2.5 py-2 font-mono text-sm tabular-nums"
+                  style={{ backgroundColor: 'var(--surface-input)', borderColor: 'var(--border-default)', color: 'var(--content-primary)' }}
                 />
               </label>
             </div>
@@ -2747,7 +2792,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setIsCanvasSettingsOpen(false)}
-                className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                className="rounded-lg px-3 py-2 text-xs font-semibold hover:opacity-80"
+                style={{ color: 'var(--content-secondary)' }}
               >
                 Annuler
               </button>
@@ -2762,7 +2808,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   Number(canvasWidthDraft) > 2000 ||
                   Number(canvasHeightDraft) > 2000
                 }
-                className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ backgroundColor: 'var(--action-primary)' }}
               >
                 Appliquer
               </button>
@@ -2772,61 +2819,61 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       )}
 
       {/* Editor Status Bar */}
-      <footer className="h-7 bg-slate-900 border-t border-slate-800 px-3 flex items-center justify-between text-[11px] text-slate-300 shrink-0 font-mono z-20">
+      <footer className="h-7 border-t px-3 flex items-center justify-between text-[11px] shrink-0 font-mono z-20" style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)', color: 'var(--content-secondary)' }}>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-            <span className="font-sans font-medium text-slate-200">
+            <span className="font-sans font-medium" style={{ color: 'var(--content-primary)' }}>
               {template.name} ({template.width_mm} × {template.height_mm} mm)
             </span>
           </div>
 
-          <div className="h-3.5 w-px bg-slate-700" />
+          <div className="h-3.5 w-px" style={{ backgroundColor: 'var(--border-subtle)' }} />
 
           {selectedItems.length === 1 ? (
-            <div className="flex items-center gap-3 text-slate-200">
+            <div className="flex items-center gap-3">
               <span className="font-sans font-semibold text-blue-400">
                 {selectedItems[0].type.toUpperCase()} #{selectedItems[0].id.slice(0, 6)}
               </span>
               <span>
-                X: <strong className="font-bold text-white">{selectedItems[0].x_mm}</strong> mm ({Math.round(selectedItems[0].x_mm * 3.78)} px)
+                X: <strong className="font-bold tabular-nums" style={{ color: 'var(--content-primary)' }}>{selectedItems[0].x_mm}</strong> mm ({Math.round(selectedItems[0].x_mm * 3.78)} px)
               </span>
               <span>
-                Y: <strong className="font-bold text-white">{selectedItems[0].y_mm}</strong> mm ({Math.round(selectedItems[0].y_mm * 3.78)} px)
+                Y: <strong className="font-bold tabular-nums" style={{ color: 'var(--content-primary)' }}>{selectedItems[0].y_mm}</strong> mm ({Math.round(selectedItems[0].y_mm * 3.78)} px)
               </span>
               <span>
-                L: <strong className="font-bold text-white">{selectedItems[0].w_mm}</strong> mm
+                L: <strong className="font-bold tabular-nums" style={{ color: 'var(--content-primary)' }}>{selectedItems[0].w_mm}</strong> mm
               </span>
               <span>
-                H: <strong className="font-bold text-white">{selectedItems[0].h_mm}</strong> mm
+                H: <strong className="font-bold tabular-nums" style={{ color: 'var(--content-primary)' }}>{selectedItems[0].h_mm}</strong> mm
               </span>
               {selectedItems[0].rotation ? (
-                <span>Rot: <strong className="font-bold text-white">{selectedItems[0].rotation}°</strong></span>
+                <span>Rot: <strong className="font-bold tabular-nums" style={{ color: 'var(--content-primary)' }}>{selectedItems[0].rotation}°</strong></span>
               ) : null}
             </div>
           ) : selectedItems.length > 1 ? (
-            <div className="flex items-center gap-2 text-indigo-300 font-semibold font-sans">
+            <div className="flex items-center gap-2 text-indigo-400 font-semibold font-sans">
               <span>{selectedItems.length} éléments sélectionnés</span>
             </div>
           ) : (
-            <span className="text-slate-400 font-sans italic">Aucun élément sélectionné</span>
+            <span className="font-sans italic" style={{ color: 'var(--content-muted)' }}>Aucun élément sélectionné</span>
           )}
         </div>
 
         <div className="flex items-center gap-4">
           {mousePosMm && (
-            <div className="flex items-center gap-2 text-slate-300">
+            <div className="flex items-center gap-2">
               <Crosshair className="w-3 h-3 text-slate-400" />
               <span>
-                Curseur: <strong className="text-white">{mousePosMm.x_mm}</strong>, <strong className="text-white">{mousePosMm.y_mm}</strong> mm
+                Curseur: <strong className="tabular-nums" style={{ color: 'var(--content-primary)' }}>{mousePosMm.x_mm}</strong>, <strong className="tabular-nums" style={{ color: 'var(--content-primary)' }}>{mousePosMm.y_mm}</strong> mm
               </span>
             </div>
           )}
 
-          <div className="h-3.5 w-px bg-slate-700" />
+          <div className="h-3.5 w-px" style={{ backgroundColor: 'var(--border-subtle)' }} />
 
-          <div className="text-[10px] text-slate-400 font-sans hidden md:flex items-center gap-1.5">
-            <span className="font-medium text-slate-300">Nudge:</span>
+          <div className="text-[10px] font-sans hidden md:flex items-center gap-1.5" style={{ color: 'var(--content-muted)' }}>
+            <span className="font-medium" style={{ color: 'var(--content-secondary)' }}>Nudge:</span>
             <span>Flèches = 1px</span>
             <span>•</span>
             <span>Maj+Flèches = 10px</span>
@@ -2834,24 +2881,25 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             <span>Alt = 0.1mm</span>
           </div>
 
-          <div className="h-3.5 w-px bg-slate-700" />
+          <div className="h-3.5 w-px" style={{ backgroundColor: 'var(--border-subtle)' }} />
 
-          <span className="text-slate-300 font-semibold">{Math.round(zoom * 100)}%</span>
+          <span className="font-semibold tabular-nums" style={{ color: 'var(--content-primary)' }}>{Math.round(zoom * 100)}%</span>
         </div>
       </footer>
 
       {/* Calibration Image Settings Modal */}
       {showCalibrationModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="rounded-xl shadow-2xl max-w-lg w-full border overflow-hidden animate-in fade-in zoom-in-95" style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)', color: 'var(--content-primary)' }}>
+            <div className="px-5 py-4 border-b flex items-center justify-between" style={{ backgroundColor: 'var(--surface-raised)', borderColor: 'var(--border-subtle)' }}>
               <div className="flex items-center gap-2">
-                <Crosshair className="w-5 h-5 text-amber-600" />
-                <h2 className="font-bold text-slate-900 text-sm">Image de Calibration & Repérage</h2>
+                <Crosshair className="w-5 h-5 text-amber-500" />
+                <h2 className="font-bold text-sm" style={{ color: 'var(--content-primary)' }}>Image de Calibration & Repérage</h2>
               </div>
               <button
                 onClick={() => setShowCalibrationModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition"
+                className="p-1 rounded-lg hover:opacity-80 transition"
+                style={{ color: 'var(--content-secondary)' }}
               >
                 <X className="w-4 h-4" />
               </button>

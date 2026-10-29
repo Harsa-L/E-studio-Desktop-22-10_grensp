@@ -356,13 +356,13 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
   };
 
   return (
-    <div data-studio-workspace="catalog" className="flex-1 flex flex-col bg-slate-900 text-slate-100 overflow-hidden font-sans">
+    <div data-studio-workspace="catalog" className="flex-1 flex flex-col bg-[var(--surface-base)] text-[var(--content-primary)] overflow-hidden font-sans">
       {/* Top Header Toolbar */}
-      <header className="h-14 border-b border-slate-800 bg-slate-950 px-6 flex items-center justify-between shrink-0">
+      <header className="h-14 border-b border-[var(--border-subtle)] bg-[var(--surface-panel)] px-6 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+            className="p-1.5 text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
             title="Retour au Tableau de Bord"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -370,18 +370,18 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
           <div>
             <div className="flex items-center gap-2">
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-              <h1 className="text-sm font-bold tracking-tight text-white">Catalogue & Résolution Produits</h1>
+              <h1 className="text-sm font-bold tracking-tight text-[var(--content-primary)]">Catalogue & Résolution Produits</h1>
             </div>
-            <p className="text-[10px] text-slate-400">Dépôt local vérifié · Importation Excel/CSV déterministe</p>
+            <p className="text-[10px] text-[var(--content-muted)]">Dépôt local vérifié · Importation Excel/CSV déterministe</p>
           </div>
         </div>
 
         {/* Tab switch */}
-        <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 text-xs">
+        <div className="flex items-center bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-xl p-1 text-xs">
           <button
             onClick={() => setActiveTab('catalog')}
-            className={`px-3 py-1 rounded-lg font-semibold transition ${
-              activeTab === 'catalog' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+            className={`px-3 py-1 rounded-lg font-semibold transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
+              activeTab === 'catalog' ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs' : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
             }`}
           >
             Articles ({products.length})
@@ -391,8 +391,8 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
               setWizardStep(1);
               setActiveTab('import_wizard');
             }}
-            className={`px-3 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition ${
-              activeTab === 'import_wizard' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+            className={`px-3 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
+              activeTab === 'import_wizard' ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs' : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
             }`}
           >
             <Upload className="w-3 h-3" />
@@ -400,8 +400,8 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
           </button>
           <button
             onClick={() => setActiveTab('reports')}
-            className={`px-3 py-1 rounded-lg font-semibold transition ${
-              activeTab === 'reports' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'
+            className={`px-3 py-1 rounded-lg font-semibold transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
+              activeTab === 'reports' ? 'bg-[var(--surface-panel)] text-[var(--content-primary)]' : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
             }`}
           >
             Historique d'Imports
@@ -412,7 +412,7 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
         <div className="flex items-center gap-2 text-xs">
           <button
             onClick={handleExportWorkspace}
-            className="px-2.5 py-1.5 border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg flex items-center gap-1.5 transition"
+            className="px-2.5 py-1.5 border border-[var(--border-subtle)] bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] rounded-lg flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
             title="Sauvegarder l'espace de travail au format JSON"
           >
             <Download className="w-3.5 h-3.5" />
@@ -428,7 +428,7 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
           />
           <button
             onClick={() => restoreInputRef.current?.click()}
-            className="px-2.5 py-1.5 border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg flex items-center gap-1.5 transition"
+            className="px-2.5 py-1.5 border border-[var(--border-subtle)] bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] rounded-lg flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
             title="Restaurer un fichier de sauvegarde JSON"
           >
             <FolderArchive className="w-3.5 h-3.5" />
@@ -452,27 +452,27 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
       <main className="flex-1 flex flex-col min-h-0 p-6 overflow-hidden">
         {/* TAB 1: CATALOG VIEW */}
         {activeTab === 'catalog' && (
-          <div className="flex-1 flex flex-col min-h-0 bg-slate-950 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0 bg-[var(--surface-panel)] border border-[var(--border-subtle)] rounded-2xl shadow-xl overflow-hidden">
             {/* Search & Actions Bar */}
-            <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-900/60">
+            <div className="p-4 border-b border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-3 bg-[var(--surface-raised)]/60">
               <div className="flex items-center gap-3 flex-1 min-w-[280px]">
                 <div className="relative flex-1 max-w-md">
-                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-[var(--content-muted)]" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Rechercher par désignation, EAN ou référence..."
-                    className="w-full pl-9 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-emerald-500"
+                    className="w-full pl-9 pr-3 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-xl text-xs text-[var(--content-primary)] placeholder-[var(--content-muted)] focus:outline-none focus:border-[var(--action-primary)] transition"
                   />
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Filter className="w-3.5 h-3.5 text-slate-400" />
+                  <Filter className="w-3.5 h-3.5 text-[var(--content-muted)]" />
                   <select
                     value={selectedDept}
                     onChange={(e) => setSelectedDept(e.target.value)}
-                    className="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300"
+                    className="px-3 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-xl text-xs text-[var(--content-primary)] outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                   >
                     <option value="all">Tous les rayons ({products.length})</option>
                     {departments.map((d) => (
@@ -492,7 +492,7 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
                       const selected = products.filter((p) => selectedIds.has(p.id));
                       onGenerateFromDatabase(selected);
                     }}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition"
+                    className="px-3 py-1.5 bg-[var(--action-primary)] hover:bg-[var(--action-hover)] text-[var(--action-primary-fg)] rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                   >
                     <Printer className="w-3.5 h-3.5" />
                     <span>Générer étiquettes ({selectedIds.size})</span>
@@ -506,7 +506,7 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
                         catalogRepository.clearCatalog();
                       }
                     }}
-                    className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 rounded-lg transition"
+                    className="p-1.5 text-[var(--content-muted)] hover:text-rose-400 hover:bg-rose-500/20 rounded-lg transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                     title="Vider le catalogue local"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -521,8 +521,8 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
                 <div className="w-16 h-16 rounded-2xl bg-emerald-950/40 border border-emerald-800/40 flex items-center justify-center text-emerald-400 mb-4">
                   <FileSpreadsheet className="w-8 h-8" />
                 </div>
-                <h3 className="text-base font-bold text-white mb-1">Aucun article dans le catalogue</h3>
-                <p className="text-xs text-slate-400 max-w-md mb-6">
+                <h3 className="text-base font-bold text-[var(--content-primary)] mb-1">Aucun article dans le catalogue</h3>
+                <p className="text-xs text-[var(--content-secondary)] max-w-md mb-6">
                   Le catalogue est vierge. Importez un fichier Excel (.xlsx) ou CSV contenant vos articles, prix et codes-barres pour commencer la production d'étiquettes.
                 </p>
                 <button
@@ -530,7 +530,7 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
                     setWizardStep(1);
                     setActiveTab('import_wizard');
                   }}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition"
+                  className="px-4 py-2 bg-[var(--action-primary)] hover:bg-[var(--action-hover)] text-[var(--action-primary-fg)] rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                 >
                   <Upload className="w-4 h-4" />
                   <span>Importer un fichier Excel / CSV</span>
@@ -538,20 +538,20 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                <Search className="w-8 h-8 text-slate-600 mb-2" />
-                <p className="text-xs text-slate-400">Aucun article ne correspond aux filtres de recherche.</p>
+                <Search className="w-8 h-8 text-[var(--content-muted)] mb-2" />
+                <p className="text-xs text-[var(--content-secondary)]">Aucun article ne correspond aux filtres de recherche.</p>
               </div>
             ) : (
               <div className="flex-1 overflow-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400 sticky top-0 z-10 uppercase tracking-wider font-semibold">
+                  <thead className="bg-[var(--surface-raised)] border-b border-[var(--border-subtle)] text-[11px] text-[var(--content-secondary)] sticky top-0 z-10 uppercase tracking-wider font-semibold">
                     <tr>
                       <th className="p-3 w-10 text-center">
                         <input
                           type="checkbox"
                           checked={selectedIds.size === filteredProducts.length && filteredProducts.length > 0}
                           onChange={handleSelectAll}
-                          className="rounded border-slate-700"
+                          className="rounded border-[var(--border-subtle)]"
                         />
                       </th>
                       <th className="p-3">Référence / SKU</th>
@@ -562,14 +562,14 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
                       <th className="p-3 text-right">Prix Promo</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 font-mono text-slate-300">
+                  <tbody className="divide-y divide-[var(--border-subtle)] font-mono text-[var(--content-primary)]">
                     {filteredProducts.map((p) => {
                       const isSelected = selectedIds.has(p.id);
                       return (
                         <tr
                           key={p.id}
-                          className={`hover:bg-slate-900/50 transition cursor-pointer ${
-                            isSelected ? 'bg-blue-950/20' : ''
+                          className={`hover:bg-[var(--surface-hover)] transition cursor-pointer ${
+                            isSelected ? 'bg-[var(--action-primary)]/10' : ''
                           }`}
                           onClick={() => handleToggleSelect(p.id)}
                         >
@@ -578,17 +578,17 @@ export const CatalogManagementStudio: React.FC<CatalogManagementStudioProps> = (
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => handleToggleSelect(p.id)}
-                              className="rounded border-slate-700"
+                              className="rounded border-[var(--border-subtle)]"
                             />
                           </td>
-                          <td className="p-3 font-semibold text-slate-200">{p.PARTNO || '—'}</td>
-                          <td className="p-3 text-slate-400">{p.PRODUCT_SCAN || '—'}</td>
-                          <td className="p-3 font-sans font-medium text-white max-w-xs truncate">{p.ITEMNAME}</td>
-                          <td className="p-3 font-sans text-slate-400">{p.DEPT_NAME || '—'}</td>
-                          <td className="p-3 text-right font-bold text-emerald-400">
+                          <td className="p-3 font-semibold text-[var(--content-primary)] tabular-nums">{p.PARTNO || '—'}</td>
+                          <td className="p-3 text-[var(--content-secondary)] tabular-nums">{p.PRODUCT_SCAN || '—'}</td>
+                          <td className="p-3 font-sans font-medium text-[var(--content-primary)] max-w-xs truncate">{p.ITEMNAME}</td>
+                          <td className="p-3 font-sans text-[var(--content-secondary)]">{p.DEPT_NAME || '—'}</td>
+                          <td className="p-3 text-right font-bold text-emerald-400 tabular-nums">
                             {p.SELLING_PRICE !== undefined ? `${p.SELLING_PRICE.toFixed(2)} €` : '—'}
                           </td>
-                          <td className="p-3 text-right font-bold text-rose-400">
+                          <td className="p-3 text-right font-bold text-rose-400 tabular-nums">
                             {p.PROMOPRICE ? `${p.PROMOPRICE.toFixed(2)} €` : '—'}
                           </td>
                         </tr>

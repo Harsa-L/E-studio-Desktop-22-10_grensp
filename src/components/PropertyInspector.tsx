@@ -154,18 +154,19 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
 
   if (count === 0) {
     return (
-      <div style={{ width: inspectorWidth }} className="designer-inspector-panel bg-white border-l border-slate-200 p-6 text-slate-500 text-sm flex flex-col items-center justify-center text-center h-full select-none shrink-0 z-10">
-        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+      <div style={{ width: inspectorWidth, backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)', color: 'var(--content-secondary)' }} className="designer-inspector-panel border-l p-6 text-sm flex flex-col items-center justify-center text-center h-full select-none shrink-0 z-10">
+        <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3" style={{ backgroundColor: 'var(--surface-raised)', color: 'var(--content-muted)' }}>
           <Sliders className="w-6 h-6" />
         </div>
-        <p className="font-semibold text-slate-700">Aucun élément sélectionné</p>
-        <p className="text-xs text-slate-400 mt-1 max-w-xs">
+        <p className="font-semibold" style={{ color: 'var(--content-primary)' }}>Aucun élément sélectionné</p>
+        <p className="text-xs mt-1 max-w-xs" style={{ color: 'var(--content-muted)' }}>
           Sélectionnez un ou plusieurs objets pour afficher leurs propriétés contextuelles.
         </p>
         {onClose && (
           <button
             onClick={onClose}
-            className="mt-4 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold"
+            className="mt-4 px-3 py-1.5 rounded-lg text-xs font-semibold hover:opacity-80 transition"
+            style={{ backgroundColor: 'var(--surface-raised)', color: 'var(--content-primary)', borderColor: 'var(--border-subtle)' }}
           >
             Fermer l'inspecteur
           </button>
@@ -215,16 +216,16 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
     const allLocked = selectedItems.every((it) => it.locked);
 
     return (
-      <div style={{ width: inspectorWidth }} className="designer-inspector-panel bg-white border-l border-slate-200 h-full flex flex-col text-xs text-slate-700 select-none overflow-y-auto shrink-0 z-10 shadow-lg">
+      <div style={{ width: inspectorWidth, backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)', color: 'var(--content-primary)' }} className="designer-inspector-panel border-l h-full flex flex-col text-xs select-none overflow-y-auto shrink-0 z-10 shadow-lg">
         {/* Multi-Selection Header */}
-        <div className="p-3 border-b border-slate-200 bg-blue-50/70 flex items-center justify-between">
+        <div className="p-3 border-b flex items-center justify-between" style={{ backgroundColor: 'var(--surface-raised)', borderColor: 'var(--border-subtle)' }}>
           <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs">
+            <span className="w-6 h-6 rounded-full font-bold flex items-center justify-center text-xs" style={{ backgroundColor: 'var(--action-primary)', color: '#ffffff' }}>
               {count}
             </span>
             <div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-blue-800">Sélection Multiple</span>
-              <h3 className="font-bold text-slate-900 text-xs">Propriétés Communes</h3>
+              <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: 'var(--action-primary)' }}>Sélection Multiple</span>
+              <h3 className="font-bold text-xs" style={{ color: 'var(--content-primary)' }}>Propriétés Communes</h3>
             </div>
           </div>
 
@@ -566,12 +567,12 @@ export const PropertyInspector: React.FC<PropertyInspectorProps> = ({
   };
 
   return (
-    <div style={{ width: inspectorWidth }} className="designer-inspector-panel bg-white border-l border-slate-200 h-full flex flex-col text-xs text-slate-700 select-none overflow-y-auto shrink-0 z-10 shadow-none">
+    <div style={{ width: inspectorWidth, backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-subtle)', color: 'var(--content-primary)' }} className="designer-inspector-panel border-l h-full flex flex-col text-xs select-none overflow-y-auto shrink-0 z-10 shadow-none">
       {/* Header with quick actions */}
-      <div className="p-3 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+      <div className="p-3 border-b flex items-center justify-between" style={{ backgroundColor: 'var(--surface-raised)', borderColor: 'var(--border-subtle)' }}>
         <div>
-          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Élément</span>
-          <h3 className="font-bold text-slate-800 capitalize text-sm">{selectedItem.type.replace('_', ' ')}</h3>
+          <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: 'var(--content-muted)' }}>Élément</span>
+          <h3 className="font-bold capitalize text-sm" style={{ color: 'var(--content-primary)' }}>{selectedItem.type.replace('_', ' ')}</h3>
         </div>
         <div className="flex items-center gap-1">
           {foldButton}

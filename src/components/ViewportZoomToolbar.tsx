@@ -68,10 +68,10 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
   return (
     <div
       id="viewport-zoom-sticky-toolbar"
-      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-md border border-slate-300/90 rounded-2xl shadow-xl px-2.5 py-1.5 flex items-center gap-2 text-xs select-none transition-all hover:shadow-2xl"
+      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[var(--surface-panel)] backdrop-blur-md border border-[var(--border-subtle)] rounded-2xl shadow-xl px-2.5 py-1.5 flex items-center gap-2 text-xs select-none transition-all hover:shadow-2xl text-[var(--content-primary)]"
     >
       {/* Tool Mode Toggles */}
-      <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 gap-0.5">
+      <div className="flex items-center bg-[var(--surface-raised)] p-0.5 rounded-xl border border-[var(--border-subtle)] gap-0.5">
         <ContextTooltip
           title="Outil Sélection Directe"
           category="Outils de Navigation"
@@ -81,10 +81,10 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
         >
           <button
             onClick={() => onToolChange('select')}
-            className={`p-1.5 rounded-lg transition ${
+            className={`p-1.5 rounded-lg transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
               activeTool === 'select'
-                ? 'bg-white text-blue-600 shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs font-bold'
+                : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
             }`}
             aria-label="Outil Sélection"
           >
@@ -101,10 +101,10 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
         >
           <button
             onClick={() => onToolChange('marquee')}
-            className={`p-1.5 rounded-lg transition ${
+            className={`p-1.5 rounded-lg transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
               activeTool === 'marquee'
-                ? 'bg-blue-600 text-white shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs font-bold'
+                : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
             }`}
             aria-label="Outil Zoom Cadre"
           >
@@ -121,10 +121,10 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
         >
           <button
             onClick={() => onToolChange('pan')}
-            className={`p-1.5 rounded-lg transition ${
+            className={`p-1.5 rounded-lg transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
               activeTool === 'pan'
-                ? 'bg-blue-600 text-white shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs font-bold'
+                : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
             }`}
             aria-label="Outil Pan"
           >
@@ -133,7 +133,7 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
         </ContextTooltip>
       </div>
 
-      <div className="h-5 w-px bg-slate-200" />
+      <div className="h-5 w-px bg-[var(--border-subtle)]" />
 
       {/* Step Zoom Out Button */}
       <ContextTooltip
@@ -145,7 +145,7 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
       >
         <button
           onClick={() => onZoomChange(Math.max(0.1, zoom - 0.1))}
-          className="p-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition"
+          className="p-1.5 rounded-lg text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)] transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
           aria-label="Zoom arrière"
         >
           <ZoomOut className="w-3.5 h-3.5" />
@@ -167,7 +167,7 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
             step="0.05"
             value={zoom}
             onChange={(e) => onZoomChange(parseFloat(e.target.value))}
-            className="w-20 md:w-28 accent-blue-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none"
+            className="w-20 md:w-28 accent-[var(--action-primary)] cursor-pointer h-1.5 bg-[var(--surface-raised)] rounded-lg appearance-none"
             aria-label="Échelle de zoom"
           />
         </div>
@@ -183,7 +183,7 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
       >
         <button
           onClick={() => onZoomChange(Math.min(8.0, zoom + 0.1))}
-          className="p-1.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition"
+          className="p-1.5 rounded-lg text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)] transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
           aria-label="Zoom avant"
         >
           <ZoomIn className="w-3.5 h-3.5" />
@@ -205,19 +205,19 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
             else if (val === 'fit_width') onFitToWidth();
             else onZoomChange(parseFloat(val) / 100);
           }}
-          className="bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-slate-800 font-mono font-bold text-[11px] outline-none cursor-pointer hover:border-slate-400 transition"
+          className="bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg px-2 py-1 text-[var(--content-primary)] font-mono font-bold text-[11px] outline-none cursor-pointer hover:border-[var(--border-strong)] transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
           aria-label="Préréglages de zoom"
         >
           <option value="fit_sheet">Ajuster à l'écran</option>
           <option value="fit_width">Ajuster en largeur</option>
           {presets.map((p) => (
-            <option key={p.label} value={Math.round(p.value * 100)}>
+            <option key={p.label} value={Math.round(p.value * 100)} className="bg-[var(--surface-panel)] text-[var(--content-primary)]">
               {p.label}
             </option>
           ))}
           {/* Custom current value if not strictly matched */}
           {!presets.some((p) => Math.round(p.value * 100) === zoomPercent) && (
-            <option value={zoomPercent}>{zoomPercent}%</option>
+            <option value={zoomPercent} className="bg-[var(--surface-panel)] text-[var(--content-primary)]">{zoomPercent}%</option>
           )}
         </select>
       </ContextTooltip>
@@ -232,17 +232,17 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
       >
         <button
           onClick={() => onZoomChange(1.0)}
-          className={`px-2 py-1 rounded-lg text-[11px] font-bold font-mono transition ${
+          className={`px-2 py-1 rounded-lg text-[11px] font-bold font-mono tabular-nums transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
             Math.abs(zoom - 1.0) < 0.02
-              ? 'bg-blue-600 text-white shadow-2xs'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs'
+              : 'bg-[var(--surface-raised)] text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)]'
           }`}
         >
           1:1
         </button>
       </ContextTooltip>
 
-      <div className="h-5 w-px bg-slate-200" />
+      <div className="h-5 w-px bg-[var(--border-subtle)]" />
 
       {/* Ruler Mode Toggle */}
       <ContextTooltip
@@ -262,10 +262,10 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
       >
         <button
           onClick={handleCycleRulerMode}
-          className={`p-1.5 rounded-lg transition ${
+          className={`p-1.5 rounded-lg transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
             uiPreferences?.rulerMode && uiPreferences.rulerMode !== 'hidden'
-              ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold'
-              : 'text-slate-400 hover:text-slate-700'
+              ? 'bg-[var(--surface-raised)] text-[var(--action-primary)] font-bold'
+              : 'text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
           }`}
           aria-label="Mode de règles millimétriques"
         >
@@ -283,7 +283,7 @@ export const ViewportZoomToolbar: React.FC<ViewportZoomToolbarProps> = ({
       >
         <button
           onClick={openPreferencesModal}
-          className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition"
+          className="p-1.5 rounded-lg text-[var(--content-secondary)] hover:text-[var(--action-primary)] hover:bg-[var(--surface-hover)] transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
           aria-label="Préférences d'accessibilité et zoom"
         >
           <Settings className="w-4 h-4" />

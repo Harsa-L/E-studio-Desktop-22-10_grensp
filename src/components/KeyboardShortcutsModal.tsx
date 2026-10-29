@@ -1,5 +1,5 @@
 import React from 'react';
-import { Keyboard, X, Command, Zap } from 'lucide-react';
+import { Keyboard, X } from 'lucide-react';
 
 interface KeyboardShortcutsModalProps {
   isOpen: boolean;
@@ -41,41 +41,52 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
   ];
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shortcuts-modal-title"
+      className="fixed inset-0 bg-[var(--scrim,rgba(0,0,0,0.6))] backdrop-blur-xs flex items-center justify-center z-50 p-4 select-none"
+    >
+      <div className="bg-[var(--surface-panel)] rounded-2xl shadow-2xl border border-[var(--border-default)] w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 text-[var(--content-primary)]">
         {/* Header */}
-        <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div className="px-6 py-4 bg-[var(--surface-raised)] border-b border-[var(--border-subtle)] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Keyboard className="w-5 h-5 text-blue-400" />
+            <div className="w-8 h-8 rounded-lg bg-[var(--action-primary-bg)] text-[var(--action-primary-fg)] flex items-center justify-center shadow-xs">
+              <Keyboard className="w-4 h-4" />
+            </div>
             <div>
-              <h2 className="text-sm font-bold">Raccourcis Clavier Pro</h2>
-              <p className="text-[11px] text-slate-400">Guide de productivité studio</p>
+              <h2 id="shortcuts-modal-title" className="text-sm font-bold text-[var(--content-primary)]">Raccourcis Clavier Pro</h2>
+              <p className="text-[11px] text-[var(--content-muted)]">Guide de productivité studio</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+            aria-label="Fermer"
+            className="p-1.5 text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg transition"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-          {shortcutGroups.map((group, gIdx) => (
-            <div key={gIdx} className="space-y-2">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                <Zap className="w-3 h-3 text-blue-600" />
-                <span>{group.title}</span>
+        {/* Content */}
+        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+          {shortcutGroups.map((group, idx) => (
+            <div key={idx} className="space-y-2.5">
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-[var(--content-muted)]">
+                {group.title}
               </h3>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl divide-y divide-slate-200/60 overflow-hidden">
-                {group.shortcuts.map((sc, sIdx) => (
-                  <div key={sIdx} className="px-3.5 py-2 flex items-center justify-between text-xs">
-                    <span className="text-slate-600 font-medium">{sc.label}</span>
-                    <div className="flex items-center gap-1">
+              <div className="space-y-1.5">
+                {group.shortcuts.map((sc, scIdx) => (
+                  <div
+                    key={scIdx}
+                    className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-xs transition border border-[var(--border-subtle)]"
+                  >
+                    <span className="text-[var(--content-primary)]">{sc.label}</span>
+                    <div className="flex items-center gap-1 shrink-0">
                       {sc.keys.map((k, kIdx) => (
                         <kbd
                           key={kIdx}
-                          className="px-2 py-0.5 bg-white border border-slate-300 rounded shadow-2xs font-mono text-[10px] font-bold text-slate-800"
+                          className="px-2 py-0.5 text-[10px] font-mono font-bold bg-[var(--surface-input)] text-[var(--content-primary)] border border-[var(--border-default)] rounded shadow-2xs"
                         >
                           {k}
                         </kbd>
@@ -88,11 +99,12 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
           ))}
         </div>
 
-        <div className="p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-          <span>Conseil: Sur macOS, vous pouvez aussi utiliser la touche <Command className="w-3 h-3 inline mx-0.5" /> Cmd</span>
+        {/* Footer */}
+        <div className="px-6 py-3 bg-[var(--surface-raised)] border-t border-[var(--border-subtle)] flex justify-between items-center text-xs">
+          <span className="text-[11px] text-[var(--content-muted)]">Astuce : Utilisez Échap pour fermer ce volet</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-900 text-white font-semibold rounded-lg hover:bg-slate-800 transition"
+            className="px-4 py-1.5 bg-[var(--action-primary-bg)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-fg)] font-semibold rounded-lg transition shadow-xs"
           >
             Fermer
           </button>

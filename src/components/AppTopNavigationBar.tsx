@@ -99,7 +99,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
   }, [onNavigate]);
 
   return (
-    <nav data-studio-shell className="bg-slate-950 text-white border-b border-slate-800 shrink-0 select-none z-40 relative shadow-none">
+    <nav data-studio-shell className="bg-[var(--surface-panel)] text-[var(--content-primary)] border-b border-[var(--border-subtle)] shrink-0 select-none z-40 relative shadow-none">
       <div className="h-12 px-3 sm:px-4 flex items-center justify-between gap-3">
         {/* Left Side: Brand Logo & Breadcrumb Navigation */}
         <div className="flex items-center gap-3 min-w-0">
@@ -108,13 +108,13 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
             className="flex items-center gap-2 text-left group hover:opacity-90 transition shrink-0 focus:outline-none"
             title={t('projectHome')}
           >
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-inner">
-              <Layers className="w-4 h-4 text-white" />
+            <div className="w-7 h-7 rounded-lg bg-[var(--action-primary-bg)] text-[var(--action-primary-fg)] flex items-center justify-center shadow-xs">
+              <Layers className="w-4 h-4" />
             </div>
             <div className="hidden md:flex flex-col">
               <div className="flex items-center gap-1.5 leading-none">
-                <span className="font-extrabold text-sm tracking-tight text-white">E-STUDIO</span>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/30 uppercase tracking-widest">
+                <span className="font-extrabold text-sm tracking-tight text-[var(--content-primary)]">E-STUDIO</span>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-[var(--action-primary-bg)]/20 text-[var(--action-primary-bg)] border border-[var(--action-primary-bg)]/30 uppercase tracking-widest">
                   DESKTOP
                 </span>
               </div>
@@ -124,7 +124,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
           <div className="relative">
             <button
               onClick={() => setFileMenuOpen((open) => !open)}
-              className="rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
+              className="rounded-md px-2.5 py-1.5 text-xs font-medium text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)] transition"
               aria-expanded={fileMenuOpen}
             >
               {t('file')}
@@ -132,36 +132,36 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
             {fileMenuOpen && (
               <>
                 <button className="fixed inset-0 z-40 cursor-default" aria-label="Fermer le menu fichier" onClick={() => setFileMenuOpen(false)} />
-                <div className="absolute left-0 top-9 z-50 w-60 rounded-lg border border-slate-700 bg-slate-900 p-1.5 shadow-2xl">
-                  {activeProjectName && <div className="truncate px-3 py-2 text-[11px] font-semibold text-slate-500">{activeProjectName}</div>}
-                  <button onClick={() => { setFileMenuOpen(false); onNavigate('start'); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><Home className="h-3.5 w-3.5" />{t('projectHome')}</button>
-                  <button onClick={() => { setFileMenuOpen(false); onNewProject(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><FilePlus2 className="h-3.5 w-3.5" />{t('newProject')}</button>
-                  <button onClick={() => { setFileMenuOpen(false); projectFileInput.current?.click(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><FolderOpen className="h-3.5 w-3.5" />{t('openProject')}</button>
-                  <div className="my-1 border-t border-slate-800" />
-                  <button disabled={!activeProjectName} onClick={() => { setFileMenuOpen(false); onSaveProject(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><Save className="h-3.5 w-3.5" />{t('saveProject')}</button>
-                  <button disabled={!activeProjectName} onClick={() => { setFileMenuOpen(false); onSaveProjectAs(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><SaveAll className="h-3.5 w-3.5" />{t('saveProjectAs')}</button>
+                <div className="absolute left-0 top-9 z-50 w-60 rounded-lg border border-[var(--border-default)] bg-[var(--surface-panel)] p-1.5 shadow-2xl text-[var(--content-primary)]">
+                  {activeProjectName && <div className="truncate px-3 py-2 text-[11px] font-semibold text-[var(--content-muted)]">{activeProjectName}</div>}
+                  <button onClick={() => { setFileMenuOpen(false); onNavigate('start'); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)]"><Home className="h-3.5 w-3.5" />{t('projectHome')}</button>
+                  <button onClick={() => { setFileMenuOpen(false); onNewProject(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)]"><FilePlus2 className="h-3.5 w-3.5" />{t('newProject')}</button>
+                  <button onClick={() => { setFileMenuOpen(false); projectFileInput.current?.click(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)]"><FolderOpen className="h-3.5 w-3.5" />{t('openProject')}</button>
+                  <div className="my-1 border-t border-[var(--border-subtle)]" />
+                  <button disabled={!activeProjectName} onClick={() => { setFileMenuOpen(false); onSaveProject(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)] disabled:opacity-40"><Save className="h-3.5 w-3.5" />{t('saveProject')}</button>
+                  <button disabled={!activeProjectName} onClick={() => { setFileMenuOpen(false); onSaveProjectAs(); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-[var(--content-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)] disabled:opacity-40"><SaveAll className="h-3.5 w-3.5" />{t('saveProjectAs')}</button>
                 </div>
               </>
             )}
           </div>
 
           {/* Breadcrumb Separator */}
-          <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
-            <ChevronRight className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--content-muted)] min-w-0">
+            <ChevronRight className="w-3.5 h-3.5 text-[var(--content-muted)] shrink-0" />
             {currentView === 'home' && (
-              <span className="font-semibold text-slate-200">{t('dashboard')}</span>
+              <span className="font-semibold text-[var(--content-primary)]">{t('dashboard')}</span>
             )}
 
             {currentView === 'editor' && (
               <>
                 <button
                   onClick={() => onNavigate('home')}
-                  className="hover:text-blue-400 transition truncate"
+                  className="hover:text-[var(--action-primary-bg)] transition truncate"
                 >
                   {t('templates')}
                 </button>
-                <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
-                <span className="font-semibold text-blue-400 truncate max-w-[140px] sm:max-w-[200px]">
+                <ChevronRight className="w-3 h-3 text-[var(--content-muted)] shrink-0" />
+                <span className="font-semibold text-[var(--action-primary-bg)] truncate max-w-[140px] sm:max-w-[200px]">
                   {activeTemplate ? activeTemplate.name : t('visualDesigner')}
                 </span>
               </>
@@ -171,12 +171,12 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
               <>
                 <button
                   onClick={() => onNavigate('home')}
-                  className="hover:text-blue-400 transition truncate"
+                  className="hover:text-[var(--action-primary-bg)] transition truncate"
                 >
                   {t('production')}
                 </button>
-                <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
-                <span className="font-semibold text-blue-400 truncate max-w-[140px] sm:max-w-[200px]">
+                <ChevronRight className="w-3 h-3 text-[var(--content-muted)] shrink-0" />
+                <span className="font-semibold text-[var(--action-primary-bg)] truncate max-w-[140px] sm:max-w-[200px]">
                   {activeTemplate ? activeTemplate.name : 'Planches & Impression'}
                 </span>
               </>
@@ -191,13 +191,13 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
         {currentView !== 'start' && (
           <>
         {/* Center: Module View Switcher */}
-        <div className="flex h-12 items-stretch border-x border-slate-800">
+        <div className="flex h-12 items-stretch border-x border-[var(--border-subtle)]">
           <button
             onClick={() => onNavigate('home')}
-            className={`px-3 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
+            className={`px-3.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
               currentView === 'home'
-                ? 'border-blue-500 bg-slate-900 text-white'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/70'
+                ? 'border-[var(--action-primary-bg)] bg-[var(--surface-raised)] text-[var(--content-primary)]'
+                : 'border-transparent text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
             }`}
             title={`${t('projectHome')} (Alt+1)`}
           >
@@ -207,10 +207,10 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
 
           <button
             onClick={() => onNavigate('editor')}
-            className={`px-3 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
+            className={`px-3.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
               currentView === 'editor'
-                ? 'border-blue-500 bg-slate-900 text-white'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/70'
+                ? 'border-[var(--action-primary-bg)] bg-[var(--surface-raised)] text-[var(--content-primary)]'
+                : 'border-transparent text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
             }`}
             title="Concepteur Visuel de Gabarit (Alt+2)"
           >
@@ -220,10 +220,10 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
 
           <button
             onClick={() => onNavigate('generation')}
-            className={`px-3 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
+            className={`px-3.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
               currentView === 'generation'
-                ? 'border-blue-500 bg-slate-900 text-white'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/70'
+                ? 'border-[var(--action-primary-bg)] bg-[var(--surface-raised)] text-[var(--content-primary)]'
+                : 'border-transparent text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
             }`}
             title="Impression & Planches (Alt+3)"
           >
@@ -233,17 +233,17 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
 
           <button
             onClick={() => onNavigate('catalog')}
-            className={`px-3 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
+            className={`px-3.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition ${
               currentView === 'catalog'
-                ? 'border-emerald-500 bg-slate-900 text-white'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/70'
+                ? 'border-emerald-500 bg-[var(--surface-raised)] text-[var(--content-primary)]'
+                : 'border-transparent text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
             }`}
             title="Catalogue & Import Excel/CSV (Alt+4)"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
             <span>Catalogue</span>
             {totalProductsCount > 0 && (
-              <span className="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 text-[10px] font-bold rounded-full">
+              <span className="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-500/30">
                 {totalProductsCount}
               </span>
             )}
@@ -255,7 +255,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
           {detachedWorkspacesSupported && (
             <button
               onClick={onOpenInNewWindow}
-              className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md border border-slate-800 transition"
+              className="p-1.5 bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] rounded-md border border-[var(--border-subtle)] transition"
               title="Open this workspace in a new window"
               aria-label="Open this workspace in a new window"
             >
@@ -264,7 +264,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
           )}
           <button
             onClick={onOpenShortcuts}
-            className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg border border-slate-800 transition"
+            className="p-1.5 bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] rounded-lg border border-[var(--border-subtle)] transition"
             title={t('keyboardShortcuts')}
           >
             <Keyboard className="w-4 h-4" />
@@ -276,7 +276,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
               aria-haspopup="true"
               aria-expanded={toolsDropdownOpen}
               aria-label={t('systemTools')}
-              className="p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg border border-slate-800 transition focus:outline-none"
+              className="p-1.5 bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] rounded-lg border border-[var(--border-subtle)] transition focus:outline-none"
               title={t('systemTools')}
             >
               <Settings2 className="w-4 h-4" />
@@ -288,15 +288,15 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                   className="fixed inset-0 z-40"
                   onClick={() => setToolsDropdownOpen(false)}
                 />
-                <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-2 text-xs divide-y divide-slate-800 animate-in fade-in-50 duration-100">
+                <div className="absolute right-0 mt-2 w-64 bg-[var(--surface-panel)] border border-[var(--border-default)] rounded-xl shadow-2xl z-50 p-2 text-xs divide-y divide-[var(--border-subtle)] text-[var(--content-primary)] animate-in fade-in-50 duration-100">
                   <label className="block px-2 pb-2">
-                    <span className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    <span className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--content-muted)]">
                       <Languages className="h-3.5 w-3.5" />{t('language')}
                     </span>
                     <select
                       value={locale}
                       onChange={(event) => setLocale(event.target.value as typeof locale)}
-                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-white"
+                      className="w-full rounded-md border border-[var(--border-default)] bg-[var(--surface-input)] px-2 py-1.5 text-xs text-[var(--content-primary)]"
                     >
                       {SUPPORTED_LOCALES.map((code) => (
                         <option key={code} value={code}>
@@ -307,7 +307,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                     {persistenceError && <span role="alert" className="mt-1 block text-[10px] text-amber-300">{persistenceError}</span>}
                   </label>
                   <div className="pb-1.5">
-                    <span className="px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    <span className="px-2 py-1 text-[10px] font-bold text-[var(--content-muted)] uppercase tracking-wider block">
                       {t('dataAndDisplay')}
                     </span>
                     <button
@@ -315,7 +315,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                         setToolsDropdownOpen(false);
                         onOpenMcpDrafts();
                       }}
-                      className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
+                      className="w-full text-left px-2.5 py-1.5 text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-2 transition"
                     >
                       <Bot className="w-3.5 h-3.5 text-cyan-400" />
                       <span>{t('aiDrafts')}</span>
@@ -325,7 +325,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                         setToolsDropdownOpen(false);
                         onOpenMappingDictionary();
                       }}
-                      className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
+                      className="w-full text-left px-2.5 py-1.5 text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-2 transition"
                     >
                       <BookOpen className="w-3.5 h-3.5 text-blue-400" />
                       <span>{t('mappingDictionary')}</span>
@@ -335,7 +335,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                         setToolsDropdownOpen(false);
                         onOpenRulesModal();
                       }}
-                      className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
+                      className="w-full text-left px-2.5 py-1.5 text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-2 transition"
                     >
                       <Layers className="w-3.5 h-3.5 text-purple-400" />
                       <span>{t('omnichannelRules')}</span>
@@ -345,7 +345,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                         setToolsDropdownOpen(false);
                         onOpenFontManager();
                       }}
-                      className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
+                      className="w-full text-left px-2.5 py-1.5 text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-2 transition"
                     >
                       <Type className="w-3.5 h-3.5 text-amber-400" />
                       <span>{t('fonts')}</span>
@@ -353,7 +353,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                   </div>
 
                   <div className="pt-1.5">
-                    <span className="px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    <span className="px-2 py-1 text-[10px] font-bold text-[var(--content-muted)] uppercase tracking-wider block">
                       {t('securityAndAudit')}
                     </span>
                     <button
@@ -361,7 +361,7 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                         setToolsDropdownOpen(false);
                         onOpenAuditLogs();
                       }}
-                      className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
+                      className="w-full text-left px-2.5 py-1.5 text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-2 transition"
                     >
                       <History className="w-3.5 h-3.5 text-emerald-400" />
                       <span>{t('auditLog')}</span>
@@ -371,9 +371,9 @@ export const AppTopNavigationBar: React.FC<AppTopNavigationBarProps> = ({
                         setToolsDropdownOpen(false);
                         onOpenPreferences();
                       }}
-                      className="w-full text-left px-2.5 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-2 transition"
+                      className="w-full text-left px-2.5 py-1.5 text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-2 transition"
                     >
-                      <Settings2 className="w-3.5 h-3.5 text-slate-400" />
+                      <Settings2 className="w-3.5 h-3.5 text-[var(--action-primary-bg)]" />
                       <span>{t('preferences')}</span>
                     </button>
                   </div>

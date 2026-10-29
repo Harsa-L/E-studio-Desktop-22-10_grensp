@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AuditLogEntry } from '../types';
 import { AuditLogService } from '../services/auditLogService';
 import { desktopFileService } from '../services/desktopFileService';
-import { History, Filter, Download, Trash2, Clock, User } from 'lucide-react';
+import { History, Filter, Download, Trash2, Clock, User, X } from 'lucide-react';
 import { useLocalization } from '../context/LocalizationContext';
 
 interface AuditTrailModalProps {
@@ -45,36 +45,41 @@ export const AuditTrailModal: React.FC<AuditTrailModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 flex flex-col max-h-[85vh]">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="audit-modal-title"
+      className="fixed inset-0 z-50 bg-[var(--scrim,rgba(0,0,0,0.6))] backdrop-blur-xs flex items-center justify-center p-4 select-none"
+    >
+      <div className="bg-[var(--surface-panel)] rounded-2xl shadow-2xl max-w-3xl w-full border border-[var(--border-default)] overflow-hidden animate-in fade-in zoom-in-95 flex flex-col max-h-[85vh] text-[var(--content-primary)]">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+        <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--surface-raised)]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[var(--action-primary-bg)] text-[var(--action-primary-fg)] flex items-center justify-center shadow-xs">
               <History className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-bold text-slate-900 text-sm">{t('auditTitle')}</h2>
-              <p className="text-[11px] text-slate-500">{t('auditSubtitle')}</p>
+              <h2 id="audit-modal-title" className="font-bold text-[var(--content-primary)] text-sm">{t('auditTitle')}</h2>
+              <p className="text-[11px] text-[var(--content-muted)]">{t('auditSubtitle')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
             aria-label={t('close')}
-            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition text-sm font-bold"
+            className="p-1.5 text-[var(--content-muted)] hover:text-[var(--content-primary)] rounded-lg hover:bg-[var(--surface-hover)] transition"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Toolbar */}
-        <div className="px-5 py-2.5 bg-slate-50/50 border-b border-slate-200 flex items-center justify-between gap-3 text-xs">
+        <div className="px-5 py-2.5 bg-[var(--surface-raised)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />
+            <Filter className="w-3.5 h-3.5 text-[var(--content-muted)]" />
             <select
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
-              className="px-2 py-1 border border-slate-300 rounded-lg text-xs bg-white text-slate-800 outline-none"
+              className="px-2.5 py-1 border border-[var(--border-default)] rounded-lg text-xs bg-[var(--surface-input)] text-[var(--content-primary)] outline-none"
             >
               <option value="all">{t('auditFilterAll')}</option>
               <option value="create">{t('auditFilterCreate')}</option>
@@ -87,14 +92,14 @@ export const AuditTrailModal: React.FC<AuditTrailModalProps> = ({ isOpen, onClos
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportLogs}
-              className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold rounded-lg flex items-center gap-1 transition"
+              className="px-2.5 py-1 bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] border border-[var(--border-default)] text-[var(--content-primary)] font-semibold rounded-lg flex items-center gap-1 transition shadow-xs"
             >
               <Download className="w-3.5 h-3.5" />
               <span>{t('auditExport')}</span>
             </button>
             <button
               onClick={handleClearLogs}
-              className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-lg flex items-center gap-1 transition"
+              className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold rounded-lg flex items-center gap-1 transition"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>{t('auditClear')}</span>
@@ -103,7 +108,7 @@ export const AuditTrailModal: React.FC<AuditTrailModalProps> = ({ isOpen, onClos
         </div>
 
         {loadError && (
-          <p role="alert" className="border-b border-rose-200 bg-rose-50 px-5 py-2 text-xs text-rose-700">
+          <p role="alert" className="border-b border-rose-500/30 bg-rose-500/10 px-5 py-2 text-xs text-rose-400">
             {t('auditLoadError')}
           </p>
         )}
@@ -111,34 +116,34 @@ export const AuditTrailModal: React.FC<AuditTrailModalProps> = ({ isOpen, onClos
         {/* Log Entries */}
         <div className="p-5 overflow-y-auto space-y-2.5 flex-1 text-xs">
           {filteredLogs.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 italic">
+            <div className="text-center py-12 text-[var(--content-muted)] italic">
               {t('auditEmpty')}
             </div>
           ) : (
             filteredLogs.map((log) => (
               <div
                 key={log.id}
-                className="p-3 border border-slate-200 rounded-xl bg-slate-50/40 hover:bg-white transition flex items-start justify-between gap-4"
+                className="p-3 border border-[var(--border-subtle)] rounded-xl bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] transition flex items-start justify-between gap-4"
               >
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900 capitalize">{log.action}</span>
+                    <span className="font-bold text-[var(--content-primary)] capitalize">{log.action}</span>
                     {log.template_name && (
-                      <span className="px-1.5 py-0.2 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-mono">
+                      <span className="px-1.5 py-0.2 bg-[var(--action-primary-bg)]/10 text-[var(--action-primary-bg)] border border-[var(--action-primary-bg)]/30 rounded text-[10px] font-mono">
                         {log.template_name}
                       </span>
                     )}
                   </div>
 
-                  <p className="text-slate-600 text-[11px]">{log.details}</p>
+                  <p className="text-[var(--content-secondary)] text-[11px]">{log.details}</p>
 
-                  <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                  <div className="flex items-center gap-3 text-[11px] text-[var(--content-muted)]">
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-400" />
+                      <Clock className="w-3 h-3 text-[var(--content-muted)]" />
                       {new Date(log.timestamp).toLocaleString(locale)}
                     </span>
                     <span className="flex items-center gap-1">
-                      <User className="w-3 h-3 text-slate-400" />
+                      <User className="w-3 h-3 text-[var(--content-muted)]" />
                       {log.user || t('system')}
                     </span>
                   </div>
@@ -149,10 +154,10 @@ export const AuditTrailModal: React.FC<AuditTrailModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <div className="px-5 py-3.5 bg-[var(--surface-raised)] border-t border-[var(--border-subtle)] flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-lg text-xs"
+            className="px-4 py-1.5 bg-[var(--action-primary-bg)] hover:bg-[var(--action-primary-hover)] text-[var(--action-primary-fg)] font-semibold rounded-lg text-xs transition shadow-xs"
           >
             {t('close')}
           </button>

@@ -48,7 +48,7 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
       <>
         {/* Top Viewport Ruler (Anchored under top ribbon) */}
         {showTopRuler && (
-          <div className="absolute top-0 left-0 right-0 h-6 bg-slate-900/95 border-b border-slate-700/90 text-[9px] font-mono font-semibold text-slate-300 pointer-events-none select-none z-30 overflow-hidden shadow-md">
+          <div className="absolute top-0 left-0 right-0 h-6 bg-[var(--canvas-rulers-bg)] border-b border-[var(--canvas-rulers-border)] text-[9px] font-mono tabular-nums font-semibold text-[var(--canvas-rulers-fg)] pointer-events-none select-none z-30 overflow-hidden shadow-xs">
             <div className="relative w-full h-full">
               {hTicks.map((mm) => {
                 const leftPx = originX + mm * scalePxPerMm;
@@ -57,14 +57,14 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
                 return (
                   <div
                     key={`vh_${mm}`}
-                    className={`absolute bottom-0 border-l ${isOrigin ? 'border-indigo-400 border-l-2' : 'border-slate-500'}`}
+                    className={`absolute bottom-0 border-l ${isOrigin ? 'border-[var(--action-primary)] border-l-2' : 'border-[var(--border-subtle)]'}`}
                     style={{
                       left: `${leftPx}px`,
                       height: isMajor ? '14px' : '7px',
                     }}
                   >
                     {isMajor && (
-                      <span className={`absolute bottom-3.5 -left-3 text-[8px] font-bold ${isOrigin ? 'text-indigo-400' : 'text-slate-200'}`}>
+                      <span className={`absolute bottom-3.5 -left-3 text-[8px] font-bold tabular-nums ${isOrigin ? 'text-[var(--action-primary)]' : 'text-[var(--content-secondary)]'}`}>
                         {mm}
                       </span>
                     )}
@@ -75,10 +75,10 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
               {/* Live mouse cursor indicator */}
               {mousePosMm && (
                 <div
-                  className="absolute top-0 bottom-0 border-l border-amber-400 z-20"
+                  className="absolute top-0 bottom-0 border-l border-[var(--action-primary)] z-20"
                   style={{ left: `${originX + mousePosMm.x_mm * scalePxPerMm}px` }}
                 >
-                  <span className="absolute -top-1 -left-3 text-[7px] bg-amber-500 text-slate-950 font-bold px-0.5 rounded shadow-2xs">
+                  <span className="absolute -top-1 -left-3 text-[7px] bg-[var(--action-primary)] text-[var(--action-primary-fg)] font-bold tabular-nums px-0.5 rounded shadow-2xs">
                     {Math.round(mousePosMm.x_mm)}
                   </span>
                 </div>
@@ -89,7 +89,7 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
 
         {/* Left Viewport Ruler (Anchored on viewport left edge) */}
         {showLeftRuler && (
-          <div className="absolute top-0 left-0 bottom-0 w-6 bg-slate-900/95 border-r border-slate-700/90 text-[9px] font-mono font-semibold text-slate-300 pointer-events-none select-none z-30 overflow-hidden shadow-md">
+          <div className="absolute top-0 left-0 bottom-0 w-6 bg-[var(--canvas-rulers-bg)] border-r border-[var(--canvas-rulers-border)] text-[9px] font-mono tabular-nums font-semibold text-[var(--canvas-rulers-fg)] pointer-events-none select-none z-30 overflow-hidden shadow-xs">
             <div className="relative w-full h-full">
               {vTicks.map((mm) => {
                 const topPx = originY + mm * scalePxPerMm;
@@ -98,14 +98,14 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
                 return (
                   <div
                     key={`vv_${mm}`}
-                    className={`absolute right-0 border-t ${isOrigin ? 'border-indigo-400 border-t-2' : 'border-slate-500'}`}
+                    className={`absolute right-0 border-t ${isOrigin ? 'border-[var(--action-primary)] border-t-2' : 'border-[var(--border-subtle)]'}`}
                     style={{
                       top: `${topPx}px`,
                       width: isMajor ? '14px' : '7px',
                     }}
                   >
                     {isMajor && (
-                      <span className={`absolute right-3.5 -top-2 text-[8px] font-bold ${isOrigin ? 'text-indigo-400' : 'text-slate-200'}`}>
+                      <span className={`absolute right-3.5 -top-2 text-[8px] font-bold tabular-nums ${isOrigin ? 'text-[var(--action-primary)]' : 'text-[var(--content-secondary)]'}`}>
                         {mm}
                       </span>
                     )}
@@ -116,10 +116,10 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
               {/* Live mouse cursor indicator */}
               {mousePosMm && (
                 <div
-                  className="absolute left-0 right-0 border-t border-amber-400 z-20"
+                  className="absolute left-0 right-0 border-t border-[var(--action-primary)] z-20"
                   style={{ top: `${originY + mousePosMm.y_mm * scalePxPerMm}px` }}
                 >
-                  <span className="absolute -left-1 -top-2.5 text-[7px] bg-amber-500 text-slate-950 font-bold px-0.5 rounded shadow-2xs">
+                  <span className="absolute -left-1 -top-2.5 text-[7px] bg-[var(--action-primary)] text-[var(--action-primary-fg)] font-bold tabular-nums px-0.5 rounded shadow-2xs">
                     {Math.round(mousePosMm.y_mm)}
                   </span>
                 </div>
@@ -150,7 +150,7 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
       {/* Top Decoupled Sheet Ruler */}
       {showTopRuler && (
         <div
-          className="absolute h-6 bg-slate-900/95 border border-slate-700/80 text-[9px] font-mono font-semibold text-slate-300 pointer-events-none select-none z-30 overflow-hidden rounded-t-sm shadow-md"
+          className="absolute h-6 bg-[var(--canvas-rulers-bg)] border border-[var(--canvas-rulers-border)] text-[9px] font-mono tabular-nums font-semibold text-[var(--canvas-rulers-fg)] pointer-events-none select-none z-30 overflow-hidden rounded-t-sm shadow-xs"
           style={{
             top: `${topOffsetPx}px`,
             left: '0px',
@@ -158,7 +158,7 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
           }}
         >
           <div className="relative w-full h-full">
-            <div className="absolute left-0.5 top-0.5 text-[8px] text-indigo-400 font-bold">
+            <div className="absolute left-0.5 top-0.5 text-[8px] text-[var(--action-primary)] font-bold tabular-nums">
               0mm
             </div>
 
@@ -168,14 +168,14 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
               return (
                 <div
                   key={`h_${mm}`}
-                  className="absolute bottom-0 border-l border-slate-500"
+                  className="absolute bottom-0 border-l border-[var(--border-subtle)]"
                   style={{
                     left: `${leftPx}px`,
                     height: isMajor ? '14px' : '7px',
                   }}
                 >
                   {isMajor && mm > 0 && (
-                    <span className="absolute bottom-3.5 -left-2 text-[8px] text-slate-200 font-bold">
+                    <span className="absolute bottom-3.5 -left-2 text-[8px] text-[var(--content-secondary)] font-bold tabular-nums">
                       {mm}
                     </span>
                   )}
@@ -185,10 +185,10 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
 
             {mousePosMm && mousePosMm.x_mm >= 0 && mousePosMm.x_mm <= width_mm && (
               <div
-                className="absolute top-0 bottom-0 border-l border-amber-400 z-20"
+                className="absolute top-0 bottom-0 border-l border-[var(--action-primary)] z-20"
                 style={{ left: `${mousePosMm.x_mm * scalePxPerMm}px` }}
               >
-                <span className="absolute -top-1 -left-3 text-[7px] bg-amber-500 text-slate-950 font-bold px-0.5 rounded shadow-2xs">
+                <span className="absolute -top-1 -left-3 text-[7px] bg-[var(--action-primary)] text-[var(--action-primary-fg)] font-bold tabular-nums px-0.5 rounded shadow-2xs">
                   {Math.round(mousePosMm.x_mm)}
                 </span>
               </div>
@@ -200,7 +200,7 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
       {/* Left Decoupled Sheet Ruler */}
       {showLeftRuler && (
         <div
-          className="absolute w-6 bg-slate-900/95 border border-slate-700/80 text-[9px] font-mono font-semibold text-slate-300 pointer-events-none select-none z-30 overflow-hidden rounded-l-sm shadow-md"
+          className="absolute w-6 bg-[var(--canvas-rulers-bg)] border border-[var(--canvas-rulers-border)] text-[9px] font-mono tabular-nums font-semibold text-[var(--canvas-rulers-fg)] pointer-events-none select-none z-30 overflow-hidden rounded-l-sm shadow-xs"
           style={{
             top: '0px',
             left: `${leftOffsetPx}px`,
@@ -214,14 +214,14 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
               return (
                 <div
                   key={`v_${mm}`}
-                  className="absolute right-0 border-t border-slate-500"
+                  className="absolute right-0 border-t border-[var(--border-subtle)]"
                   style={{
                     top: `${topPx}px`,
                     width: isMajor ? '14px' : '7px',
                   }}
                 >
                   {isMajor && mm > 0 && (
-                    <span className="absolute right-3.5 -top-2 text-[8px] text-slate-200 font-bold">
+                    <span className="absolute right-3.5 -top-2 text-[8px] text-[var(--content-secondary)] font-bold tabular-nums">
                       {mm}
                     </span>
                   )}
@@ -231,10 +231,10 @@ export const CanvasRulers: React.FC<CanvasRulersProps> = ({
 
             {mousePosMm && mousePosMm.y_mm >= 0 && mousePosMm.y_mm <= height_mm && (
               <div
-                className="absolute left-0 right-0 border-t border-amber-400 z-20"
+                className="absolute left-0 right-0 border-t border-[var(--action-primary)] z-20"
                 style={{ top: `${mousePosMm.y_mm * scalePxPerMm}px` }}
               >
-                <span className="absolute -left-1 -top-2.5 text-[7px] bg-amber-500 text-slate-950 font-bold px-0.5 rounded shadow-2xs">
+                <span className="absolute -left-1 -top-2.5 text-[7px] bg-[var(--action-primary)] text-[var(--action-primary-fg)] font-bold tabular-nums px-0.5 rounded shadow-2xs">
                   {Math.round(mousePosMm.y_mm)}
                 </span>
               </div>

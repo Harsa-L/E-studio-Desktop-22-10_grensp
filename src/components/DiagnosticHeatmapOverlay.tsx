@@ -56,16 +56,26 @@ export const DiagnosticHeatmapOverlay: React.FC<DiagnosticHeatmapOverlayProps> =
           left: `${leftMarginPx}px`,
           width: `${widthPx - leftMarginPx - rightMarginPx}px`,
           height: `${heightPx - topMarginPx - bottomMarginPx}px`,
+          borderColor: 'var(--print-safe-area)',
         }}
-        className="absolute border border-dashed border-emerald-400/60 bg-emerald-500/5"
+        className="absolute border border-dashed bg-emerald-500/5"
       >
-        <span className="absolute top-1 left-1 text-[9px] font-bold text-emerald-400 bg-emerald-950/80 px-1 py-0.5 rounded border border-emerald-500/40">
+        <span
+          style={{
+            color: 'var(--print-safe-area)',
+            borderColor: 'var(--print-safe-area)',
+          }}
+          className="absolute top-1 left-1 text-[9px] font-bold bg-slate-950/80 px-1 py-0.5 rounded border tabular-nums"
+        >
           ZONE SÉCURISÉE ({template.inner_margins_mm?.left ?? 2}mm)
         </span>
       </div>
 
       {/* Clipping warning border on edges */}
-      <div className="absolute inset-0 border-2 border-red-500/40 pointer-events-none" />
+      <div
+        style={{ borderColor: 'var(--print-out-of-bounds)' }}
+        className="absolute inset-0 border-2 pointer-events-none opacity-60"
+      />
 
       {/* Component Bounding Boxes & Neon Diagnostic Outlines */}
       {(template.items || []).map((item) => {
@@ -119,7 +129,7 @@ export const DiagnosticHeatmapOverlay: React.FC<DiagnosticHeatmapOverlayProps> =
             </div>
 
             {/* Bottom dimension tag */}
-            <div className="text-[8px] text-slate-300/80 self-end">
+            <div className="text-[8px] text-slate-300/80 self-end font-mono tabular-nums">
               {item.w_mm.toFixed(1)}×{item.h_mm.toFixed(1)}mm
             </div>
           </div>
