@@ -204,10 +204,10 @@ export const FontManagerModal: React.FC<FontManagerModalProps> = ({
                       <span className="px-1.5 py-0.2 bg-[var(--surface-panel)] text-[var(--content-muted)] border border-[var(--border-subtle)] rounded text-[9px] uppercase font-mono">
                         {f.category}
                       </span>
-                      {f.source === 'builtin' ? (
+                      {f.source !== 'custom_upload' ? (
                         <span className="text-[9px] text-[var(--content-muted)] italic">Système</span>
                       ) : (
-                        <span className="text-[9px] text-[var(--action-primary-bg)] font-semibold">Personnalisée</span>
+                        <span className="text-[9px] text-[var(--action-primary)] font-semibold">Personnalisée</span>
                       )}
                     </div>
                     <div
@@ -218,7 +218,7 @@ export const FontManagerModal: React.FC<FontManagerModalProps> = ({
                     </div>
                   </div>
 
-                  {f.source !== 'builtin' && (
+                  {f.source === 'custom_upload' && (
                     <button
                       onClick={() => handleDeleteFont(f.id)}
                       className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition"

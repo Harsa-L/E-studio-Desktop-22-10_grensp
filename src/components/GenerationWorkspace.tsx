@@ -1366,30 +1366,30 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
   };
 
   return (
-    <div data-studio-workspace="production" className="flex flex-col h-full bg-slate-100 overflow-hidden select-none">
+    <div data-studio-workspace="production" className="flex flex-col h-full bg-[var(--surface-base)] text-[var(--content-primary)] overflow-hidden select-none">
       {/* Top Header Bar */}
-      <header className="bg-white border-b border-slate-200 shrink-0 shadow-xs z-30">
+      <header className="bg-[var(--surface-panel)] border-b border-[var(--border-subtle)] shrink-0 shadow-xs z-30">
         {/* Tier 1: Master Action Bar */}
-        <div className="h-14 px-4 flex items-center justify-between border-b border-slate-100">
+        <div className="h-14 px-4 flex items-center justify-between border-b border-[var(--border-subtle)]">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={onBack}
-              className="px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg flex items-center gap-1 transition shrink-0"
+              className="px-2.5 py-1.5 text-xs font-semibold text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-1 transition shrink-0 focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
               title="Revenir à l'accueil des gabarits"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Gabarits</span>
             </button>
-            <div className="h-5 w-px bg-slate-200 shrink-0" />
+            <div className="h-5 w-px bg-[var(--border-subtle)] shrink-0" />
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-bold text-slate-900 truncate">
+                <span className="text-sm font-bold text-[var(--content-primary)] truncate">
                   {template.name}
                 </span>
-                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[11px] font-bold rounded-full border border-blue-200 shrink-0">
+                <span className="px-2 py-0.5 bg-[var(--action-primary)]/10 text-[var(--action-primary)] text-[11px] font-bold rounded-full border border-[var(--action-primary)]/20 shrink-0 tabular-nums">
                   {template.width_mm} × {template.height_mm} mm
                 </span>
-                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[11px] font-semibold rounded-full shrink-0">
+                <span className="px-2 py-0.5 bg-[var(--surface-raised)] text-[var(--content-secondary)] text-[11px] font-semibold rounded-full shrink-0 tabular-nums">
                   {products.length} articles
                 </span>
               </div>
@@ -1405,9 +1405,9 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             >
               <button
                 onClick={() => setIsDictionaryModalOpen(true)}
-                className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition"
+                className="px-3 py-1.5 bg-[var(--surface-panel)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-primary)] text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
               >
-                <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                <BookOpen className="w-3.5 h-3.5 text-[var(--action-primary)]" />
                 <span>Mapping & Alias</span>
               </button>
             </ContextTooltip>
@@ -1417,8 +1417,8 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               content="Charger un catalogue d'articles, codes EAN, désignations et grilles tarifaires dégressives"
               category="Données"
             >
-              <label className="cursor-pointer px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition">
-                <Upload className="w-3.5 h-3.5 text-slate-600" />
+              <label className="cursor-pointer px-3 py-1.5 bg-[var(--surface-panel)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-primary)] text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition focus-within:ring-2 focus-within:ring-[var(--action-focus-ring)]">
+                <Upload className="w-3.5 h-3.5 text-[var(--content-muted)]" />
                 <span>Importer Données</span>
                 <input type="file" accept=".xlsx,.csv" onChange={handleFileUpload} className="hidden" />
               </label>
@@ -1433,11 +1433,11 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               >
                 <button
                   onClick={() => setExportDropdownOpen((prev) => !prev)}
-                  className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition"
+                  className="px-3 py-1.5 bg-[var(--surface-panel)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-primary)] text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                 >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
                   <span>Exporter</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-[var(--content-muted)]" />
                 </button>
               </ContextTooltip>
 
@@ -1447,8 +1447,8 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                     className="fixed inset-0 z-40"
                     onClick={() => setExportDropdownOpen(false)}
                   />
-                  <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-1.5 animate-in fade-in-50 duration-100">
-                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
+                  <div className="absolute right-0 mt-1.5 w-64 bg-[var(--surface-panel)] border border-[var(--border-subtle)] rounded-xl shadow-xl z-50 p-1.5 animate-in fade-in-50 duration-100 text-[var(--content-primary)]">
+                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--content-muted)] border-b border-[var(--border-subtle)] mb-1">
                       Formats d'Exportation
                     </div>
                     <button
@@ -1456,12 +1456,12 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                         setExportDropdownOpen(false);
                         handleExportExcel();
                       }}
-                      className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 rounded-lg flex items-center gap-2.5 transition"
+                      className="w-full text-left px-3 py-2 text-xs text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-2.5 transition"
                     >
-                      <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-500 shrink-0" />
                       <div>
                         <div className="font-semibold">Tableur Excel (.xlsx)</div>
-                        <div className="text-[10px] text-slate-400">Catalogue articles & paliers</div>
+                        <div className="text-[10px] text-[var(--content-muted)]">Catalogue articles & paliers</div>
                       </div>
                     </button>
                     <button
@@ -1469,12 +1469,12 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                         setExportDropdownOpen(false);
                         setShowZplModal(true);
                       }}
-                      className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-2.5 transition"
+                      className="w-full text-left px-3 py-2 text-xs text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-2.5 transition"
                     >
-                      <Cpu className="w-4 h-4 text-slate-800 shrink-0" />
+                      <Cpu className="w-4 h-4 text-[var(--action-primary)] shrink-0" />
                       <div>
                         <div className="font-semibold">Zebra / TSC (.zpl)</div>
-                        <div className="text-[10px] text-slate-400">Flux thermique direct industriel</div>
+                        <div className="text-[10px] text-[var(--content-muted)]">Flux thermique direct industriel</div>
                       </div>
                     </button>
                     <button
@@ -1482,12 +1482,12 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                         setExportDropdownOpen(false);
                         void openPrintModal('pdf');
                       }}
-                      className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-900 rounded-lg flex items-center gap-2.5 transition"
+                      className="w-full text-left px-3 py-2 text-xs text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-2.5 transition"
                     >
-                      <Printer className="w-4 h-4 text-blue-600 shrink-0" />
+                      <Printer className="w-4 h-4 text-[var(--action-primary)] shrink-0" />
                       <div>
                         <div className="font-semibold">Imprimer le PDF via CUPS</div>
-                        <div className="text-[10px] text-slate-400">Soumission au spooler OS (Linux/macOS)</div>
+                        <div className="text-[10px] text-[var(--content-muted)]">Soumission au spooler OS (Linux/macOS)</div>
                       </div>
                     </button>
                     <button
@@ -1495,12 +1495,12 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                         setExportDropdownOpen(false);
                         void openPrintModal('zpl');
                       }}
-                      className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 rounded-lg flex items-center gap-2.5 transition"
+                      className="w-full text-left px-3 py-2 text-xs text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-2.5 transition"
                     >
-                      <Cpu className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <Cpu className="w-4 h-4 text-emerald-500 shrink-0" />
                       <div>
                         <div className="font-semibold">Envoyer ZPL au réseau</div>
-                        <div className="text-[10px] text-slate-400">TCP privé vers imprimante configurée</div>
+                        <div className="text-[10px] text-[var(--content-muted)]">TCP privé vers imprimante configurée</div>
                       </div>
                     </button>
                     <button
@@ -1508,12 +1508,12 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                         setExportDropdownOpen(false);
                         handleExportPptx();
                       }}
-                      className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-900 rounded-lg flex items-center gap-2.5 transition"
+                      className="w-full text-left px-3 py-2 text-xs text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg flex items-center gap-2.5 transition"
                     >
-                      <Presentation className="w-4 h-4 text-amber-600 shrink-0" />
+                      <Presentation className="w-4 h-4 text-amber-500 shrink-0" />
                       <div>
                         <div className="font-semibold">PowerPoint (.pptx)</div>
-                        <div className="text-[10px] text-slate-400">Diaporama & fiches de rayon</div>
+                        <div className="text-[10px] text-[var(--content-muted)]">Diaporama & fiches de rayon</div>
                       </div>
                     </button>
                   </div>
@@ -1523,10 +1523,10 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
             <button
               onClick={() => setShowJobHistory(true)}
-              className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition"
+              className="px-3 py-1.5 bg-[var(--surface-panel)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-primary)] text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
               title="Consulter l'historique des travaux d'impression et le spooler SQLite"
             >
-              <History className="w-3.5 h-3.5 text-purple-600" />
+              <History className="w-3.5 h-3.5 text-purple-400" />
               <span>Spooler SQLite</span>
             </button>
 
@@ -1537,7 +1537,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             >
               <button
                 onClick={() => setExportConfirmTarget('pdf')}
-                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition"
+                className="px-3.5 py-1.5 bg-[var(--action-primary)] hover:bg-[var(--action-hover)] text-[var(--action-primary-fg)] text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Télécharger PDF Planche</span>
@@ -1547,11 +1547,11 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
         </div>
 
         {/* Tier 2: Ergonomic 3-Phase Workflow Ribbon */}
-        <div className="px-4 py-2 bg-slate-50 flex items-center justify-between gap-4 overflow-x-auto text-xs">
+        <div className="px-4 py-2 bg-[var(--surface-raised)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-4 overflow-x-auto text-xs">
           <div className="flex items-center gap-6">
             {/* Phase 1: Données & Paliers */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">
+              <span className="text-[10px] font-bold text-[var(--content-muted)] uppercase tracking-wider hidden md:inline">
                 1. Données :
               </span>
               <ContextTooltip
@@ -1561,14 +1561,14 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               >
                 <button
                   onClick={() => setActiveTab('data')}
-                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition ${
+                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
                     activeTab === 'data'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+                      ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs'
+                      : 'bg-[var(--surface-panel)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)]'
                   }`}
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>{t('dataTab')} ({products.length})</span>
+                  <span className="tabular-nums">{t('dataTab')} ({products.length})</span>
                 </button>
               </ContextTooltip>
               <ContextTooltip
@@ -1578,13 +1578,13 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               >
                 <button
                   onClick={() => setActiveTab('tiers')}
-                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition ${
+                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
                     activeTab === 'tiers'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+                      ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs'
+                      : 'bg-[var(--surface-panel)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)]'
                   }`}
                 >
-                  <TrendingDown className="w-3.5 h-3.5 text-blue-500" />
+                  <TrendingDown className="w-3.5 h-3.5 text-[var(--action-primary)]" />
                   <span>{t('tiersTab')}</span>
                 </button>
               </ContextTooltip>
@@ -1595,23 +1595,23 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               >
                 <button
                   onClick={() => setActiveTab('clustering')}
-                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition ${
+                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
                     activeTab === 'clustering'
-                      ? 'bg-purple-600 text-white shadow-xs'
-                      : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+                      ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs'
+                      : 'bg-[var(--surface-panel)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)]'
                   }`}
                 >
-                  <Boxes className="w-3.5 h-3.5 text-purple-500" />
+                  <Boxes className="w-3.5 h-3.5 text-purple-400" />
                   <span>{t('assortmentsTab')}</span>
                 </button>
               </ContextTooltip>
             </div>
 
-            <div className="h-4 w-px bg-slate-300 hidden md:block" />
+            <div className="h-4 w-px bg-[var(--border-subtle)] hidden md:block" />
 
             {/* Phase 2: Signalétique & Imposition */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">
+              <span className="text-[10px] font-bold text-[var(--content-muted)] uppercase tracking-wider hidden md:inline">
                 2. Mise en Page :
               </span>
               <ContextTooltip
@@ -1621,10 +1621,10 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               >
                 <button
                   onClick={() => setActiveTab('multislot')}
-                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition ${
+                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
                     activeTab === 'multislot'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+                      ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs'
+                      : 'bg-[var(--surface-panel)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)]'
                   }`}
                 >
                   <LayoutGrid className="w-3.5 h-3.5 text-emerald-500" />
@@ -1638,10 +1638,10 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               >
                 <button
                   onClick={() => setActiveTab('imposition')}
-                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition ${
+                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
                     activeTab === 'imposition'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+                      ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs'
+                      : 'bg-[var(--surface-panel)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)]'
                   }`}
                 >
                   <Grid className="w-3.5 h-3.5" />
@@ -1655,10 +1655,10 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               >
                 <button
                   onClick={() => setActiveTab('blueprint')}
-                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition ${
+                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
                     activeTab === 'blueprint'
-                      ? 'bg-amber-600 text-white shadow-xs'
-                      : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+                      ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs'
+                      : 'bg-[var(--surface-panel)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)]'
                   }`}
                 >
                   <Compass className="w-3.5 h-3.5 text-amber-500" />
@@ -1667,11 +1667,11 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               </ContextTooltip>
             </div>
 
-            <div className="h-4 w-px bg-slate-300 hidden md:block" />
+            <div className="h-4 w-px bg-[var(--border-subtle)] hidden md:block" />
 
             {/* Phase 3: BÀT & Validation */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden md:inline">
+              <span className="text-[10px] font-bold text-[var(--content-muted)] uppercase tracking-wider hidden md:inline">
                 3. BÀT :
               </span>
               <ContextTooltip
@@ -1681,13 +1681,13 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               >
                 <button
                   onClick={() => setActiveTab('preview')}
-                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition ${
+                  className={`px-2.5 py-1 font-semibold rounded-lg flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
                     activeTab === 'preview'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+                      ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs'
+                      : 'bg-[var(--surface-panel)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)]'
                   }`}
                 >
-                  <Eye className="w-3.5 h-3.5 text-indigo-500" />
+                  <Eye className="w-3.5 h-3.5 text-[var(--action-primary)]" />
                   <span>{t('proofTab')}</span>
                 </button>
               </ContextTooltip>
@@ -1695,26 +1695,26 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-white shadow-2xs">
-              <span className="text-slate-400">Pré-presse :</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-[var(--border-subtle)] bg-[var(--surface-panel)] shadow-2xs">
+              <span className="text-[var(--content-muted)]">Pré-presse :</span>
               {preFlightReport.status === 'ready' ? (
-                <span className="text-emerald-600 flex items-center gap-1">
+                <span className="text-emerald-400 flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Conforme (300 DPI)</span>
                 </span>
               ) : preFlightReport.status === 'warning' ? (
-                <span className="text-amber-600 flex items-center gap-1" title={preFlightReport.issues.map((i) => i.message).join('\n')}>
+                <span className="text-amber-400 flex items-center gap-1" title={preFlightReport.issues.map((i) => i.message).join('\n')}>
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  <span>{preFlightReport.warningsCount} avertissement(s)</span>
+                  <span className="tabular-nums">{preFlightReport.warningsCount} avertissement(s)</span>
                 </span>
               ) : (
-                <span className="text-red-600 flex items-center gap-1" title={preFlightReport.issues.map((i) => i.message).join('\n')}>
+                <span className="text-rose-400 flex items-center gap-1" title={preFlightReport.issues.map((i) => i.message).join('\n')}>
                   <AlertCircle className="w-3.5 h-3.5" />
-                  <span>{preFlightReport.errorsCount} erreur(s)</span>
+                  <span className="tabular-nums">{preFlightReport.errorsCount} erreur(s)</span>
                 </span>
               )}
             </div>
-            <div className="text-[11px] text-slate-400 font-mono hidden lg:block">
+            <div className="text-[11px] text-[var(--content-muted)] font-mono hidden lg:block">
               Workflow E-Studio • Planche {template.name}
             </div>
           </div>
@@ -1722,13 +1722,13 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
       </header>
 
       {exportError && (
-        <div role="alert" className="shrink-0 border-b border-rose-300 bg-rose-50 px-4 py-3 text-xs text-rose-900">
+        <div role="alert" className="shrink-0 border-b border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-300">
           <div className="flex items-start justify-between gap-3">
             <div className="whitespace-pre-line">{exportError}</div>
             <button
               type="button"
               onClick={() => setExportError(null)}
-              className="shrink-0 font-semibold text-rose-700 hover:text-rose-900"
+              className="shrink-0 font-semibold text-rose-400 hover:text-rose-200"
             >
               Fermer
             </button>
@@ -1737,20 +1737,20 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
       )}
 
       {/* Global Print & Preview Scope Control Bar */}
-      <div className="bg-slate-900 text-white border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 z-20 shadow-xs">
+      <div className="bg-[var(--surface-panel)] text-[var(--content-primary)] border-b border-[var(--border-subtle)] px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 z-20 shadow-xs">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5 font-bold text-slate-300">
-            <Target className="w-4 h-4 text-blue-400 shrink-0" />
+          <div className="flex items-center gap-1.5 font-bold text-[var(--content-primary)]">
+            <Target className="w-4 h-4 text-[var(--action-primary)] shrink-0" />
             <span>Périmètre d'Aperçu & Impression :</span>
           </div>
 
-          <div className="flex items-center bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+          <div className="flex items-center bg-[var(--surface-raised)] p-0.5 rounded-lg border border-[var(--border-subtle)]">
             <button
               onClick={() => setPrintScope('selected_only')}
-              className={`px-3 py-1 rounded-md font-semibold text-xs transition flex items-center gap-1.5 ${
+              className={`px-3 py-1 rounded-md font-semibold text-xs transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
                 printScope === 'selected_only'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-sm'
+                  : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
               }`}
               title="Générer et prévisualiser uniquement pour l'article sélectionné"
             >
@@ -1759,51 +1759,51 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
             <button
               onClick={() => setPrintScope('checked_only')}
-              className={`px-3 py-1 rounded-md font-semibold text-xs transition flex items-center gap-1.5 ${
+              className={`px-3 py-1 rounded-md font-semibold text-xs transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
                 printScope === 'checked_only'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-sm'
+                  : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
               }`}
               title="Générer pour les articles cochés avec leurs quantités respectives"
             >
-              <span>☑️ Articles cochés ({checkedProductIds.size})</span>
+              <span className="tabular-nums">☑️ Articles cochés ({checkedProductIds.size})</span>
             </button>
 
             <button
               onClick={() => setPrintScope('all')}
-              className={`px-3 py-1 rounded-md font-semibold text-xs transition flex items-center gap-1.5 ${
+              className={`px-3 py-1 rounded-md font-semibold text-xs transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
                 printScope === 'all'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-sm'
+                  : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
               }`}
               title="Générer pour la totalité du catalogue ou du lot filtré"
             >
-              <span>📦 Tout le catalogue ({filteredProducts.length})</span>
+              <span className="tabular-nums">📦 Tout le catalogue ({filteredProducts.length})</span>
             </button>
           </div>
 
           {printScope === 'selected_only' && (
-            <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
-              <label className="flex items-center gap-1.5 text-slate-300 text-xs cursor-pointer">
+            <div className="flex items-center gap-2.5 pl-2 border-l border-[var(--border-subtle)]">
+              <label className="flex items-center gap-1.5 text-[var(--content-secondary)] text-xs cursor-pointer">
                 <input
                   type="checkbox"
                   checked={fillSheetWithSelected}
                   onChange={(e) => setFillSheetWithSelected(e.target.checked)}
-                  className="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                  className="rounded text-[var(--action-primary)] focus:ring-[var(--action-focus-ring)] w-3.5 h-3.5"
                 />
-                <span>Remplir planche ({imposition?.total_per_page || 1} ex.)</span>
+                <span className="tabular-nums">Remplir planche ({imposition?.total_per_page || 1} ex.)</span>
               </label>
 
               {!fillSheetWithSelected && (
-                <div className="flex items-center gap-1 text-slate-300 text-xs">
-                  <span className="text-slate-400">Exemplaires :</span>
+                <div className="flex items-center gap-1 text-[var(--content-secondary)] text-xs">
+                  <span className="text-[var(--content-muted)]">Exemplaires :</span>
                   <input
                     type="number"
                     min="1"
                     max="1000"
                     value={selectedCopies}
                     onChange={(e) => setSelectedCopies(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-14 px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-center font-mono text-xs text-white"
+                    className="w-14 px-2 py-0.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-center font-mono text-xs text-[var(--content-primary)] tabular-nums"
                   />
                 </div>
               )}
@@ -1811,17 +1811,17 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
           )}
 
           {printScope === 'checked_only' && (
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-800 text-xs">
+            <div className="flex items-center gap-2 pl-2 border-l border-[var(--border-subtle)] text-xs">
               <button
                 onClick={() => setCheckedProductIds(new Set(filteredProducts.map((p) => p.id)))}
-                className="text-blue-400 hover:underline font-medium"
+                className="text-[var(--action-primary)] hover:underline font-medium"
               >
                 Tout cocher
               </button>
-              <span className="text-slate-600">•</span>
+              <span className="text-[var(--content-muted)]">•</span>
               <button
                 onClick={() => setCheckedProductIds(new Set())}
-                className="text-slate-400 hover:underline"
+                className="text-[var(--content-muted)] hover:underline"
               >
                 Tout décocher
               </button>
@@ -1830,9 +1830,9 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
         </div>
 
         {/* Live Calculation Output Indicator */}
-        <div className="flex items-center gap-2 text-slate-400 text-xs">
+        <div className="flex items-center gap-2 text-[var(--content-secondary)] text-xs">
           <span>Sortie prévue :</span>
-          <span className="px-2 py-0.5 rounded font-mono font-bold bg-slate-800 text-blue-300 border border-slate-700">
+          <span className="px-2 py-0.5 rounded font-mono font-bold bg-[var(--surface-raised)] text-[var(--action-primary)] border border-[var(--border-subtle)] tabular-nums">
             {effectivePrintItems.length} étiquette{effectivePrintItems.length > 1 ? 's' : ''} • {Math.ceil((effectivePrintItems.length + (impositionConfig.start_offset_slot || 0)) / (imposition?.total_per_page || 1))} feuille{Math.ceil((effectivePrintItems.length + (impositionConfig.start_offset_slot || 0)) / (imposition?.total_per_page || 1)) > 1 ? 's' : ''}
           </span>
         </div>
@@ -1842,10 +1842,10 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
       {activeTab === 'preview' && (
         <div className="flex-1 flex overflow-hidden">
           {/* Left Sidebar: Articles List */}
-          <div className="w-84 bg-white border-r border-slate-200 flex flex-col shrink-0">
-            <div className="p-3 border-b border-slate-200 bg-slate-50/70">
+          <div className="w-84 bg-[var(--surface-panel)] border-r border-[var(--border-subtle)] flex flex-col shrink-0 text-[var(--content-primary)]">
+            <div className="p-3 border-b border-[var(--border-subtle)] bg-[var(--surface-raised)]/70">
               <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[var(--content-muted)]" />
                 <input
                   type="text"
                   placeholder="Rechercher article, EAN, SKU..."
@@ -1854,15 +1854,15 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                     setSearchTerm(e.target.value);
                     setCurrentIndex(0);
                   }}
-                  className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:outline-hidden"
+                  className="w-full pl-8 pr-3 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs text-[var(--content-primary)] placeholder-[var(--content-muted)] focus:ring-1 focus:ring-[var(--action-focus-ring)] focus:outline-none transition"
                 />
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+            <div className="flex-1 overflow-y-auto divide-y divide-[var(--border-subtle)]">
               {filteredProducts.length === 0 ? (
-                <div className="p-6 text-center text-xs text-slate-400">
-                  <p className="font-semibold text-slate-600 mb-1">Aucun article dans la file</p>
+                <div className="p-6 text-center text-xs text-[var(--content-muted)]">
+                  <p className="font-semibold text-[var(--content-secondary)] mb-1">Aucun article dans la file</p>
                   <p>Importez un fichier Excel/CSV ou liez des données depuis le catalogue pour générer des planches.</p>
                 </div>
               ) : (
@@ -1875,7 +1875,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                     key={p.id}
                     onClick={() => setCurrentIndex(idx)}
                     className={`p-3 cursor-pointer transition flex items-start gap-2.5 ${
-                      isSelected ? 'bg-blue-50/80 border-l-3 border-blue-600' : 'hover:bg-slate-50'
+                      isSelected ? 'bg-[var(--action-primary)]/10 border-l-3 border-[var(--action-primary)]' : 'hover:bg-[var(--surface-hover)]'
                     }`}
                   >
                     <input
@@ -1890,7 +1890,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                           return next;
                         });
                       }}
-                      className="mt-1 rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 shrink-0 cursor-pointer"
+                      className="mt-1 rounded text-[var(--action-primary)] focus:ring-[var(--action-focus-ring)] w-3.5 h-3.5 shrink-0 cursor-pointer"
                       title="Cocher pour impression par lot"
                     />
                     <div className="pt-0.5">
@@ -1904,16 +1904,16 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-[10px] text-slate-400 font-bold">{p.PARTNO}</span>
-                        <span className="font-bold text-xs text-slate-900">
+                        <span className="font-mono text-[10px] text-[var(--content-muted)] font-bold tabular-nums">{p.PARTNO}</span>
+                        <span className="font-bold text-xs text-[var(--content-primary)] font-mono tabular-nums">
                           {(Number(p.SELLING_PRICE) || 0).toLocaleString('fr-FR')} F
                         </span>
                       </div>
-                      <p className="font-semibold text-xs text-slate-800 truncate mt-0.5">{p.ITEMNAME}</p>
-                      <div className="flex items-center justify-between text-[10px] text-slate-500 mt-0.5">
-                        <span className="font-mono">{p.PRODUCT_SCAN || 'Sans code-barres'}</span>
+                      <p className="font-semibold text-xs text-[var(--content-primary)] truncate mt-0.5">{p.ITEMNAME}</p>
+                      <div className="flex items-center justify-between text-[10px] text-[var(--content-secondary)] mt-0.5">
+                        <span className="font-mono tabular-nums">{p.PRODUCT_SCAN || 'Sans code-barres'}</span>
                         {isChecked && (
-                          <span className="px-1.5 py-0.2 bg-blue-100 text-blue-800 rounded text-[9px] font-bold">
+                          <span className="px-1.5 py-0.2 bg-[var(--action-primary)]/15 text-[var(--action-primary)] rounded text-[9px] font-bold">
                             Coché
                           </span>
                         )}
@@ -1926,24 +1926,24 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
           </div>
 
           {/* Right Main Stage: Preview & Controls */}
-          <div className="flex-1 flex flex-col bg-slate-100 overflow-hidden">
+          <div className="flex-1 flex flex-col bg-[var(--surface-base)] overflow-hidden">
             {/* Carousel Navigation Bar */}
-            <div className="h-11 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0">
+            <div className="h-11 bg-[var(--surface-panel)] border-b border-[var(--border-subtle)] px-6 flex items-center justify-between shrink-0 text-[var(--content-primary)]">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentIndex((c) => Math.max(0, c - 1))}
                   disabled={currentIndex === 0}
-                  className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30 text-slate-700"
+                  className="p-1.5 rounded hover:bg-[var(--surface-hover)] disabled:opacity-30 text-[var(--content-secondary)] hover:text-[var(--content-primary)] focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="font-mono text-xs font-bold text-slate-700">
+                <span className="font-mono text-xs font-bold text-[var(--content-primary)] tabular-nums">
                   Article {currentIndex + 1} sur {filteredProducts.length}
                 </span>
                 <button
                   onClick={() => setCurrentIndex((c) => Math.min(filteredProducts.length - 1, c + 1))}
                   disabled={currentIndex === filteredProducts.length - 1}
-                  className="p-1.5 rounded hover:bg-slate-100 disabled:opacity-30 text-slate-700"
+                  className="p-1.5 rounded hover:bg-[var(--surface-hover)] disabled:opacity-30 text-[var(--content-secondary)] hover:text-[var(--content-primary)] focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -1951,12 +1951,12 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
               {currentProduct && (
                 <div className="flex items-center gap-3">
-                  <div className="hidden sm:flex items-center gap-3 text-xs text-slate-600">
+                  <div className="hidden sm:flex items-center gap-3 text-xs text-[var(--content-secondary)]">
                     <span>
-                      Marque: <strong className="text-slate-800">{currentProduct.BRAND_INFO || '—'}</strong>
+                      Marque: <strong className="text-[var(--content-primary)]">{currentProduct.BRAND_INFO || '—'}</strong>
                     </span>
                     <span>
-                      Rayon: <strong className="text-slate-800">{currentProduct.CATEGORY_NAME || '—'}</strong>
+                      Rayon: <strong className="text-[var(--content-primary)]">{currentProduct.CATEGORY_NAME || '—'}</strong>
                     </span>
                   </div>
 
@@ -1965,7 +1965,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                       setPrintScope('selected_only');
                       handleGeneratePdf();
                     }}
-                    className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition"
+                    className="px-2.5 py-1 bg-[var(--action-primary)] hover:bg-[var(--action-hover)] text-[var(--action-primary-fg)] rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                     title="Générer le PDF pour cet article sélectionné"
                   >
                     <FileText className="w-3.5 h-3.5" />
@@ -1984,7 +1984,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                       }
                     }}
                     disabled={externalPreviewLoading}
-                    className="px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 disabled:opacity-50 text-xs font-semibold"
+                    className="px-2.5 py-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-raised)] text-[var(--action-primary)] hover:bg-[var(--surface-hover)] disabled:opacity-50 text-xs font-semibold focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                   >
                     {externalPreviewLoading ? 'Simulation…' : showExternalPreview ? 'Aperçu local' : 'Simulation Labelary'}
                   </button>
@@ -1992,35 +1992,35 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               )}
             </div>
 
-            {/* Centered Preview Canvas */}
+            {/* Centered Preview Canvas on Dynamic Pasteboard */}
             <div
               className="flex-1 flex items-center justify-center p-8 overflow-auto"
               style={{
-                backgroundColor: '#e2e8f0',
+                backgroundColor: 'var(--canvas-pasteboard)',
                 backgroundImage:
-                  'radial-gradient(#cbd5e1 1.5px, transparent 1.5px), radial-gradient(#cbd5e1 1.5px, #e2e8f0 1.5px)',
+                  'radial-gradient(var(--canvas-grid-dot) 1.5px, transparent 1.5px), radial-gradient(var(--canvas-grid-dot) 1.5px, var(--canvas-pasteboard) 1.5px)',
                 backgroundSize: '24px 24px',
                 backgroundPosition: '0 0, 12px 12px',
               }}
             >
               {externalPreviewError && (
-                <div role="alert" className="absolute top-16 z-10 max-w-xl rounded-lg border border-rose-300 bg-white p-3 text-xs text-rose-800 shadow">
+                <div role="alert" className="absolute top-16 z-10 max-w-xl rounded-lg border border-rose-500/30 bg-[var(--surface-panel)] p-3 text-xs text-rose-400 shadow">
                   Échec de la simulation Labelary : {externalPreviewError}
                 </div>
               )}
               {showExternalPreview && externalPreviewUrl ? (
                 <div className="flex max-h-full max-w-full flex-col items-center gap-3 overflow-auto">
-                  <div className="max-w-2xl rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-xs text-amber-950">
+                  <div className="max-w-2xl rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-300">
                     Simulation externe Labelary ({printerConfig.zpl_dpi} dpi). Le rendu réseau n’est pas une épreuve de production ; confirmez sur l’imprimante et avec un lecteur.
                   </div>
                   <img
                     src={externalPreviewUrl}
                     alt="Simulation externe de l’étiquette par Labelary"
-                    className="max-h-[70vh] max-w-full bg-white shadow-2xl ring-1 ring-slate-300"
+                    className="max-h-[70vh] max-w-full bg-white shadow-2xl ring-1 ring-[var(--border-subtle)]"
                   />
                 </div>
               ) : currentProduct ? (
-                <div className="shadow-2xl ring-1 ring-slate-300">
+                <div className="shadow-2xl ring-1 ring-[var(--border-subtle)]">
                   <LabelRenderer
                     template={template}
                     record={currentProduct}
@@ -2032,9 +2032,9 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   />
                 </div>
               ) : (
-                <div className="text-center p-8 bg-white border border-slate-200 rounded-2xl shadow-sm max-w-sm">
-                  <p className="font-bold text-slate-800 text-sm mb-1">Aperçu en attente de données</p>
-                  <p className="text-slate-500 text-xs">Chargez un catalogue ou ajoutez des articles pour prévisualiser ce gabarit avec des données réelles.</p>
+                <div className="text-center p-8 bg-[var(--surface-panel)] border border-[var(--border-subtle)] rounded-2xl shadow-sm max-w-sm text-[var(--content-primary)]">
+                  <p className="font-bold text-sm mb-1">Aperçu en attente de données</p>
+                  <p className="text-[var(--content-muted)] text-xs">Chargez un catalogue ou ajoutez des articles pour prévisualiser ce gabarit avec des données réelles.</p>
                 </div>
               )}
             </div>
@@ -2046,16 +2046,16 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
       {activeTab === 'imposition' && (
         <div className="flex-1 flex overflow-hidden">
           {/* Settings Panel */}
-          <div className="w-80 bg-white border-r border-slate-200 p-5 flex flex-col gap-4 text-xs shrink-0 overflow-y-auto">
-            <h3 className="font-bold text-slate-900 uppercase text-[11px] tracking-wider text-slate-400">
+          <div className="w-80 bg-[var(--surface-panel)] border-r border-[var(--border-subtle)] p-5 flex flex-col gap-4 text-xs shrink-0 overflow-y-auto text-[var(--content-primary)]">
+            <h3 className="font-bold uppercase text-[11px] tracking-wider text-[var(--content-muted)]">
               Paramètres d'Imposition Planche
             </h3>
 
             {/* Avery / Standard Formats Preset Quick Picker */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="font-semibold text-slate-700 flex items-center gap-1">
-                  <BookmarkCheck className="w-3.5 h-3.5 text-blue-600" />
+                <label className="font-semibold text-[var(--content-primary)] flex items-center gap-1">
+                  <BookmarkCheck className="w-3.5 h-3.5 text-blue-500" />
                   <span>Modèle Planche / Avery</span>
                 </label>
               </div>
@@ -2071,7 +2071,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   }
                 }}
                 defaultValue=""
-                className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs"
+                className="w-full px-3 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs text-[var(--content-primary)]"
               >
                 <option value="" disabled>Sélectionner un format standard...</option>
                 {AVERY_STANDARD_CATALOG.map((p) => (
@@ -2083,13 +2083,13 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Format Papier Physique</label>
+              <label className="block font-semibold text-[var(--content-primary)] mb-1">Format Papier Physique</label>
               <select
                 value={impositionConfig.page_size}
                 onChange={(e) =>
                   setImpositionConfig({ ...impositionConfig, page_size: e.target.value as any })
                 }
-                className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs"
+                className="w-full px-3 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs text-[var(--content-primary)]"
               >
                 <option value="A4">A4 (210 × 297 mm)</option>
                 <option value="A3">A3 (297 × 420 mm)</option>
@@ -2101,11 +2101,11 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             </div>
 
             {impositionConfig.page_size === 'CUSTOM' && (
-              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex flex-col gap-2">
-                <span className="font-semibold text-slate-700 text-[11px]">Dimensions Page Personnalisée</span>
+              <div className="p-2.5 bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg flex flex-col gap-2">
+                <span className="font-semibold text-[var(--content-primary)] text-[11px]">Dimensions Page Personnalisée</span>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Largeur (mm)</span>
+                    <span className="text-[10px] text-[var(--content-muted)] font-medium block mb-0.5">Largeur (mm)</span>
                     <input
                       type="number"
                       min="20"
@@ -2117,11 +2117,11 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                           custom_page_w_mm: parseFloat(e.target.value) || 210,
                         })
                       }
-                      className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                      className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs font-mono tabular-nums text-[var(--content-primary)]"
                     />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Hauteur (mm)</span>
+                    <span className="text-[10px] text-[var(--content-muted)] font-medium block mb-0.5">Hauteur (mm)</span>
                     <input
                       type="number"
                       min="20"
@@ -2133,7 +2133,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                           custom_page_h_mm: parseFloat(e.target.value) || 297,
                         })
                       }
-                      className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                      className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs font-mono tabular-nums text-[var(--content-primary)]"
                     />
                   </div>
                 </div>
@@ -2141,15 +2141,15 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             )}
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Orientation</label>
+              <label className="block font-semibold text-[var(--content-primary)] mb-1">Orientation</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setImpositionConfig({ ...impositionConfig, orientation: 'portrait' })}
                   className={`py-1.5 px-3 rounded-lg border text-center font-medium transition ${
                     impositionConfig.orientation === 'portrait'
-                      ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold'
-                      : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                      ? 'bg-blue-600/10 border-blue-500 text-blue-500 font-bold'
+                      : 'border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)]'
                   }`}
                 >
                   Portrait
@@ -2159,8 +2159,8 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   onClick={() => setImpositionConfig({ ...impositionConfig, orientation: 'landscape' })}
                   className={`py-1.5 px-3 rounded-lg border text-center font-medium transition ${
                     impositionConfig.orientation === 'landscape'
-                      ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold'
-                      : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                      ? 'bg-blue-600/10 border-blue-500 text-blue-500 font-bold'
+                      : 'border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)]'
                   }`}
                 >
                   Paysage
@@ -2169,10 +2169,10 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block font-semibold text-slate-700 text-xs">Espacement des Étiquettes sur la Planche (mm)</label>
+              <label className="block font-semibold text-[var(--content-primary)] text-xs">Espacement des Étiquettes sur la Planche (mm)</label>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Espacement Horiz. X (mm)</span>
+                  <span className="text-[10px] text-[var(--content-muted)] font-medium block mb-0.5">Espacement Horiz. X (mm)</span>
                   <input
                     type="number"
                     step="0.5"
@@ -2183,11 +2183,11 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                       const val = parseFloat(e.target.value) || 0;
                       setImpositionConfig({ ...impositionConfig, gap_x_mm: val, gap_mm: val });
                     }}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-800"
+                    className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs font-mono tabular-nums font-bold text-[var(--content-primary)]"
                   />
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Espacement Vert. Y (mm)</span>
+                  <span className="text-[10px] text-[var(--content-muted)] font-medium block mb-0.5">Espacement Vert. Y (mm)</span>
                   <input
                     type="number"
                     step="0.5"
@@ -2198,7 +2198,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                       const val = parseFloat(e.target.value) || 0;
                       setImpositionConfig({ ...impositionConfig, gap_y_mm: val });
                     }}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-800"
+                    className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs font-mono tabular-nums font-bold text-[var(--content-primary)]"
                   />
                 </div>
               </div>
@@ -2208,9 +2208,9 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   template.default_imposition = impositionConfig;
                   await api.templateSave(template);
                 }}
-                className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                className="w-full py-1.5 bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] text-[var(--content-primary)] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition"
               >
-                <BookmarkCheck className="w-3.5 h-3.5 text-blue-600" />
+                <BookmarkCheck className="w-3.5 h-3.5 text-blue-500" />
                 <span>Enregistrer cette disposition dans le gabarit</span>
               </button>
             </div>
@@ -2253,26 +2253,26 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             </div>
 
             <div className="flex items-center justify-between pt-1">
-              <label className="font-semibold text-slate-700">Repères de coupe (Crop marks)</label>
+              <label className="font-semibold text-[var(--content-primary)]">Repères de coupe (Crop marks)</label>
               <input
                 type="checkbox"
                 checked={impositionConfig.show_cut_marks}
                 onChange={(e) =>
                   setImpositionConfig({ ...impositionConfig, show_cut_marks: e.target.checked })
                 }
-                className="rounded text-blue-600"
+                className="rounded text-blue-500"
               />
             </div>
 
             {/* Advanced PDF Export Config */}
-            <div className="pt-2 border-t border-slate-200 space-y-2">
+            <div className="pt-2 border-t border-[var(--border-subtle)] space-y-2">
               <div className="flex items-center justify-between">
-                <label className="font-semibold text-slate-700 text-xs flex items-center gap-1">
-                  <Settings2 className="w-3.5 h-3.5 text-slate-500" />
+                <label className="font-semibold text-[var(--content-primary)] text-xs flex items-center gap-1">
+                  <Settings2 className="w-3.5 h-3.5 text-[var(--content-muted)]" />
                   <span>Limites de l'export PDF</span>
                 </label>
               </div>
-              <p className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-[11px] leading-relaxed text-amber-900">
+              <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-[11px] leading-relaxed text-amber-500">
                 L'export PDF actuel est vectoriel RGB : il ne produit pas de résolution DPI configurable,
                 de fond perdu ni de séparations CMJN. Ces réglages sont masqués pour éviter de présenter
                 une simulation comme une finition prépresse.
@@ -2280,14 +2280,14 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
             </div>
 
             {/* Print Calibration Offset Controls */}
-            <div className="pt-2 border-t border-slate-200">
+            <div className="pt-2 border-t border-[var(--border-subtle)]">
               <div className="flex items-center justify-between mb-1.5">
-                <label className="font-semibold text-slate-700 text-xs">Calibration Imprimante (Décalage)</label>
-                <span className="text-[10px] text-slate-400 font-mono">± 0.1 mm</span>
+                <label className="font-semibold text-[var(--content-primary)] text-xs">Calibration Imprimante (Décalage)</label>
+                <span className="text-[10px] text-[var(--content-muted)] font-mono tabular-nums">± 0.1 mm</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Axe X (mm)</span>
+                  <span className="text-[10px] text-[var(--content-muted)] font-medium block mb-0.5">Axe X (mm)</span>
                   <input
                     type="number"
                     step="0.1"
@@ -2300,12 +2300,12 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                         calibration_x_mm: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="w-full px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs font-mono"
+                    className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs font-mono tabular-nums text-[var(--content-primary)]"
                     placeholder="0.0"
                   />
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Axe Y (mm)</span>
+                  <span className="text-[10px] text-[var(--content-muted)] font-medium block mb-0.5">Axe Y (mm)</span>
                   <input
                     type="number"
                     step="0.1"
@@ -2318,7 +2318,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                         calibration_y_mm: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="w-full px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs font-mono"
+                    className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs font-mono tabular-nums text-[var(--content-primary)]"
                     placeholder="0.0"
                   />
                 </div>
@@ -2327,26 +2327,26 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
             {/* Imposition Results Summary */}
             {imposition && (
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 mt-2">
-                <span className="font-bold text-slate-900 block text-xs">Calcul de Grille Physique</span>
-                <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
+              <div className="p-4 bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-xl space-y-2 mt-2">
+                <span className="font-bold text-[var(--content-primary)] block text-xs">Calcul de Grille Physique</span>
+                <div className="grid grid-cols-2 gap-2 text-[11px] text-[var(--content-secondary)]">
                   <div>
-                    Colonnes: <strong className="text-slate-900">{imposition.cols}</strong>
+                    Colonnes: <strong className="text-[var(--content-primary)] tabular-nums">{imposition.cols}</strong>
                   </div>
                   <div>
-                    Lignes: <strong className="text-slate-900">{imposition.rows}</strong>
+                    Lignes: <strong className="text-[var(--content-primary)] tabular-nums">{imposition.rows}</strong>
                   </div>
                   <div>
-                    Par feuille: <strong className="text-blue-700">{imposition.total_per_page} étiquettes</strong>
+                    Par feuille: <strong className="text-blue-500 tabular-nums">{imposition.total_per_page} étiquettes</strong>
                   </div>
                   <div>
-                    Feuilles requises: <strong className="text-slate-900">{Math.ceil((effectivePrintItems.length + (impositionConfig.start_offset_slot || 0)) / imposition.total_per_page)} ({effectivePrintItems.length} étiquette{effectivePrintItems.length > 1 ? 's' : ''})</strong>
+                    Feuilles requises: <strong className="text-[var(--content-primary)] tabular-nums">{Math.ceil((effectivePrintItems.length + (impositionConfig.start_offset_slot || 0)) / imposition.total_per_page)} ({effectivePrintItems.length} étiquette{effectivePrintItems.length > 1 ? 's' : ''})</strong>
                   </div>
                   <div>
-                    Marge Horiz.: <strong className="text-slate-900">{imposition.horizontal_offset_mm.toFixed(1)} mm</strong>
+                    Marge Horiz.: <strong className="text-[var(--content-primary)] font-mono tabular-nums">{imposition.horizontal_offset_mm.toFixed(1)} mm</strong>
                   </div>
                   <div>
-                    Marge Vert.: <strong className="text-slate-900">{imposition.vertical_offset_mm.toFixed(1)} mm</strong>
+                    Marge Vert.: <strong className="text-[var(--content-primary)] font-mono tabular-nums">{imposition.vertical_offset_mm.toFixed(1)} mm</strong>
                   </div>
                 </div>
               </div>
@@ -2354,8 +2354,8 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
           </div>
 
           {/* Visual Imposition Sheet Preview */}
-          <div className="flex-1 bg-slate-200 p-8 flex flex-col items-center justify-center overflow-auto">
-            <div className="mb-2 text-xs font-medium text-slate-600 flex items-center gap-2">
+          <div className="flex-1 bg-[var(--canvas-pasteboard)] p-8 flex flex-col items-center justify-center overflow-auto">
+            <div className="mb-2 text-xs font-medium text-[var(--content-muted)] flex items-center gap-2">
               <span>Feuille #1 — Cliquez sur un emplacement pour définir l'étiquette de départ</span>
             </div>
             {imposition && (
@@ -2386,7 +2386,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                       className={`absolute border flex flex-col justify-between p-1 overflow-hidden cursor-pointer transition ${
                         isSkipped
                           ? 'border-dashed border-amber-300 bg-amber-50/40 text-amber-500 opacity-60 hover:opacity-100'
-                          : 'border-slate-300 bg-slate-50/50 hover:bg-blue-50/50 hover:border-blue-300'
+                          : 'border-slate-300 bg-slate-50/50 hover:bg-blue-50/50 hover:border-blue-400'
                       }`}
                       style={{
                         left: `${x * 1.5}px`,
@@ -2406,12 +2406,12 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                           <div className="flex items-center justify-between text-[8px] font-bold text-slate-700">
                             <span className="truncate">{prod ? prod.ITEMNAME : `Emplacement #${slotIdx + 1}`}</span>
                             {prod && (
-                              <span className="text-blue-600">
+                              <span className="text-blue-600 tabular-nums font-mono">
                                 {prod.SELLING_PRICE} {(template.items?.find((i: any) => (i as any).currency_symbol) as any)?.currency_symbol || '€'}
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center justify-between text-[7px] text-slate-400 font-mono">
+                          <div className="flex items-center justify-between text-[7px] text-slate-400 font-mono tabular-nums">
                             <span>{prod?.PRODUCT_SCAN || '—'}</span>
                             <span>{template.width_mm}x{template.height_mm}mm</span>
                           </div>
@@ -2428,10 +2428,10 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
       {/* Tab 3: Data Table */}
       {activeTab === 'data' && (
-        <div className="flex-1 bg-white flex flex-col overflow-hidden">
-          <div className="p-3 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <div className="flex-1 bg-[var(--surface-base)] flex flex-col overflow-hidden text-[var(--content-primary)]">
+          <div className="p-3 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--surface-panel)]">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-xs text-slate-700">Données Articles ({products.length} lignes)</span>
+              <span className="font-bold text-xs text-[var(--content-primary)] tabular-nums">Données Articles ({products.length} lignes)</span>
             </div>
             <button
               onClick={() => {
@@ -2447,7 +2447,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                 };
                 setProducts([...products, newRow]);
               }}
-              className="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-lg text-xs font-semibold flex items-center gap-1 transition"
+              className="px-3 py-1 bg-[var(--action-primary)]/10 text-[var(--action-primary)] border border-[var(--action-primary)]/20 hover:bg-[var(--action-primary)]/20 rounded-lg text-xs font-semibold flex items-center gap-1 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Ajouter une ligne</span>
@@ -2456,7 +2456,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
           <div className="flex-1 overflow-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-50 sticky top-0 border-b border-slate-200 text-slate-500 font-semibold z-10">
+              <thead className="bg-[var(--surface-panel)] sticky top-0 border-b border-[var(--border-subtle)] text-[var(--content-muted)] font-semibold z-10">
                 <tr>
                   <th className="p-2.5">Réf / SKU</th>
                   <th className="p-2.5">Nom de l'Article</th>
@@ -2468,10 +2468,10 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   <th className="p-2.5 w-10"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[var(--border-subtle)]">
                 {products.map((p, idx) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="p-2.5 font-mono text-[11px] text-slate-700 font-bold">{p.PARTNO}</td>
+                  <tr key={p.id} className="hover:bg-[var(--surface-hover)]">
+                    <td className="p-2.5 font-mono text-[11px] text-[var(--content-primary)] font-bold tabular-nums">{p.PARTNO}</td>
                     <td className="p-2.5">
                       <input
                         type="text"
@@ -2481,10 +2481,10 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                           updated[idx] = { ...p, ITEMNAME: e.target.value };
                           setProducts(updated);
                         }}
-                        className="w-full px-2 py-1 border border-transparent hover:border-slate-300 focus:border-blue-500 rounded font-semibold text-slate-800"
+                        className="w-full px-2 py-1 border border-transparent hover:border-[var(--border-subtle)] focus:border-[var(--action-focus-ring)] rounded font-semibold text-[var(--content-primary)] bg-transparent focus:bg-[var(--surface-input)] focus:outline-none"
                       />
                     </td>
-                    <td className="p-2.5 font-mono text-slate-600">
+                    <td className="p-2.5 font-mono text-[var(--content-secondary)]">
                       <input
                         type="text"
                         value={p.PRODUCT_SCAN || ''}
@@ -2493,7 +2493,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                           updated[idx] = { ...p, PRODUCT_SCAN: e.target.value };
                           setProducts(updated);
                         }}
-                        className="w-full px-2 py-1 border border-transparent hover:border-slate-300 focus:border-blue-500 rounded font-mono"
+                        className="w-full px-2 py-1 border border-transparent hover:border-[var(--border-subtle)] focus:border-[var(--action-focus-ring)] rounded font-mono tabular-nums text-[var(--content-secondary)] bg-transparent focus:bg-[var(--surface-input)] focus:outline-none"
                       />
                     </td>
                     <td className="p-2.5">
@@ -2505,7 +2505,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                           updated[idx] = { ...p, SELLING_PRICE: parseFloat(e.target.value) || 0 };
                           setProducts(updated);
                         }}
-                        className="w-24 px-2 py-1 border border-transparent hover:border-slate-300 focus:border-blue-500 rounded font-bold text-slate-900"
+                        className="w-24 px-2 py-1 border border-transparent hover:border-[var(--border-subtle)] focus:border-[var(--action-focus-ring)] rounded font-bold font-mono tabular-nums text-[var(--content-primary)] bg-transparent focus:bg-[var(--surface-input)] focus:outline-none"
                       />
                     </td>
                     <td className="p-2.5">
@@ -2521,27 +2521,27 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                           };
                           setProducts(updated);
                         }}
-                        className="w-24 px-2 py-1 border border-transparent hover:border-slate-300 focus:border-blue-500 rounded text-rose-600 font-bold"
+                        className="w-24 px-2 py-1 border border-transparent hover:border-[var(--border-subtle)] focus:border-[var(--action-focus-ring)] rounded text-rose-500 font-bold font-mono tabular-nums bg-transparent focus:bg-[var(--surface-input)] focus:outline-none"
                       />
                     </td>
-                    <td className="p-2.5 text-slate-600">{p.CATEGORY_NAME || '—'}</td>
+                    <td className="p-2.5 text-[var(--content-secondary)]">{p.CATEGORY_NAME || '—'}</td>
                     <td className="p-2.5">
                       {p.price_tiers && p.price_tiers.length > 0 ? (
-                        <span className="text-[11px] text-sky-700 font-medium">
+                        <span className="text-[11px] text-[var(--action-primary)] font-medium font-mono tabular-nums">
                           {p.price_tiers.map((t) => `${t.min_qty}+ : ${t.unit_price}`).join(' | ')}
                         </span>
                       ) : p.TIERS && p.TIERS.length > 0 ? (
-                        <span className="text-[11px] text-sky-700 font-medium">
+                        <span className="text-[11px] text-[var(--action-primary)] font-medium font-mono tabular-nums">
                           {p.TIERS.map((t) => `${t.qty}+ : ${t.unit_price}`).join(' | ')}
                         </span>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-[var(--content-muted)]">—</span>
                       )}
                     </td>
                     <td className="p-2.5 text-right">
                       <button
                         onClick={() => setProducts(products.filter((_, i) => i !== idx))}
-                        className="p-1 hover:bg-rose-50 text-rose-500 rounded"
+                        className="p-1 hover:bg-rose-500/10 text-rose-500 rounded focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
                         title="Supprimer la ligne"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -2596,15 +2596,15 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
       {/* Excel / CSV Built-in Data Mapping Modal */}
       {worksheetImport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
-          <section className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
-            <h2 className="text-base font-semibold text-slate-900">Choisir une feuille Excel</h2>
-            <p className="mt-1 text-sm text-slate-600">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <section className="w-full max-w-md rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-5 shadow-2xl text-[var(--content-primary)]">
+            <h2 className="text-base font-semibold text-[var(--content-primary)]">Choisir une feuille Excel</h2>
+            <p className="mt-1 text-sm text-[var(--content-secondary)]">
               Le classeur contient plusieurs feuilles. Sélectionnez celle qui contient les lignes d’étiquettes.
             </p>
             <select
               aria-label="Feuille Excel à importer"
-              className="mt-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+              className="mt-4 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-input)] px-3 py-2 text-sm text-[var(--content-primary)]"
               value={selectedWorksheet}
               onChange={(event) => setSelectedWorksheet(event.target.value)}
             >
@@ -2612,19 +2612,19 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                 <option key={name} value={name}>{name}</option>
               ))}
             </select>
-            {dataImportError && <p role="alert" className="mt-3 text-sm text-red-700">{dataImportError}</p>}
+            {dataImportError && <p role="alert" className="mt-3 text-sm text-red-500">{dataImportError}</p>}
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setWorksheetImport(null)}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700"
+                className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] px-3 py-2 text-sm text-[var(--content-secondary)]"
               >
                 Annuler
               </button>
               <button
                 type="button"
                 onClick={() => void handleWorksheetSelection()}
-                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                className="rounded-lg bg-[var(--action-primary)] hover:bg-[var(--action-hover)] px-3 py-2 text-sm font-semibold text-[var(--action-primary-fg)]"
               >
                 Continuer
               </button>
@@ -2641,7 +2641,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
         />
       )}
       {dataImportError && !worksheetImport && (
-        <div role="alert" className="fixed bottom-4 right-4 z-50 max-w-lg rounded-lg border border-red-200 bg-white px-4 py-3 text-sm text-red-800 shadow-lg">
+        <div role="alert" className="fixed bottom-4 right-4 z-50 max-w-lg rounded-lg border border-red-500/30 bg-[var(--surface-panel)] px-4 py-3 text-sm text-red-400 shadow-lg">
           <div className="flex items-start justify-between gap-4">
             <span>{dataImportError}</span>
             <button type="button" onClick={() => setDataImportError(null)} aria-label="Dismiss import error">×</button>
@@ -2657,76 +2657,76 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
       {/* ZPL Thermal Printer Modal */}
       {showZplModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[var(--surface-panel)] rounded-2xl shadow-2xl border border-[var(--border-subtle)] w-full max-w-md p-6 space-y-4 text-[var(--content-primary)]">
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
                   <Cpu className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Export ZPL II (Thermique Direct)</h3>
-                  <p className="text-[11px] text-slate-500">Imprimantes Zebra, TSC, Honeywell, Godex</p>
+                  <h3 className="text-sm font-bold text-[var(--content-primary)]">Export ZPL II (Thermique Direct)</h3>
+                  <p className="text-[11px] text-[var(--content-muted)]">Imprimantes Zebra, TSC, Honeywell, Godex</p>
                 </div>
               </div>
             </div>
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Résolution de la tête thermique</label>
+                <label className="block font-semibold text-[var(--content-primary)] mb-1">Résolution de la tête thermique</label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setZplDpi(203)}
                     className={`py-2 px-3 rounded-lg border text-center font-medium transition ${
                       zplDpi === 203
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold shadow-xs'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 font-bold shadow-xs'
+                        : 'border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)]'
                     }`}
                   >
                     203 DPI
-                    <span className="block text-[9px] font-normal text-slate-400">8 dots/mm (Standard)</span>
+                    <span className="block text-[9px] font-normal text-[var(--content-muted)]">8 dots/mm (Standard)</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setZplDpi(300)}
                     className={`py-2 px-3 rounded-lg border text-center font-medium transition ${
                       zplDpi === 300
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold shadow-xs'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 font-bold shadow-xs'
+                        : 'border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)]'
                     }`}
                   >
                     300 DPI
-                    <span className="block text-[9px] font-normal text-slate-400">12 dots/mm (Haute Définition)</span>
+                    <span className="block text-[9px] font-normal text-[var(--content-muted)]">12 dots/mm (Haute Définition)</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setZplDpi(600)}
                     className={`py-2 px-3 rounded-lg border text-center font-medium transition ${
                       zplDpi === 600
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold shadow-xs'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 font-bold shadow-xs'
+                        : 'border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)]'
                     }`}
                   >
                     600 DPI
-                    <span className="block text-[9px] font-normal text-slate-400">24 dots/mm (Micro texte)</span>
+                    <span className="block text-[9px] font-normal text-[var(--content-muted)]">24 dots/mm (Micro texte)</span>
                   </button>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-600 space-y-1">
-                <p className="text-[11px] font-semibold text-slate-800">Prêt pour le flux d'impression :</p>
-                <p className="text-[10px]">• {products.length} étiquettes prêtes à envoyer en lot</p>
-                <p className="text-[10px]">• Format : {template.width_mm} × {template.height_mm} mm</p>
+              <div className="p-3 bg-[var(--surface-raised)] rounded-xl border border-[var(--border-subtle)] text-[var(--content-secondary)] space-y-1">
+                <p className="text-[11px] font-semibold text-[var(--content-primary)]">Prêt pour le flux d'impression :</p>
+                <p className="text-[10px] tabular-nums">• {products.length} étiquettes prêtes à envoyer en lot</p>
+                <p className="text-[10px] tabular-nums">• Format : {template.width_mm} × {template.height_mm} mm</p>
                 <p className="text-[10px]">• Codes-barres natifs haute vitesse (^BC, ^BE, ^BQ)</p>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
               <button
                 type="button"
                 onClick={() => setShowZplModal(false)}
-                className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
+                className="px-3.5 py-1.5 text-xs font-semibold text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg transition"
               >
                 Annuler
               </button>
@@ -2736,7 +2736,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   setShowZplModal(false);
                   setExportConfirmTarget('zpl');
                 }}
-                className="px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs flex items-center gap-1.5 transition"
+                className="px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-xs flex items-center gap-1.5 transition"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Télécharger fichier .ZPL</span>
@@ -2747,18 +2747,18 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
       )}
 
       {showPrintModal && (
-        <div className="fixed inset-0 z-[70] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden">
-            <div className="px-5 py-4 bg-slate-950 text-white flex items-center justify-between">
+        <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[var(--surface-panel)] rounded-2xl shadow-2xl border border-[var(--border-subtle)] w-full max-w-xl overflow-hidden text-[var(--content-primary)]">
+            <div className="px-5 py-4 bg-[var(--surface-raised)] border-b border-[var(--border-subtle)] text-[var(--content-primary)] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center">
                   <Printer className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold">
+                  <h3 className="text-sm font-bold text-[var(--content-primary)]">
                     {printFormat === 'pdf' ? 'Impression via spooler CUPS' : 'Envoi réseau ZPL'}
                   </h3>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-[var(--content-muted)]">
                     {printFormat === 'pdf' ? 'Soumission PDF à une file OS installée' : 'Flux ZPL direct vers une IP privée configurée'}
                   </p>
                 </div>
@@ -2766,7 +2766,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               <button
                 type="button"
                 onClick={() => setShowPrintModal(false)}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
+                className="p-1.5 text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg transition"
                 aria-label="Fermer"
               >
                 <X className="w-5 h-5" />
@@ -2778,22 +2778,22 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                 <button
                   type="button"
                   onClick={() => { setPrintFormat('pdf'); setPrintError(null); setPrintMessage(null); }}
-                  className={`flex-1 rounded-lg border px-3 py-2 font-semibold ${printFormat === 'pdf' ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-slate-200 text-slate-600'}`}
+                  className={`flex-1 rounded-lg border px-3 py-2 font-semibold transition ${printFormat === 'pdf' ? 'border-blue-500 bg-blue-500/15 text-blue-400 font-bold' : 'border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)]'}`}
                 >
                   PDF / CUPS
                 </button>
                 <button
                   type="button"
                   onClick={() => { setPrintFormat('zpl'); setPrintError(null); setPrintMessage(null); }}
-                  className={`flex-1 rounded-lg border px-3 py-2 font-semibold ${printFormat === 'zpl' ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 text-slate-600'}`}
+                  className={`flex-1 rounded-lg border px-3 py-2 font-semibold transition ${printFormat === 'zpl' ? 'border-emerald-500 bg-emerald-500/15 text-emerald-400 font-bold' : 'border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)]'}`}
                 >
                   ZPL / TCP
                 </button>
               </div>
 
               {printCapabilities && (
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 space-y-1">
-                  <p className="font-semibold text-slate-800">Plateforme native : {printCapabilities.platform}</p>
+                <div className="p-3 bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-xl text-[var(--content-secondary)] space-y-1">
+                  <p className="font-semibold text-[var(--content-primary)]">Plateforme native : {printCapabilities.platform}</p>
                   <p>{printCapabilities.note}</p>
                 </div>
               )}
@@ -2801,7 +2801,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               {printFormat === 'pdf' ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label htmlFor="cups-queue" className="font-semibold text-slate-700">File d'impression CUPS</label>
+                    <label htmlFor="cups-queue" className="font-semibold text-[var(--content-primary)]">File d'impression CUPS</label>
                     <button
                       type="button"
                       onClick={() => {
@@ -2816,7 +2816,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                           }
                         }).catch((error) => setPrintQueueError(error instanceof Error ? error.message : String(error)));
                       }}
-                      className="text-blue-700 hover:underline"
+                      className="text-[var(--action-primary)] hover:underline"
                     >
                       Rechercher les files
                     </button>
@@ -2825,7 +2825,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                     id="cups-queue"
                     value={printerConfig.cups_queue}
                     onChange={(event) => setPrinterConfig((previous) => ({ ...previous, cups_queue: event.target.value }))}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white"
+                    className="w-full rounded-lg border border-[var(--border-subtle)] px-3 py-2 bg-[var(--surface-input)] text-[var(--content-primary)]"
                     disabled={!printerConfigReady}
                   >
                     <option value="">Sélectionner une imprimante CUPS</option>
@@ -2835,26 +2835,26 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                       </option>
                     ))}
                   </select>
-                  {printQueueError && <p className="text-rose-700">{printQueueError}</p>}
+                  {printQueueError && <p className="text-rose-400">{printQueueError}</p>}
                   {printQueues.length === 0 && !printQueueError && (
-                    <p className="text-amber-700">Aucune file CUPS n'est installée ou découverte.</p>
+                    <p className="text-amber-400">Aucune file CUPS n'est installée ou découverte.</p>
                   )}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   <label className="space-y-1">
-                    <span className="block font-semibold text-slate-700">Adresse IP privée</span>
+                    <span className="block font-semibold text-[var(--content-primary)]">Adresse IP privée</span>
                     <input
                       type="text"
                       value={printerConfig.zpl_host}
                       onChange={(event) => setPrinterConfig((previous) => ({ ...previous, zpl_host: event.target.value }))}
                       placeholder="192.168.1.50"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                      className="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-input)] px-3 py-2 text-[var(--content-primary)] font-mono tabular-nums"
                       autoComplete="off"
                     />
                   </label>
                   <label className="space-y-1">
-                    <span className="block font-semibold text-slate-700">Port TCP</span>
+                    <span className="block font-semibold text-[var(--content-primary)]">Port TCP</span>
                     <input
                       type="number"
                       min={1}
@@ -2864,56 +2864,56 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                         ...previous,
                         zpl_port: Number.parseInt(event.target.value, 10) || 0,
                       }))}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                      className="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-input)] px-3 py-2 text-[var(--content-primary)] font-mono tabular-nums"
                     />
                   </label>
                   <label className="space-y-1 col-span-2">
-                    <span className="block font-semibold text-slate-700">Résolution ZPL</span>
+                    <span className="block font-semibold text-[var(--content-primary)]">Résolution ZPL</span>
                     <select
                       value={printerConfig.zpl_dpi}
                       onChange={(event) => setPrinterConfig((previous) => ({
                         ...previous,
                         zpl_dpi: Number(event.target.value) as 203 | 300 | 600,
                       }))}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white"
+                      className="w-full rounded-lg border border-[var(--border-subtle)] px-3 py-2 bg-[var(--surface-input)] text-[var(--content-primary)]"
                     >
                       <option value={203}>203 DPI</option>
                       <option value={300}>300 DPI</option>
                       <option value={600}>600 DPI</option>
                     </select>
                   </label>
-                  <p className="col-span-2 text-[11px] text-amber-800">
+                  <p className="col-span-2 text-[11px] text-amber-400">
                     Le flux brut ne fournit aucun accusé matériel. L'état « envoyé non confirmé » signifie seulement que les octets ont été écrits sur le socket; une impression physique ne peut pas être certifiée.
                   </p>
                 </div>
               )}
 
               {rulesError && (
-                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800">
+                <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300">
                   Les règles de production ne peuvent pas être chargées : {rulesError}
                 </div>
               )}
               {printError && (
-                <div role="alert" className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 whitespace-pre-wrap">
+                <div role="alert" className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 whitespace-pre-wrap">
                   Échec de l'impression : {printError}
                 </div>
               )}
               {printMessage && (
-                <div role="status" className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 whitespace-pre-wrap">
+                <div role="status" className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 whitespace-pre-wrap">
                   {printMessage}
                 </div>
               )}
             </div>
 
-            <div className="px-5 py-3 border-t border-slate-200 flex items-center justify-between gap-3">
-              <span className="text-[10px] text-slate-500">
+            <div className="px-5 py-3 border-t border-[var(--border-subtle)] bg-[var(--surface-panel)] flex items-center justify-between gap-3">
+              <span className="text-[10px] text-[var(--content-muted)] font-mono tabular-nums">
                 {effectivePrintItems.length} exemplaire(s) • règles appliquées avant rendu • matériel réel requis
               </span>
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowPrintModal(false)}
-                  className="px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                  className="px-3 py-2 rounded-lg text-xs font-semibold text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]"
                 >
                   Fermer
                 </button>
@@ -2936,7 +2936,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                       printerConfig.zpl_port > 65535
                     ))
                   }
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-lg bg-[var(--action-primary)] hover:bg-[var(--action-hover)] text-[var(--action-primary-fg)] text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {printBusy ? 'Soumission…' : printFormat === 'pdf' ? 'Envoyer à CUPS' : 'Envoyer le flux ZPL'}
                 </button>
@@ -2948,29 +2948,29 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
       {/* Two-Tier Pre-Export Quality Verification & Confirmation Summary Modal */}
       {exportConfirmTarget && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl max-w-lg w-full flex flex-col max-h-[85vh] overflow-hidden text-slate-100 font-sans">
-            <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[var(--surface-panel)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl max-w-lg w-full flex flex-col max-h-[85vh] overflow-hidden text-[var(--content-primary)] font-sans">
+            <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--surface-raised)]">
               <div className="flex items-center gap-2.5">
                 <div
                   className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                     preFlightReport.status === 'ready'
-                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                       : preFlightReport.status === 'warning'
-                      ? 'bg-amber-950 text-amber-400 border border-amber-800'
-                      : 'bg-rose-950 text-rose-400 border border-rose-800'
+                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                      : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
                   }`}
                 >
                   <FileCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Vérification Pré-Vol & Confirmation d'Export</h3>
-                  <p className="text-[11px] text-slate-400">Contrôle qualité avant génération du fichier</p>
+                  <h3 className="text-sm font-bold text-[var(--content-primary)]">Vérification Pré-Vol & Confirmation d'Export</h3>
+                  <p className="text-[11px] text-[var(--content-muted)]">Contrôle qualité avant génération du fichier</p>
                 </div>
               </div>
               <button
                 onClick={() => setExportConfirmTarget(null)}
-                className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg text-sm"
+                className="p-1 text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg text-sm transition"
               >
                 ✕
               </button>
@@ -2978,28 +2978,28 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
             <div className="p-5 overflow-y-auto space-y-4 text-xs">
               {/* Export Parameters Summary */}
-              <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
+              <div className="bg-[var(--surface-raised)] border border-[var(--border-subtle)] p-4 rounded-xl space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Format d'exportation :</span>
-                  <span className="font-bold text-white uppercase font-mono">
+                  <span className="text-[var(--content-muted)]">Format d'exportation :</span>
+                  <span className="font-bold text-[var(--content-primary)] uppercase font-mono">
                     {exportConfirmTarget === 'pdf' ? 'PDF (Planches multi-poses HD)' : 'ZPL (Thermique direct)'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Nombre d'étiquettes :</span>
-                  <span className="font-bold text-white font-mono">{effectivePrintItems.length} article(s)</span>
+                  <span className="text-[var(--content-muted)]">Nombre d'étiquettes :</span>
+                  <span className="font-bold text-[var(--content-primary)] font-mono tabular-nums">{effectivePrintItems.length} article(s)</span>
                 </div>
                 {exportConfirmTarget === 'pdf' && imposition && (
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Nombre de planches / feuilles :</span>
-                    <span className="font-bold text-white font-mono">
+                    <span className="text-[var(--content-muted)]">Nombre de planches / feuilles :</span>
+                    <span className="font-bold text-[var(--content-primary)] font-mono tabular-nums">
                       {Math.ceil(effectivePrintItems.length / Math.max(1, imposition.total_per_page))} feuille(s) ({imposition.cols}×{imposition.rows} poses)
                     </span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Nom de fichier cible :</span>
-                  <span className="font-mono text-blue-400 text-[11px] truncate max-w-xs">
+                  <span className="text-[var(--content-muted)]">Nom de fichier cible :</span>
+                  <span className="font-mono text-[var(--action-primary)] text-[11px] truncate max-w-xs">
                     {exportConfirmTarget === 'pdf'
                       ? `etiquettes_imposees_${template.name.toLowerCase().replace(/\s+/g, '_')}.pdf`
                       : `thermique_${template.name.toLowerCase().replace(/\s+/g, '_')}_${zplDpi}dpi.zpl`}
@@ -3009,15 +3009,15 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
 
               {/* Quality Verification Status */}
               <div className="space-y-2">
-                <span className="text-[11px] font-bold text-slate-400 block uppercase font-mono">
+                <span className="text-[11px] font-bold text-[var(--content-muted)] block uppercase font-mono">
                   Résultats des Contrôles Pré-Vol
                 </span>
                 {preFlightReport.status === 'ready' ? (
-                  <div className="bg-emerald-950/30 border border-emerald-800/50 p-3.5 rounded-xl flex items-center gap-2.5 text-emerald-300">
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 p-3.5 rounded-xl flex items-center gap-2.5 text-emerald-400">
                     <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
                     <div>
-                      <p className="font-bold text-xs text-white">Gabarit 100% Conforme</p>
-                      <p className="text-[11px] text-emerald-200/80">
+                      <p className="font-bold text-xs text-[var(--content-primary)]">Gabarit 100% Conforme</p>
+                      <p className="text-[11px] text-emerald-300">
                         Marges sécurisées respectées, champs de prix conformes et codes-barres valides.
                       </p>
                     </div>
@@ -3027,23 +3027,23 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                     <div
                       className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-semibold ${
                         preFlightReport.status === 'warning'
-                          ? 'bg-amber-950/40 border-amber-800 text-amber-300'
-                          : 'bg-rose-950/40 border-rose-800 text-rose-300'
+                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                          : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
                       }`}
                     >
                       <AlertTriangle className="w-4 h-4 shrink-0" />
-                      <span>
+                      <span className="tabular-nums">
                         {preFlightReport.errorsCount > 0
                           ? `${preFlightReport.errorsCount} erreur(s) et ${preFlightReport.warningsCount} avertissement(s) détecté(s)`
                           : `${preFlightReport.warningsCount} avertissement(s) de mise en page détecté(s)`}
                       </span>
                     </div>
-                    <div className="max-h-32 overflow-y-auto space-y-1.5 bg-slate-950 border border-slate-800 p-2.5 rounded-xl">
+                    <div className="max-h-32 overflow-y-auto space-y-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] p-2.5 rounded-xl">
                       {preFlightReport.issues.map((issue) => (
-                        <div key={issue.id} className="text-[11px] flex items-start gap-2 text-slate-300">
+                        <div key={issue.id} className="text-[11px] flex items-start gap-2 text-[var(--content-secondary)]">
                           <span
                             className={`px-1 py-0.2 rounded text-[9px] font-mono font-bold uppercase shrink-0 mt-0.5 ${
-                              issue.severity === 'error' ? 'bg-rose-900 text-rose-200' : 'bg-amber-900 text-amber-200'
+                              issue.severity === 'error' ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'
                             }`}
                           >
                             {issue.severity}
@@ -3057,11 +3057,11 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               </div>
             </div>
 
-            <div className="px-5 py-3 border-t border-slate-800 bg-slate-950 flex items-center justify-between">
+            <div className="px-5 py-3 border-t border-[var(--border-subtle)] bg-[var(--surface-raised)] flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setExportConfirmTarget(null)}
-                className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold"
+                className="px-4 py-1.5 bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] rounded-lg text-xs font-semibold"
               >
                 Annuler
               </button>
@@ -3080,8 +3080,8 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                 }}
                 className={`px-5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 shadow-xs transition ${
                   preFlightReport.passed
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
-                    : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
+                    ? 'bg-[var(--action-primary)] hover:bg-[var(--action-hover)] text-[var(--action-primary-fg)] cursor-pointer'
+                    : 'bg-[var(--surface-raised)] text-[var(--content-muted)] cursor-not-allowed opacity-60'
                 }`}
                 title={!preFlightReport.passed ? 'Export bloqué : corrigez les erreurs pré-vol' : 'Confirmer et enregistrer'}
               >
@@ -3094,18 +3094,18 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
       )}
 
       {showLabelaryConsent && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-4" role="presentation">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4" role="presentation">
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby="labelary-consent-title"
-            className="w-full max-w-lg rounded-xl border border-slate-300 bg-white p-5 shadow-2xl"
+            className="w-full max-w-lg rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-5 shadow-2xl text-[var(--content-primary)]"
           >
-            <h2 id="labelary-consent-title" className="text-base font-bold text-slate-900">Envoyer la source à Labelary ?</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">
+            <h2 id="labelary-consent-title" className="text-base font-bold text-[var(--content-primary)]">Envoyer la source à Labelary ?</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--content-secondary)]">
               Pour cette simulation, E-Studio enverra le ZPL généré pour l’article sélectionné ainsi que les dimensions et la résolution à l’API tierce Labelary. Le contenu peut inclure des données produit ou des informations métier. E-Studio n’envoie rien avant votre confirmation.
             </p>
-            <label className="mt-4 flex items-start gap-2 text-sm text-slate-800">
+            <label className="mt-4 flex items-start gap-2 text-sm text-[var(--content-primary)]">
               <input
                 type="checkbox"
                 checked={labelaryConsentChecked}
@@ -3118,7 +3118,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
               <button
                 type="button"
                 onClick={() => setShowLabelaryConsent(false)}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700"
+                className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] px-3 py-2 text-sm text-[var(--content-secondary)] hover:text-[var(--content-primary)]"
               >
                 Annuler
               </button>
@@ -3129,7 +3129,7 @@ export const GenerationWorkspace: React.FC<GenerationWorkspaceProps> = ({
                   setShowLabelaryConsent(false);
                   void requestLabelaryPreview();
                 }}
-                className="rounded-lg bg-indigo-700 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-[var(--action-primary)] px-3 py-2 text-sm font-semibold text-[var(--action-primary-fg)] hover:bg-[var(--action-hover)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Confirmer et simuler
               </button>

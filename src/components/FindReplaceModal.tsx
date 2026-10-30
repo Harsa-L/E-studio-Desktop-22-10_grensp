@@ -15,6 +15,7 @@ interface FindReplaceModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: TemplateItem[];
+  selectedItemIds?: string[];
   onUpdateMultipleItems: (updatedItems: TemplateItem[]) => void;
   onSelectItems: (ids: string[]) => void;
 }

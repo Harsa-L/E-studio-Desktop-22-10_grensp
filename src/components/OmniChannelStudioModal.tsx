@@ -199,29 +199,29 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
   const lcdAnimations = layout.animation_triggers;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-7xl h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
+      <div className="bg-[var(--surface-panel)] w-full max-w-7xl h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[var(--border-subtle)] text-[var(--content-primary)]">
         
         {/* Header Bar */}
-        <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shrink-0 border-b border-slate-800">
+        <div className="bg-[var(--surface-raised)] text-[var(--content-primary)] px-6 py-4 flex items-center justify-between shrink-0 border-b border-[var(--border-subtle)]">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600/30 border border-blue-400/40 rounded-xl text-blue-400">
+            <div className="p-2 bg-[var(--surface-panel)] border border-[var(--border-subtle)] rounded-xl text-[var(--action-primary)] shadow-xs">
               <Cpu className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white tracking-tight">
+                <h2 className="text-base font-bold text-[var(--content-primary)] tracking-tight">
                   Studio de Simulation de Règles Omni-Canal
                 </h2>
-                <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] font-semibold rounded-full uppercase tracking-wider">
+                <span className="px-2 py-0.5 bg-[var(--surface-panel)] text-[var(--action-primary)] border border-[var(--border-subtle)] text-[10px] font-semibold rounded-full uppercase tracking-wider font-mono">
                   Simulation locale
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[var(--content-muted)] mt-0.5">
                 Les règles compatibles sont appliquées aux exports PDF/ZPL et aux impressions configurées. Les actions non prises en charge bloquent l'export; les écrans ESL/LCD ne sont pas déployés par cette application.
               </p>
               {rulesError && (
-                <p role="alert" className="text-[11px] text-rose-300 mt-1">
+                <p role="alert" className="text-[11px] text-rose-500 font-medium mt-1">
                   Règles non enregistrées ou invalides : {rulesError}
                 </p>
               )}
@@ -230,13 +230,13 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
 
           {/* Tab Navigation & Close */}
           <div className="flex items-center gap-3">
-            <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
+            <div className="flex bg-[var(--surface-panel)] p-1 rounded-xl border border-[var(--border-subtle)]">
               <button
                 onClick={() => setActiveTab('simulation')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] ${
                   activeTab === 'simulation'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs font-bold'
+                    : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
                 }`}
               >
                 <Play className="w-3.5 h-3.5" />
@@ -244,10 +244,10 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
               </button>
               <button
                 onClick={() => setActiveTab('rules')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] ${
                   activeTab === 'rules'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs font-bold'
+                    : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
                 }`}
               >
                 <Sliders className="w-3.5 h-3.5" />
@@ -255,10 +255,10 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
               </button>
               <button
                 onClick={() => setActiveTab('payload')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] ${
                   activeTab === 'payload'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs font-bold'
+                    : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)]'
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
@@ -268,7 +268,7 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition"
+              className="p-1.5 hover:bg-[var(--surface-hover)] text-[var(--content-muted)] hover:text-[var(--content-primary)] rounded-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
               title="Fermer la fenêtre"
             >
               <X className="w-5 h-5" />
@@ -277,46 +277,46 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
         </div>
 
         {/* Latency & SLA Live Status Ribbon */}
-        <div className="bg-slate-100 border-b border-slate-200 px-6 py-2 flex flex-wrap items-center justify-between text-xs gap-4 shrink-0">
+        <div className="bg-[var(--surface-base)] border-b border-[var(--border-subtle)] px-6 py-2 flex flex-wrap items-center justify-between text-xs gap-4 shrink-0 text-[var(--content-primary)]">
           <div className="flex items-center gap-4">
-            <span className="text-slate-500 font-medium flex items-center gap-1.5">
+            <span className="text-[var(--content-muted)] font-medium flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-amber-500" />
               <span>Temps d'exécution :</span>
-              <strong className="font-mono text-slate-900 bg-white px-1.5 py-0.5 border border-slate-200 rounded">
+              <strong className="font-mono tabular-nums text-[var(--content-primary)] bg-[var(--surface-raised)] px-1.5 py-0.5 border border-[var(--border-subtle)] rounded">
                 {evalResult.payload.audit_trail.execution_time_ms} ms
               </strong>
             </span>
 
-            <span className={`flex items-center gap-1 px-2 py-0.5 font-semibold rounded-full border ${
+            <span className={`flex items-center gap-1 px-2 py-0.5 font-semibold rounded-full border font-mono tabular-nums ${
               evalResult.payload.audit_trail.sla_respected
-                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                : 'bg-rose-100 text-rose-800 border-rose-300'
+                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                : 'bg-rose-500/10 text-rose-500 border-rose-500/30'
             }`}>
               <CheckCircle2 className={`w-3.5 h-3.5 ${
-                evalResult.payload.audit_trail.sla_respected ? 'text-emerald-600' : 'text-rose-600'
+                evalResult.payload.audit_trail.sla_respected ? 'text-emerald-500' : 'text-rose-500'
               }`} />
               <span>
                 SLA &lt; 50ms {evalResult.payload.audit_trail.sla_respected ? 'respecté' : 'dépassé'} ({evalResult.payload.audit_trail.execution_time_ms}ms)
               </span>
             </span>
 
-            <span className="text-slate-600 hidden sm:inline">
-              Règles actives : <strong>{evalResult.payload.audit_trail.rules_applied.length}</strong> appliquée(s) sur{' '}
-              <strong>{rules.length}</strong>
+            <span className="text-[var(--content-secondary)] hidden sm:inline">
+              Règles actives : <strong className="font-mono tabular-nums">{evalResult.payload.audit_trail.rules_applied.length}</strong> appliquée(s) sur{' '}
+              <strong className="font-mono tabular-nums">{rules.length}</strong>
             </span>
           </div>
 
           {/* Quick Scenario Buttons for Acceptance Criteria Validation */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+            <span className="text-[11px] font-bold text-[var(--content-muted)] uppercase tracking-wider mr-1">
               Scénarios Critères de Recette :
             </span>
             <button
               onClick={() => applyScenario('eink_30')}
-              className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 transition ${
+              className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] ${
                 selectedDeviceKey === 'EINK_2_1_INCH' && simulatedDiscount >= 30
-                  ? 'bg-rose-600 text-white shadow-2xs'
-                  : 'bg-white border border-slate-300 hover:bg-slate-50 text-slate-700'
+                  ? 'bg-rose-600 text-white shadow-xs font-bold'
+                  : 'bg-[var(--surface-panel)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-primary)]'
               }`}
               title="Test Recette 1 : Produit -30% sur E-Ink 2.1 pouces -> Inversion couleurs + Masquage description"
             >
@@ -326,10 +326,10 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
 
             <button
               onClick={() => applyScenario('print_30')}
-              className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 transition ${
+              className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] ${
                 selectedDeviceKey === 'PRINT_HIGH_RES_A4'
-                  ? 'bg-blue-600 text-white shadow-2xs'
-                  : 'bg-white border border-slate-300 hover:bg-slate-50 text-slate-700'
+                  ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs font-bold'
+                  : 'bg-[var(--surface-panel)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-primary)]'
               }`}
               title="Test Recette 2 : Même produit sur Papier High-Res -> Description complète + Sticker Promo HD"
             >
@@ -339,10 +339,10 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
 
             <button
               onClick={() => applyScenario('conflict')}
-              className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 transition ${
+              className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] ${
                 evalResult.payload.audit_trail.conflicts_resolved.length > 0
-                  ? 'bg-purple-600 text-white shadow-2xs'
-                  : 'bg-white border border-slate-300 hover:bg-slate-50 text-slate-700'
+                  ? 'bg-purple-600 text-white shadow-xs font-bold'
+                  : 'bg-[var(--surface-panel)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-primary)]'
               }`}
               title="Test Recette 3 : Résolution de Conflit (Promo 800 vs Marge Locale 400)"
             >
@@ -356,19 +356,19 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
         {activeTab === 'simulation' && (
           <div className="flex-1 flex overflow-hidden">
             {/* Left Parameter Controls Panel */}
-            <div className="w-80 border-r border-slate-200 bg-white p-5 overflow-y-auto space-y-5 shrink-0 text-xs">
+            <div className="w-80 border-r border-[var(--border-subtle)] bg-[var(--surface-panel)] p-5 overflow-y-auto space-y-5 shrink-0 text-xs text-[var(--content-primary)]">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-                  <Sliders className="w-3.5 h-3.5 text-blue-600" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--content-muted)] mb-3 flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-[var(--action-primary)]" />
                   <span>Contexte d'Exécution Unifié</span>
                 </h3>
 
                 <div className="space-y-1.5 mb-3">
-                  <label className="block font-semibold text-slate-700">Événement déclencheur simulé</label>
+                  <label className="block font-semibold text-[var(--content-primary)]">Événement déclencheur simulé</label>
                   <select
                     value={selectedTrigger}
                     onChange={(e) => setSelectedTrigger(e.target.value as TriggerType)}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium"
+                    className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs font-medium text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                   >
                     <option value="on_promo_active">on_promo_active</option>
                     <option value="on_price_update">on_price_update</option>
@@ -377,18 +377,18 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                     <option value="on_device_render">on_device_render</option>
                     <option value="manual_simulation">manual_simulation</option>
                   </select>
-                  <p className="text-[10px] text-slate-500">Seules les règles associées à cet événement sont évaluées.</p>
+                  <p className="text-[10px] text-[var(--content-muted)]">Seules les règles associées à cet événement sont évaluées.</p>
                 </div>
 
                 {/* 1. Device Profile Selector */}
                 <div className="space-y-1.5">
-                  <label className="block font-semibold text-slate-700">
+                  <label className="block font-semibold text-[var(--content-primary)]">
                     1. Profil Périphérique (Device_Profile)
                   </label>
                   <select
                     value={selectedDeviceKey}
                     onChange={(e) => setSelectedDeviceKey(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                    className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs font-medium text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                   >
                     {Object.values(DEVICE_PROFILES).map((dev) => (
                       <option key={dev.id} value={dev.id}>
@@ -397,38 +397,38 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                       </option>
                     ))}
                   </select>
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg space-y-1 text-[11px] text-slate-600">
+                  <div className="p-2.5 bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg space-y-1 text-[11px] text-[var(--content-secondary)]">
                     <div className="flex justify-between">
                       <span>Technologie :</span>
-                      <strong className="uppercase font-mono text-slate-800">{currentDevice.type}</strong>
+                      <strong className="uppercase font-mono text-[var(--content-primary)]">{currentDevice.type}</strong>
                     </div>
                     <div className="flex justify-between">
                       <span>Palette Physique :</span>
-                      <strong className="uppercase font-mono text-slate-800">{currentDevice.color_palette}</strong>
+                      <strong className="uppercase font-mono text-[var(--content-primary)]">{currentDevice.color_palette}</strong>
                     </div>
                     <div className="flex justify-between">
                       <span>Dimensions / Diagonale :</span>
-                      <strong className="font-mono text-slate-800">
+                      <strong className="font-mono tabular-nums text-[var(--content-primary)]">
                         {currentDevice.dimensions.width_mm}x{currentDevice.dimensions.height_mm}mm ({currentDevice.screen_size_inches || 'N/A'}")
                       </strong>
                     </div>
                     <div className="flex justify-between">
                       <span>Résolution :</span>
-                      <strong className="font-mono text-slate-800">{currentDevice.resolution_dpi} DPI</strong>
+                      <strong className="font-mono tabular-nums text-[var(--content-primary)]">{currentDevice.resolution_dpi} DPI</strong>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* 2. Product Data Selector */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <label className="block font-semibold text-slate-700">
+              <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
+                <label className="block font-semibold text-[var(--content-primary)]">
                   2. Données Produit (Product_Data)
                 </label>
                 <select
                   value={selectedProductIdx}
                   onChange={(e) => setSelectedProductIdx(Number(e.target.value))}
-                  className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                  className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs font-medium text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 >
                   {simProducts.map((prod, idx) => (
                     <option key={prod.id} value={idx}>
@@ -438,11 +438,11 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                 </select>
 
                 {/* Simulated Discount Slider */}
-                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-1.5">
+                <div className="bg-[var(--surface-raised)] p-2.5 rounded-lg border border-[var(--border-subtle)] space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-slate-700">Taux de Remise :</span>
-                    <span className={`font-bold px-1.5 py-0.5 rounded text-[11px] ${
-                      simulatedDiscount >= 30 ? 'bg-rose-100 text-rose-700' : 'bg-slate-200 text-slate-800'
+                    <span className="font-medium text-[var(--content-primary)]">Taux de Remise :</span>
+                    <span className={`font-bold px-1.5 py-0.5 rounded text-[11px] font-mono tabular-nums ${
+                      simulatedDiscount >= 30 ? 'bg-rose-500/10 text-rose-500 border border-rose-500/30' : 'bg-[var(--surface-panel)] text-[var(--content-primary)] border border-[var(--border-subtle)]'
                     }`}>
                       -{simulatedDiscount}% {simulatedDiscount >= 30 && '🔥 (Seuil déclenché)'}
                     </span>
@@ -454,25 +454,25 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                     step="5"
                     value={simulatedDiscount}
                     onChange={(e) => setSimulatedDiscount(Number(e.target.value))}
-                    className="w-full accent-blue-600"
+                    className="w-full accent-[var(--action-primary)]"
                   />
-                  <div className="flex justify-between text-[10px] text-slate-400">
+                  <div className="flex justify-between text-[10px] text-[var(--content-muted)] font-mono tabular-nums">
                     <span>0% (Standard)</span>
-                    <span className="text-rose-600 font-semibold">30% (Règle Métier)</span>
+                    <span className="text-rose-500 font-semibold">30% (Règle Métier)</span>
                     <span>70% (Destockage)</span>
                   </div>
                 </div>
               </div>
 
               {/* 3. Store Context Selector */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <label className="block font-semibold text-slate-700">
+              <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
+                <label className="block font-semibold text-[var(--content-primary)]">
                   3. Contexte Magasin (Store_Context)
                 </label>
                 <select
                   value={selectedStoreIdx}
                   onChange={(e) => setSelectedStoreIdx(Number(e.target.value))}
-                  className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                  className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs font-medium text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 >
                   {SAMPLE_STORES.map((st, idx) => (
                     <option key={st.store_id} value={idx}>
@@ -480,34 +480,34 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                     </option>
                   ))}
                 </select>
-                <div className="text-[11px] text-slate-500 space-y-0.5">
-                  <div>Campagnes : <strong className="text-slate-700">{currentStore.active_campaigns.join(', ')}</strong></div>
-                  <div>Région : <span className="text-slate-700">{currentStore.region}</span></div>
+                <div className="text-[11px] text-[var(--content-muted)] space-y-0.5">
+                  <div>Campagnes : <strong className="text-[var(--content-primary)]">{currentStore.active_campaigns.join(', ')}</strong></div>
+                  <div>Région : <span className="text-[var(--content-primary)]">{currentStore.region}</span></div>
                 </div>
               </div>
 
               {/* Audit Summary Box */}
-              <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 text-[11px] space-y-1.5">
-                <div className="font-bold text-blue-900 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+              <div className="bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-xl p-3 text-[11px] space-y-1.5">
+                <div className="font-bold text-[var(--content-primary)] flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[var(--action-primary)]" />
                   <span>Trace d'Audit de Simulation</span>
                 </div>
-                <div className="text-blue-800">
-                  • <strong>{evalResult.payload.audit_trail.rules_applied.length}</strong> règle(s) appliquée(s).
+                <div className="text-[var(--content-secondary)]">
+                  • <strong className="font-mono tabular-nums text-[var(--content-primary)]">{evalResult.payload.audit_trail.rules_applied.length}</strong> règle(s) appliquée(s).
                 </div>
                 {evalResult.payload.audit_trail.conflicts_resolved.length > 0 && (
-                  <div className="text-purple-700 font-semibold">
-                    • <strong>{evalResult.payload.audit_trail.conflicts_resolved.length}</strong> conflit(s) de priorité résolu(s).
+                  <div className="text-purple-500 font-semibold">
+                    • <strong className="font-mono tabular-nums">{evalResult.payload.audit_trail.conflicts_resolved.length}</strong> conflit(s) de priorité résolu(s).
                   </div>
                 )}
-                <div className="text-emerald-700 font-semibold">
-                  • Latence : <strong>{evalResult.payload.audit_trail.execution_time_ms} ms</strong>
+                <div className="text-emerald-500 font-semibold">
+                  • Latence : <strong className="font-mono tabular-nums">{evalResult.payload.audit_trail.execution_time_ms} ms</strong>
                 </div>
               </div>
             </div>
 
             {/* Center Visual Multi-Device Preview Stage */}
-            <div className="flex-1 bg-slate-100 p-6 overflow-y-auto flex flex-col items-center justify-start space-y-6">
+            <div className="flex-1 bg-[var(--surface-base)] p-6 overflow-y-auto flex flex-col items-center justify-start space-y-6">
               
               {/* Acceptance Criteria Status Card */}
               <div className="w-full max-w-3xl bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
@@ -801,7 +801,7 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleResetDefaultRules}
-                    className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition"
+                    className="px-3 py-1.5 bg-[var(--surface-panel)] border border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-primary)] text-xs font-semibold rounded-lg flex items-center gap-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                     title="Réinitialiser aux règles par défaut"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -845,7 +845,7 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                       setEditingRule(newRule);
                       setIsRuleFormOpen(true);
                     }}
-                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition"
+                    className="px-3.5 py-1.5 bg-[var(--action-primary)] hover:opacity-90 text-[var(--action-primary-fg)] text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-xs transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Créer une Règle</span>
@@ -862,45 +862,45 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                       key={r.id}
                       className={`p-4 rounded-xl border transition ${
                         r.enabled
-                          ? 'bg-white border-slate-200 shadow-xs hover:border-slate-300'
-                          : 'bg-slate-50 border-slate-200 opacity-60'
+                          ? 'bg-[var(--surface-panel)] border-[var(--border-subtle)] shadow-xs hover:border-[var(--border-strong)]'
+                          : 'bg-[var(--surface-raised)] border-[var(--border-subtle)] opacity-60'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2.5">
-                            <span className="font-mono text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-800 rounded border border-slate-200">
+                            <span className="font-mono tabular-nums text-xs font-bold px-2 py-0.5 bg-[var(--surface-raised)] text-[var(--content-primary)] rounded border border-[var(--border-subtle)]">
                               Priorité: {r.priority}
                             </span>
 
-                            <h4 className="text-sm font-bold text-slate-900">{r.name}</h4>
+                            <h4 className="text-sm font-bold text-[var(--content-primary)]">{r.name}</h4>
 
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--surface-raised)] text-[var(--action-primary)] border border-[var(--border-subtle)]">
                               Trigger: {r.trigger}
                             </span>
 
                             {r.time_bound?.enabled && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 <span>Horodatée</span>
                               </span>
                             )}
                           </div>
 
-                          <p className="text-xs text-slate-500">{r.description}</p>
+                          <p className="text-xs text-[var(--content-muted)]">{r.description}</p>
 
                           {/* Conditions & Actions pills summary */}
-                          <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-600">
-                            <span className="font-semibold text-slate-700">Conditions :</span>
-                            <span className="bg-slate-100 px-2 py-0.5 rounded font-mono text-[10px]">
+                          <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-[var(--content-secondary)]">
+                            <span className="font-semibold text-[var(--content-primary)]">Conditions :</span>
+                            <span className="bg-[var(--surface-raised)] border border-[var(--border-subtle)] px-2 py-0.5 rounded font-mono tabular-nums text-[10px]">
                               {r.condition_group.conditions.length} condition(s) [{r.condition_group.logical_operator}]
                             </span>
-                            <span className="text-slate-300">•</span>
-                            <span className="font-semibold text-slate-700">Actions :</span>
+                            <span className="text-[var(--content-muted)]">•</span>
+                            <span className="font-semibold text-[var(--content-primary)]">Actions :</span>
                             {r.actions.map((act) => (
                               <span
                                 key={act.id}
-                                className="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.2 rounded font-mono text-[10px]"
+                                className="bg-[var(--surface-raised)] text-[var(--action-primary)] border border-[var(--border-subtle)] px-2 py-0.2 rounded font-mono text-[10px]"
                               >
                                 {act.type} ({act.conflict_key || 'global'})
                               </span>
@@ -917,10 +917,10 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                               );
                               handleSaveRules(updated);
                             }}
-                            className={`px-2 py-1 rounded text-xs font-semibold ${
+                            className={`px-2 py-1 rounded text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] ${
                               r.enabled
-                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30'
+                                : 'bg-[var(--surface-raised)] text-[var(--content-muted)] border border-[var(--border-subtle)]'
                             }`}
                           >
                             {r.enabled ? 'Actif' : 'Désactivé'}
@@ -931,7 +931,7 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                               setEditingRule(r);
                               setIsRuleFormOpen(true);
                             }}
-                            className="p-1.5 hover:bg-slate-100 text-slate-600 rounded-lg"
+                            className="p-1.5 hover:bg-[var(--surface-hover)] text-[var(--content-secondary)] hover:text-[var(--content-primary)] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                             title="Modifier cette règle"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -943,7 +943,7 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                                 handleSaveRules(rules.filter((item) => item.id !== r.id));
                               }
                             }}
-                            className="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg"
+                            className="p-1.5 hover:bg-rose-500/10 text-rose-500 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                             title="Supprimer cette règle"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -957,12 +957,12 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
 
             {/* Rule Edit Drawer */}
             {isRuleFormOpen && editingRule && (
-              <div className="w-96 border-l border-slate-200 bg-slate-50 p-5 overflow-y-auto space-y-4 shrink-0 text-xs">
-                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-                  <h4 className="font-bold text-slate-900 text-sm">Configuration Règle TCA</h4>
+              <div className="w-96 border-l border-[var(--border-subtle)] bg-[var(--surface-panel)] p-5 overflow-y-auto space-y-4 shrink-0 text-xs text-[var(--content-primary)]">
+                <div className="flex justify-between items-center pb-2 border-b border-[var(--border-subtle)]">
+                  <h4 className="font-bold text-[var(--content-primary)] text-sm">Configuration Règle TCA</h4>
                   <button
                     onClick={() => setIsRuleFormOpen(false)}
-                    className="p-1 hover:bg-slate-200 rounded text-slate-500"
+                    className="p-1 hover:bg-[var(--surface-hover)] rounded text-[var(--content-muted)] hover:text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -970,41 +970,41 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Nom de la Règle</label>
+                    <label className="block font-semibold text-[var(--content-secondary)] mb-1">Nom de la Règle</label>
                     <input
                       type="text"
                       value={editingRule.name}
                       onChange={(e) => setEditingRule({ ...editingRule, name: e.target.value })}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                      className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Description</label>
+                    <label className="block font-semibold text-[var(--content-secondary)] mb-1">Description</label>
                     <textarea
                       value={editingRule.description}
                       onChange={(e) => setEditingRule({ ...editingRule, description: e.target.value })}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs h-16"
+                      className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs text-[var(--content-primary)] h-16 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Score Priorité (1-1000)</label>
+                      <label className="block font-semibold text-[var(--content-secondary)] mb-1">Score Priorité (1-1000)</label>
                       <input
                         type="number"
                         value={editingRule.priority}
                         onChange={(e) => setEditingRule({ ...editingRule, priority: Number(e.target.value) })}
-                        className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono"
+                        className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs font-mono tabular-nums text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                       />
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Trigger Déclencheur</label>
+                      <label className="block font-semibold text-[var(--content-secondary)] mb-1">Trigger Déclencheur</label>
                       <select
                         value={editingRule.trigger}
                         onChange={(e) => setEditingRule({ ...editingRule, trigger: e.target.value as TriggerType })}
-                        className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                        className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                       >
                         <option value="on_promo_active">on_promo_active</option>
                         <option value="on_price_update">on_price_update</option>
@@ -1017,11 +1017,11 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                   </div>
 
                   {/* Conditions summary */}
-                  <div className="p-2.5 bg-white border border-slate-200 rounded-lg space-y-2">
-                    <div className="font-semibold text-slate-700">Conditions Logiques (AND/OR/NOT)</div>
+                  <div className="p-2.5 bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg space-y-2">
+                    <div className="font-semibold text-[var(--content-primary)]">Conditions Logiques (AND/OR/NOT)</div>
                     <div className="space-y-1.5">
                       {editingRule.condition_group.conditions.map((c: any, cIdx: number) => (
-                        <div key={cIdx} className="text-[11px] font-mono bg-slate-50 p-1.5 rounded border border-slate-200">
+                        <div key={cIdx} className="text-[11px] font-mono bg-[var(--surface-panel)] p-1.5 rounded border border-[var(--border-subtle)] text-[var(--content-primary)]">
                           {c.field_path} {c.operator} {String(c.value)}
                         </div>
                       ))}
@@ -1029,13 +1029,13 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                   </div>
 
                   {/* Actions summary */}
-                  <div className="p-2.5 bg-white border border-slate-200 rounded-lg space-y-2">
-                    <div className="font-semibold text-slate-700">Actions Enregistrées ({editingRule.actions.length})</div>
+                  <div className="p-2.5 bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg space-y-2">
+                    <div className="font-semibold text-[var(--content-primary)]">Actions Enregistrées ({editingRule.actions.length})</div>
                     <div className="space-y-1.5">
                       {editingRule.actions.map((act, aIdx) => (
-                        <div key={aIdx} className="text-[11px] font-mono bg-purple-50 text-purple-900 p-1.5 rounded border border-purple-200">
-                          <div className="font-bold">{act.type} (cible: {act.target_element_id || 'global'})</div>
-                          <div className="text-[10px] text-purple-700">Clé de conflit: {act.conflict_key || 'aucun'}</div>
+                        <div key={aIdx} className="text-[11px] font-mono bg-[var(--surface-panel)] text-[var(--content-primary)] p-1.5 rounded border border-[var(--border-subtle)]">
+                          <div className="font-bold text-[var(--action-primary)]">{act.type} (cible: {act.target_element_id || 'global'})</div>
+                          <div className="text-[10px] text-[var(--content-muted)]">Clé de conflit: {act.conflict_key || 'aucun'}</div>
                         </div>
                       ))}
                     </div>
@@ -1047,7 +1047,7 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
                       handleSaveRules(updated);
                       setIsRuleFormOpen(false);
                     }}
-                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+                    className="w-full py-2 bg-[var(--action-primary)] hover:opacity-90 text-[var(--action-primary-fg)] font-semibold rounded-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                   >
                     Enregistrer les Modifications
                   </button>
@@ -1059,14 +1059,14 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
 
         {/* Tab 3: Enriched JSON Payload Inspector */}
         {activeTab === 'payload' && (
-          <div className="flex-1 flex flex-col p-6 overflow-hidden bg-slate-900 text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className="flex-1 flex flex-col p-6 overflow-hidden bg-[var(--surface-panel)] text-[var(--content-primary)]">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-blue-400" />
+                <h3 className="text-sm font-bold text-[var(--content-primary)] flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[var(--action-primary)]" />
                   <span>Payload JSON Enrichi (Headless Client Contract)</span>
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[var(--content-muted)]">
                   Données enrichies prêtes pour transmission aux micro-services d'impression ou d'affichage en rayon.
                 </p>
               </div>
@@ -1074,7 +1074,7 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleCopyPayload}
-                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-xs"
+                  className="px-3.5 py-1.5 bg-[var(--action-primary)] hover:opacity-90 text-[var(--action-primary-fg)] text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 >
                   {copiedPayload ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedPayload ? 'Copié dans le presse-papier !' : 'Copier JSON'}</span>
@@ -1083,22 +1083,22 @@ export const OmniChannelStudioModal: React.FC<OmniChannelStudioModalProps> = ({
             </div>
 
             {/* Syntax-highlighted style JSON viewer */}
-            <div className="flex-1 overflow-auto mt-4 p-4 bg-slate-950 rounded-xl border border-slate-800 font-mono text-xs text-emerald-400 leading-relaxed select-text">
+            <div className="flex-1 overflow-auto mt-4 p-4 bg-[var(--surface-base)] rounded-xl border border-[var(--border-subtle)] font-mono text-xs text-[var(--content-primary)] leading-relaxed select-text">
               <pre>{JSON.stringify(evalResult.payload, null, 2)}</pre>
             </div>
           </div>
         )}
 
         {/* Footer Bar */}
-        <div className="bg-slate-50 border-t border-slate-200 px-6 py-3 flex items-center justify-between text-xs text-slate-500 shrink-0">
+        <div className="bg-[var(--surface-raised)] border-t border-[var(--border-subtle)] px-6 py-3 flex items-center justify-between text-xs text-[var(--content-muted)] shrink-0">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-blue-600" />
+            <ShieldCheck className="w-4 h-4 text-[var(--action-primary)]" />
             <span>Moteur Headless conforme architecture distribuée (Cloud Run / ESL Gateway / POS Server).</span>
           </div>
 
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg transition"
+            className="px-4 py-1.5 bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] text-[var(--content-primary)] font-semibold rounded-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
           >
             Fermer
           </button>

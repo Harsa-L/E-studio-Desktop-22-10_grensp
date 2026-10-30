@@ -159,37 +159,37 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
   const previewScale = selectedMultiTemplate.page_size === 'A3' ? 1.6 : 2.2;
 
   return (
-    <div className="flex-1 bg-slate-100 flex flex-col overflow-hidden">
+    <div className="flex-1 bg-[var(--surface-base)] text-[var(--content-primary)] flex flex-col overflow-hidden">
       {/* Header Banner */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3.5 flex items-center justify-between shadow-xs">
+      <div className="bg-[var(--surface-panel)] border-b border-[var(--border-subtle)] px-6 py-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-xs">
             <LayoutGrid className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-base font-bold text-[var(--content-primary)]">
                 Gabarits Multi-Articles & Attribution par Règles Métier
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400">
                 Multi-Slot Engine
               </span>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[var(--content-muted)]">
               Signalétique multi-emplacements (bacs soldeurs, îlots) et attribution automatique de gabarits selon les attributs produits
             </p>
           </div>
         </div>
 
         {/* Sub-tab Navigation */}
-        <div className="flex rounded-xl border border-slate-200 p-1 bg-slate-50">
+        <div className="flex rounded-xl border border-[var(--border-subtle)] p-1 bg-[var(--surface-raised)]">
           <button
             type="button"
             onClick={() => setActiveSubTab('multi_slot')}
-            className={`px-3.5 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition ${
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
               activeSubTab === 'multi_slot'
-                ? 'bg-white shadow-xs text-emerald-700'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-[var(--surface-panel)] shadow-xs text-emerald-400'
+                : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
             }`}
           >
             <LayoutGrid className="w-4 h-4" />
@@ -198,10 +198,10 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
           <button
             type="button"
             onClick={() => setActiveSubTab('rules_assignment')}
-            className={`px-3.5 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition ${
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none ${
               activeSubTab === 'rules_assignment'
-                ? 'bg-white shadow-xs text-blue-700'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-[var(--surface-panel)] shadow-xs text-[var(--action-primary)]'
+                : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
             }`}
           >
             <Zap className="w-4 h-4" />
@@ -214,9 +214,9 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
       {activeSubTab === 'multi_slot' && (
         <div className="flex-1 flex overflow-hidden">
           {/* Left Panel: Configuration & Slot Bindings */}
-          <div className="w-96 bg-white border-r border-slate-200 flex flex-col overflow-y-auto p-5 space-y-5">
+          <div className="w-96 bg-[var(--surface-panel)] border-r border-[var(--border-subtle)] flex flex-col overflow-y-auto p-5 space-y-5 text-[var(--content-primary)]">
             <div>
-              <label className="block font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">
+              <label className="block font-bold text-xs text-[var(--content-muted)] uppercase tracking-wider mb-2">
                 Gabarit Multi-Slots Sélectionné
               </label>
               <div className="space-y-2">
@@ -226,13 +226,13 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
                     onClick={() => setSelectedMultiTemplate(tpl)}
                     className={`p-3 rounded-xl border cursor-pointer transition text-xs ${
                       selectedMultiTemplate.id === tpl.id
-                        ? 'bg-emerald-50/80 border-emerald-500 font-bold text-emerald-900'
-                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'
+                        ? 'bg-emerald-500/10 border-emerald-500 font-bold text-emerald-400'
+                        : 'bg-[var(--surface-raised)] border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] text-[var(--content-secondary)]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span>{tpl.name}</span>
-                      <span className="font-mono text-[10px] bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                      <span className="font-mono text-[10px] bg-[var(--surface-panel)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] tabular-nums">
                         {tpl.slots.length} Slots
                       </span>
                     </div>
@@ -242,8 +242,8 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
             </div>
 
             {/* Banner Header Config */}
-            <div className="space-y-2 pt-2 border-t border-slate-200">
-              <label className="block font-bold text-xs text-slate-700 uppercase tracking-wider">
+            <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
+              <label className="block font-bold text-xs text-[var(--content-muted)] uppercase tracking-wider">
                 Bandeau Supérieur (En-tête Îlot)
               </label>
               <input
@@ -255,14 +255,14 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
                     banner_title: e.target.value,
                   })
                 }
-                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800"
+                className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs font-semibold text-[var(--content-primary)] focus:border-[var(--action-focus-ring)] focus:outline-none"
               />
             </div>
 
             {/* Per-Slot Product Selector Grid */}
-            <div className="space-y-3 pt-2 border-t border-slate-200">
+            <div className="space-y-3 pt-2 border-t border-[var(--border-subtle)]">
               <div className="flex items-center justify-between">
-                <label className="block font-bold text-xs text-slate-700 uppercase tracking-wider">
+                <label className="block font-bold text-xs text-[var(--content-muted)] uppercase tracking-wider">
                   Affectation des Articles par Emplacement
                 </label>
               </div>
@@ -274,16 +274,16 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
                 return (
                   <div
                     key={slot.id}
-                    className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs"
+                    className="p-3 bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-xl space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 flex items-center gap-1.5">
-                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">
+                      <span className="font-bold text-[var(--content-primary)] flex items-center gap-1.5">
+                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold tabular-nums">
                           {sIdx + 1}
                         </span>
                         {slot.name}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-mono">
+                      <span className="text-[10px] text-[var(--content-muted)] font-mono tabular-nums">
                         {slot.w_mm}x{slot.h_mm} mm
                       </span>
                     </div>
@@ -291,7 +291,7 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
                     <select
                       value={boundProdId || ''}
                       onChange={(e) => handleAssignProductToSlot(slot.id, e.target.value)}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs font-semibold text-[var(--content-primary)] focus:border-emerald-500 focus:outline-none"
                     >
                       <option value="">-- Emplacement Vide --</option>
                       {products.map((p) => (
@@ -302,9 +302,9 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
                     </select>
 
                     {boundProd && (
-                      <div className="p-2 bg-white rounded-lg border border-slate-200 flex items-center justify-between text-[11px]">
-                        <span className="text-slate-600 truncate">{boundProd.PARTNO || 'SKU'}</span>
-                        <span className="font-bold text-emerald-700">{boundProd.SELLING_PRICE} €</span>
+                      <div className="p-2 bg-[var(--surface-panel)] rounded-lg border border-[var(--border-subtle)] flex items-center justify-between text-[11px]">
+                        <span className="text-[var(--content-secondary)] truncate">{boundProd.PARTNO || 'SKU'}</span>
+                        <span className="font-bold text-emerald-400 tabular-nums font-mono">{boundProd.SELLING_PRICE} €</span>
                       </div>
                     )}
                   </div>
@@ -314,17 +314,17 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
           </div>
 
           {/* Right Panel: Interactive Sheet Canvas Live Preview */}
-          <div className="flex-1 bg-slate-200 p-8 flex flex-col items-center justify-center overflow-auto">
-            <div className="mb-2 text-xs font-medium text-slate-600 flex items-center gap-2">
-              <Eye className="w-4 h-4 text-emerald-600" />
-              <span>
+          <div className="flex-1 bg-[var(--canvas-pasteboard)] p-8 flex flex-col items-center justify-center overflow-auto">
+            <div className="mb-2 text-xs font-medium text-[var(--content-muted)] flex items-center gap-2">
+              <Eye className="w-4 h-4 text-emerald-500" />
+              <span className="font-mono tabular-nums">
                 Aperçu de la Feuille Physique Composite ({selectedMultiTemplate.page_size} • {selectedMultiTemplate.width_mm} × {selectedMultiTemplate.height_mm} mm)
               </span>
             </div>
 
             {/* Composite Sheet Container */}
             <div
-              className="bg-white shadow-2xl relative border border-slate-400 select-none overflow-hidden"
+              className="bg-white shadow-2xl relative border border-slate-300 select-none overflow-hidden"
               style={{
                 width: `${selectedMultiTemplate.width_mm * previewScale}px`,
                 height: `${selectedMultiTemplate.height_mm * previewScale}px`,
@@ -394,11 +394,11 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
                           <div className="text-right">
                             {prod.PROMOPRICE ? (
                               <div>
-                                <span className="text-[10px] line-through text-slate-400 mr-1.5 font-bold">
+                                <span className="text-[10px] line-through text-slate-400 mr-1.5 font-bold tabular-nums">
                                   {prod.SELLING_PRICE} €
                                 </span>
                                 <span
-                                  className="font-black text-rose-600 font-mono"
+                                  className="font-black text-rose-600 font-mono tabular-nums"
                                   style={{ fontSize: `${20 * (previewScale / 2)}px` }}
                                 >
                                   {prod.PROMOPRICE} €
@@ -406,7 +406,7 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
                               </div>
                             ) : (
                               <span
-                                className="font-black text-slate-900 font-mono"
+                                className="font-black text-slate-900 font-mono tabular-nums"
                                 style={{ fontSize: `${20 * (previewScale / 2)}px` }}
                               >
                                 {prod.SELLING_PRICE} €
@@ -433,15 +433,15 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
       {activeSubTab === 'rules_assignment' && (
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Rules Summary Card */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
+          <div className="bg-[var(--surface-panel)] rounded-2xl p-6 border border-[var(--border-subtle)] shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-blue-600" />
+                <Zap className="w-5 h-5 text-[var(--action-primary)]" />
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-bold text-[var(--content-primary)]">
                     Règles d'Attribution Automatiques de Gabarits (Data-Driven Assignment)
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-[var(--content-muted)]">
                     Le système évalue les caractéristiques de chaque article (promotion, paliers de prix, département marée) pour assigner le bon gabarit sans intervention humaine
                   </p>
                 </div>
@@ -452,16 +452,16 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
               {BUILTIN_ASSIGNMENT_RULES.map((rule) => (
                 <div
                   key={rule.id}
-                  className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2 text-xs"
+                  className="bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-xl p-4 space-y-2 text-xs"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900">{rule.name}</span>
-                    <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-mono text-[10px] font-bold">
+                    <span className="font-bold text-[var(--content-primary)]">{rule.name}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 font-mono text-[10px] font-bold tabular-nums">
                       Prio: {rule.priority}
                     </span>
                   </div>
-                  <p className="text-slate-600 text-[11px]">{rule.description}</p>
-                  <div className="pt-2 border-t border-slate-200 font-semibold text-blue-700 text-[11px]">
+                  <p className="text-[var(--content-secondary)] text-[11px]">{rule.description}</p>
+                  <div className="pt-2 border-t border-[var(--border-subtle)] font-semibold text-[var(--action-primary)] text-[11px]">
                     Gabarit cible: {rule.targetTemplateName}
                   </div>
                 </div>
@@ -470,19 +470,19 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
           </div>
 
           {/* Product Assignment Table with Overrides */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
+          <div className="bg-[var(--surface-panel)] rounded-2xl p-6 border border-[var(--border-subtle)] shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5 text-slate-700" />
-                <h3 className="text-sm font-bold text-slate-900">
+                <FileSpreadsheet className="w-5 h-5 text-[var(--content-muted)]" />
+                <h3 className="text-sm font-bold text-[var(--content-primary)] tabular-nums">
                   Résolution & Dérogations Manuelles par Article ({products.length})
                 </h3>
               </div>
             </div>
 
-            <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <div className="border border-[var(--border-subtle)] rounded-xl overflow-hidden">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                <thead className="bg-[var(--surface-raised)] text-[var(--content-muted)] font-semibold border-b border-[var(--border-subtle)]">
                   <tr>
                     <th className="p-3">Article</th>
                     <th className="p-3">Critères Détectés</th>
@@ -492,7 +492,7 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
                     <th className="p-3">Copies Forcées</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[var(--border-subtle)]">
                   {templateResolutionResults.map((row) => {
                     const p = row.product;
                     const hasPromo = !!p.PROMOPRICE || !!p.DISCOUNT_PCT;
@@ -500,40 +500,40 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
                     const isSeafood = (p.DEPT_NAME || '').toLowerCase().includes('marée') || (p.CATEGORY_NAME || '').toLowerCase().includes('poisson');
 
                     return (
-                      <tr key={p.id} className="hover:bg-slate-50 transition">
+                      <tr key={p.id} className="hover:bg-[var(--surface-hover)] transition">
                         <td className="p-3">
-                          <span className="font-bold text-slate-900 block">{p.ITEMNAME}</span>
-                          <span className="text-[10px] text-slate-500 font-mono">
+                          <span className="font-bold text-[var(--content-primary)] block">{p.ITEMNAME}</span>
+                          <span className="text-[10px] text-[var(--content-muted)] font-mono tabular-nums">
                             {p.PARTNO || p.id} • {p.SELLING_PRICE} €
                           </span>
                         </td>
                         <td className="p-3">
                           <div className="flex flex-wrap gap-1">
                             {hasPromo && (
-                              <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-bold">
+                              <span className="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 text-[10px] font-bold">
                                 Promo
                               </span>
                             )}
                             {hasTiers && (
-                              <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-bold">
+                              <span className="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 text-[10px] font-bold">
                                 Paliers Dégressifs
                               </span>
                             )}
                             {isSeafood && (
-                              <span className="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 text-[10px] font-bold">
+                              <span className="px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-400 text-[10px] font-bold">
                                 Marée / Pêche
                               </span>
                             )}
                             {!hasPromo && !hasTiers && !isSeafood && (
-                              <span className="text-slate-400 text-[10px]">Standard</span>
+                              <span className="text-[var(--content-muted)] text-[10px]">Standard</span>
                             )}
                           </div>
                         </td>
                         <td className="p-3">
-                          <span className="font-semibold text-slate-700">{row.appliedRuleName}</span>
+                          <span className="font-semibold text-[var(--content-secondary)]">{row.appliedRuleName}</span>
                         </td>
                         <td className="p-3">
-                          <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
+                          <span className="font-bold text-[var(--action-primary)] bg-[var(--action-primary)]/10 px-2 py-0.5 rounded-lg border border-[var(--action-primary)]/20">
                             {row.matchedTemplate.name}
                           </span>
                         </td>
@@ -546,7 +546,7 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
                                 assigned_template: e.target.value || undefined,
                               });
                             }}
-                            className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800"
+                            className="px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs font-medium text-[var(--content-primary)] focus:border-[var(--action-focus-ring)] focus:outline-none"
                           >
                             <option value="">Automatique (Règle Métier)</option>
                             {templates.map((tpl) => (
@@ -569,7 +569,7 @@ export const MultiSlotSignageStudio: React.FC<MultiSlotSignageStudioProps> = ({
                                 forced_copies: parseInt(e.target.value) || undefined,
                               });
                             }}
-                            className="w-16 px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold"
+                            className="w-16 px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs font-mono font-bold tabular-nums text-[var(--content-primary)] focus:border-[var(--action-focus-ring)] focus:outline-none"
                           />
                         </td>
                       </tr>

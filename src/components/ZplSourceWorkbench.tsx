@@ -150,28 +150,32 @@ export const ZplSourceWorkbench: React.FC<ZplSourceWorkbenchProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end bg-black/25" role="presentation">
+    <div className="fixed inset-0 z-[100] flex justify-end bg-black/40 backdrop-blur-xs" role="presentation">
       <section
-        className="flex h-full w-full flex-col overflow-hidden border-l border-slate-700 bg-slate-900 shadow-2xl sm:w-[68vw] sm:max-w-6xl"
+        className="flex h-full w-full flex-col overflow-hidden border-l border-[var(--border-subtle)] bg-[var(--surface-panel)] text-[var(--content-primary)] shadow-2xl sm:w-[68vw] sm:max-w-6xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="zpl-source-title"
       >
-        <header className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+        <header className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-raised)] px-5 py-4">
           <div className="flex items-center gap-3">
-            <FileCode2 className="h-5 w-5 text-blue-400" />
+            <FileCode2 className="h-5 w-5 text-[var(--action-primary)]" />
             <div>
-              <h2 id="zpl-source-title" className="font-semibold text-white">Éditeur de source ZPL</h2>
-              <p className="text-xs text-slate-400">La source reste autoritaire ; l’aperçu visuel est limité aux commandes prises en charge</p>
+              <h2 id="zpl-source-title" className="font-semibold text-[var(--content-primary)]">Éditeur de source ZPL</h2>
+              <p className="text-xs text-[var(--content-muted)]">La source reste autoritaire ; l’aperçu visuel est limité aux commandes prises en charge</p>
             </div>
           </div>
-          <button onClick={close} className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white" aria-label="Fermer">
+          <button
+            onClick={close}
+            className="rounded-lg p-2 text-[var(--content-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
+            aria-label="Fermer"
+          >
             <X className="h-4 w-4" />
           </button>
         </header>
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 px-5 py-3">
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-500">
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--surface-panel)] px-5 py-3">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[var(--action-primary)] px-3 py-2 text-xs font-semibold text-[var(--action-primary-fg)] hover:opacity-90 focus-within:ring-2 focus-within:ring-[var(--action-focus-ring)]">
             <Upload className="h-3.5 w-3.5" />
             {isReading ? 'Lecture…' : 'Importer .zpl / .txt'}
             <input type="file" accept=".zpl,.txt,text/plain" className="hidden" onChange={handleImport} disabled={isReading} />
@@ -180,12 +184,12 @@ export const ZplSourceWorkbench: React.FC<ZplSourceWorkbenchProps> = ({
             value={filename}
             onChange={(event) => setFilename(event.target.value)}
             aria-label="Nom du fichier exporté"
-            className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200"
+            className="min-w-0 flex-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-input)] px-3 py-2 text-xs text-[var(--content-primary)] font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
           />
           <button
             onClick={handleExport}
             disabled={!source}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-3 py-2 text-xs font-semibold text-[var(--content-primary)] hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
           >
             <Download className="h-3.5 w-3.5" />
             Exporter la source
@@ -194,12 +198,12 @@ export const ZplSourceWorkbench: React.FC<ZplSourceWorkbenchProps> = ({
             <button
               onClick={handleApplySource}
               disabled={!source}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
             >
               Appliquer au canevas
             </button>
           )}
-          <span className={`text-xs ${hasUnsavedEdits ? 'text-amber-300' : 'text-slate-500'}`}>
+          <span className={`text-xs tabular-nums font-mono ${hasUnsavedEdits ? 'text-amber-500 font-semibold' : 'text-[var(--content-muted)]'}`}>
             {hasUnsavedEdits ? 'Modifications non exportées' : 'Aucune modification'}
           </span>
         </div>
@@ -212,13 +216,13 @@ export const ZplSourceWorkbench: React.FC<ZplSourceWorkbenchProps> = ({
               aria-label="Contenu source ZPL"
               spellCheck={false}
               placeholder="Importer un fichier ZPL ou coller sa source ici…"
-              className="min-h-[16rem] w-full resize-none border-b border-slate-800 bg-slate-950 p-4 font-mono text-sm leading-6 text-slate-200 outline-none lg:border-b-0 lg:border-r"
+              className="min-h-[16rem] w-full resize-none border-b border-[var(--border-subtle)] bg-[var(--surface-base)] p-4 font-mono text-xs leading-6 text-[var(--content-primary)] outline-none lg:border-b-0 lg:border-r focus-visible:ring-1 focus-visible:ring-[var(--action-focus-ring)]"
             />
-            <div className="min-h-[16rem] overflow-auto bg-slate-800/50 p-4">
-              <div className="mb-3 flex items-center justify-between text-xs text-slate-400">
+            <div className="min-h-[16rem] overflow-auto bg-[var(--canvas-pasteboard)] p-4">
+              <div className="mb-3 flex items-center justify-between text-xs text-[var(--content-muted)]">
                 <span>Aperçu source (dimensions en points imprimante)</span>
                 <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1">L
+                  <label className="flex items-center gap-1 font-mono tabular-nums">L
                     <input
                       aria-label="Largeur de page en dots"
                       type="number"
@@ -226,10 +230,10 @@ export const ZplSourceWorkbench: React.FC<ZplSourceWorkbenchProps> = ({
                       value={visualModel.widthDots}
                       disabled={!visualModel.widthRange}
                       onChange={(event) => updatePageSize({ widthDots: Number(event.target.value) })}
-                      className="w-16 rounded border border-slate-600 bg-slate-950 px-1 py-1 text-slate-100 disabled:opacity-50"
+                      className="w-16 rounded border border-[var(--border-subtle)] bg-[var(--surface-input)] px-1 py-1 text-[var(--content-primary)] font-mono tabular-nums disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                     />
                   </label>
-                  <label className="flex items-center gap-1">H
+                  <label className="flex items-center gap-1 font-mono tabular-nums">H
                     <input
                       aria-label="Hauteur de page en dots"
                       type="number"
@@ -237,7 +241,7 @@ export const ZplSourceWorkbench: React.FC<ZplSourceWorkbenchProps> = ({
                       value={visualModel.heightDots}
                       disabled={!visualModel.heightRange}
                       onChange={(event) => updatePageSize({ heightDots: Number(event.target.value) })}
-                      className="w-16 rounded border border-slate-600 bg-slate-950 px-1 py-1 text-slate-100 disabled:opacity-50"
+                      className="w-16 rounded border border-[var(--border-subtle)] bg-[var(--surface-input)] px-1 py-1 text-[var(--content-primary)] font-mono tabular-nums disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                     />
                   </label>
                 </div>
@@ -247,7 +251,7 @@ export const ZplSourceWorkbench: React.FC<ZplSourceWorkbenchProps> = ({
                 viewBox={`0 0 ${visualModel.widthDots} ${visualModel.heightDots}`}
                 role="img"
                 aria-label="Aperçu des objets texte source ZPL"
-                className="mx-auto max-h-64 w-full rounded border border-slate-600 bg-white shadow"
+                className="mx-auto max-h-64 w-full rounded border border-[var(--border-subtle)] bg-white shadow"
                 onPointerUp={finishObjectDrag}
                 onPointerCancel={() => { dragStartRef.current = null; }}
               >
@@ -283,16 +287,16 @@ export const ZplSourceWorkbench: React.FC<ZplSourceWorkbenchProps> = ({
               </svg>
               {selectedObject && (
                 <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_6rem_6rem]">
-                  <label className="text-xs text-slate-300">
+                  <label className="text-xs text-[var(--content-secondary)]">
                     Texte
                     <input
                       value={selectedObject.text}
                       disabled={!selectedObject.editable}
                       onChange={(event) => updateObject(selectedObject, { text: event.target.value })}
-                      className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 font-mono text-xs text-white disabled:opacity-50"
+                      className="mt-1 w-full rounded border border-[var(--border-subtle)] bg-[var(--surface-input)] px-2 py-1.5 font-mono text-xs text-[var(--content-primary)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                     />
                   </label>
-                  <label className="text-xs text-slate-300">
+                  <label className="text-xs text-[var(--content-secondary)]">
                     X
                     <input
                       type="number"
@@ -300,10 +304,10 @@ export const ZplSourceWorkbench: React.FC<ZplSourceWorkbenchProps> = ({
                       value={selectedObject.xDots}
                       disabled={!selectedObject.editable}
                       onChange={(event) => updateObject(selectedObject, { xDots: Number(event.target.value) })}
-                      className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 font-mono text-xs text-white disabled:opacity-50"
+                      className="mt-1 w-full rounded border border-[var(--border-subtle)] bg-[var(--surface-input)] px-2 py-1.5 font-mono tabular-nums text-xs text-[var(--content-primary)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                     />
                   </label>
-                  <label className="text-xs text-slate-300">
+                  <label className="text-xs text-[var(--content-secondary)]">
                     Y
                     <input
                       type="number"
@@ -311,35 +315,35 @@ export const ZplSourceWorkbench: React.FC<ZplSourceWorkbenchProps> = ({
                       value={selectedObject.yDots}
                       disabled={!selectedObject.editable}
                       onChange={(event) => updateObject(selectedObject, { yDots: Number(event.target.value) })}
-                      className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 font-mono text-xs text-white disabled:opacity-50"
+                      className="mt-1 w-full rounded border border-[var(--border-subtle)] bg-[var(--surface-input)] px-2 py-1.5 font-mono tabular-nums text-xs text-[var(--content-primary)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                     />
                   </label>
                 </div>
               )}
               {visualModel.objects.length === 0 && (
-                <p className="py-12 text-center text-xs text-slate-500">Aucun objet texte pris en charge pour l’aperçu.</p>
+                <p className="py-12 text-center text-xs text-[var(--content-muted)]">Aucun objet texte pris en charge pour l’aperçu.</p>
               )}
             </div>
           </div>
-          <div className="max-h-36 overflow-auto border-t border-slate-800 px-5 py-3 text-xs">
-            <p className="mb-2 text-slate-300">
+          <div className="max-h-36 overflow-auto border-t border-[var(--border-subtle)] bg-[var(--surface-raised)] px-5 py-3 text-xs">
+            <p className="mb-2 text-[var(--content-secondary)] font-mono tabular-nums">
               {document.segments.length} segments source · {visualModel.objects.length} objet(s) texte · {visualModel.diagnostics.length} avertissement(s)
             </p>
             {visualModel.diagnostics.length > 0 && (
-              <ul className="space-y-1 text-amber-300" aria-label="Avertissements de structure">
+              <ul className="space-y-1 text-amber-500" aria-label="Avertissements de structure">
                 {visualModel.diagnostics.map((diagnostic, index) => <li key={`${index}-${diagnostic}`}>{diagnostic}</li>)}
               </ul>
             )}
-            <p className="mt-2 text-slate-500">
+            <p className="mt-2 text-[var(--content-muted)] leading-relaxed">
               Les fichiers UTF-8 valides sont conservés textuellement, y compris leurs espaces et fins de ligne. Les encodages non UTF-8 sont refusés pour éviter une conversion silencieuse.
               L’aperçu visuel ne couvre que les champs texte ^FO/^A0N/^FD sûrs ; les autres commandes restent préservées comme source brute. Les dimensions ne sont modifiables que si ^PW et ^LL sont uniques et numériques.
             </p>
             {onApplySource && (
-              <p className="mt-2 text-amber-300">
+              <p className="mt-2 text-amber-500">
                 L’application réinterprète les objets pris en charge ; les liaisons dynamiques peuvent devenir des valeurs statiques et les champs composites peuvent être aplatis. Vérifiez le canevas avant d’enregistrer ; les commandes non prises en charge restent conservées dans la source ZPL.
               </p>
             )}
-            {message && <p className="mt-2 text-slate-300" role="status">{message}</p>}
+            {message && <p className="mt-2 text-[var(--content-primary)] font-medium" role="status">{message}</p>}
           </div>
         </div>
       </section>

@@ -36,8 +36,8 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
   const [height_mm, setHeight_mm] = useState(50.0);
   const [innerMargins, setInnerMargins] = useState<Margins>({ top: 2.0, bottom: 2.0, left: 2.0, right: 2.0 });
   const [outerMargins, setOuterMargins] = useState<Margins>({ top: 1.0, bottom: 1.0, left: 1.0, right: 1.0 });
-  const [bgColor, setBgColor] = useState("#FFFFFF");
-  const [bgOpacity, setBgOpacity] = useState(1.0);
+  const [bgColor] = useState("#FFFFFF");
+  const [bgOpacity] = useState(1.0);
   const [bgImage, setBgImage] = useState<string | null>(null);
   const [bgImageOpacity, setBgImageOpacity] = useState(0.35);
   const [bgImageFit, setBgImageFit] = useState<'contain' | 'cover' | 'stretch'>('contain');
@@ -130,33 +130,34 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+      <div className="bg-[var(--surface-panel)] rounded-xl shadow-2xl border border-[var(--border-subtle)] w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden text-[var(--content-primary)] animate-in fade-in zoom-in-95">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <div className="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--surface-raised)]">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+            <div className="p-2 bg-[var(--surface-panel)] text-[var(--action-primary)] border border-[var(--border-subtle)] rounded-lg">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">{wizardText('title')}</h2>
-              <p className="text-xs text-slate-500">{wizardText('subtitle')}</p>
+              <h2 className="text-base font-bold text-[var(--content-primary)]">{wizardText('title')}</h2>
+              <p className="text-xs text-[var(--content-muted)]">{wizardText('subtitle')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+            className="p-1.5 text-[var(--content-muted)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
+            aria-label="Fermer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 text-xs text-slate-700">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 text-xs text-[var(--content-secondary)]">
           {errors.length > 0 && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 space-y-1">
+            <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-500 space-y-1">
               <div className="flex items-center gap-1.5 font-bold">
-                <AlertCircle className="w-4 h-4 text-rose-600" />
+                <AlertCircle className="w-4 h-4 text-rose-500" />
                 <span>Erreurs de validation :</span>
               </div>
               <ul className="list-disc list-inside pl-1 text-[11px]">
@@ -169,17 +170,17 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
 
           {/* Presets */}
           <div>
-            <label className="block font-semibold text-slate-700 mb-1.5">{wizardText('presets')}</label>
+            <label className="block font-semibold text-[var(--content-primary)] mb-1.5">{wizardText('presets')}</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {PRESETS.map((p, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => handlePreset(p)}
-                  className="px-3 py-2 text-left border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 rounded-lg transition flex flex-col"
+                  className="px-3 py-2 text-left border border-[var(--border-subtle)] bg-[var(--surface-panel)] hover:border-[var(--action-primary)] hover:bg-[var(--surface-hover)] rounded-lg transition flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 >
-                  <span className="font-semibold text-slate-800 truncate">{p.name}</span>
-                  <span className="text-[11px] text-slate-500">{p.w} × {p.h} mm</span>
+                  <span className="font-semibold text-[var(--content-primary)] truncate">{p.name}</span>
+                  <span className="text-[11px] text-[var(--content-muted)] font-mono tabular-nums">{p.w} × {p.h} mm</span>
                 </button>
               ))}
             </div>
@@ -187,21 +188,21 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
 
           {/* Name */}
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">{wizardText('name')}</label>
+            <label className="block font-semibold text-[var(--content-primary)] mb-1">{wizardText('name')}</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={`${wizardText('name')}…`}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+              className="w-full px-3 py-2 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-sm text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
             />
           </div>
 
           {/* Dimensions */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">{wizardText('width')}</label>
+              <label className="block font-semibold text-[var(--content-primary)] mb-1">{wizardText('width')}</label>
               <input
                 type="number"
                 step="0.5"
@@ -210,11 +211,11 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
                 required
                 value={width_mm}
                 onChange={(e) => setWidth_mm(parseFloat(e.target.value) || 10)}
-                className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                className="w-full px-3 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-sm text-[var(--content-primary)] font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">{wizardText('height')}</label>
+              <label className="block font-semibold text-[var(--content-primary)] mb-1">{wizardText('height')}</label>
               <input
                 type="number"
                 step="0.5"
@@ -223,19 +224,19 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
                 required
                 value={height_mm}
                 onChange={(e) => setHeight_mm(parseFloat(e.target.value) || 10)}
-                className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                className="w-full px-3 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-sm text-[var(--content-primary)] font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
               />
             </div>
           </div>
 
           {/* Hardware Parameters: Resolution & Color Mode */}
-          <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+          <div className="grid grid-cols-2 gap-4 p-3 bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Résolution Cible (DPI)</label>
+              <label className="block font-semibold text-[var(--content-primary)] mb-1">Résolution Cible (DPI)</label>
               <select
                 value={targetDpi}
                 onChange={(e) => setTargetDpi(Number(e.target.value))}
-                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white font-mono"
+                className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs text-[var(--content-primary)] font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
               >
                 <option value={152}>152 DPI (Écran ESL basse rés.)</option>
                 <option value={203}>203 DPI (Thermique Standard / ESL)</option>
@@ -244,11 +245,11 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
               </select>
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Palette / Mode Matériel</label>
+              <label className="block font-semibold text-[var(--content-primary)] mb-1">Palette / Mode Matériel</label>
               <select
                 value={hardwareColorMode}
                 onChange={(e) => setHardwareColorMode(e.target.value)}
-                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
+                className="w-full px-2.5 py-1.5 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded-lg text-xs text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
               >
                 <option value="RGB">Couleurs RGB (Écran / Web)</option>
                 <option value="CMYK">CMYK Quadri (Impression Masse)</option>
@@ -260,107 +261,107 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
           </div>
 
           {/* Inner printable margins */}
-          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+          <div className="p-3.5 bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-800">Marges Intérieures (Zone Imprimable)</span>
-              <span className="text-[11px] text-slate-500 font-mono">
+              <span className="font-semibold text-[var(--content-primary)]">Marges Intérieures (Zone Imprimable)</span>
+              <span className="text-[11px] text-[var(--content-muted)] font-mono tabular-nums">
                 Imprimable: {(width_mm - innerMargins.left - innerMargins.right).toFixed(1)} × {(height_mm - innerMargins.top - innerMargins.bottom).toFixed(1)} mm
               </span>
             </div>
             <div className="grid grid-cols-4 gap-2">
               <div>
-                <label className="text-[11px] text-slate-500">Haut (mm)</label>
+                <label className="text-[11px] text-[var(--content-muted)]">Haut (mm)</label>
                 <input
                   type="number"
                   step="0.5"
                   min="0"
                   value={innerMargins.top}
                   onChange={(e) => setInnerMargins({ ...innerMargins, top: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                  className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs text-[var(--content-primary)] font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-500">Bas (mm)</label>
+                <label className="text-[11px] text-[var(--content-muted)]">Bas (mm)</label>
                 <input
                   type="number"
                   step="0.5"
                   min="0"
                   value={innerMargins.bottom}
                   onChange={(e) => setInnerMargins({ ...innerMargins, bottom: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                  className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs text-[var(--content-primary)] font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-500">Gauche (mm)</label>
+                <label className="text-[11px] text-[var(--content-muted)]">Gauche (mm)</label>
                 <input
                   type="number"
                   step="0.5"
                   min="0"
                   value={innerMargins.left}
                   onChange={(e) => setInnerMargins({ ...innerMargins, left: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                  className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs text-[var(--content-primary)] font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-500">Droite (mm)</label>
+                <label className="text-[11px] text-[var(--content-muted)]">Droite (mm)</label>
                 <input
                   type="number"
                   step="0.5"
                   min="0"
                   value={innerMargins.right}
                   onChange={(e) => setInnerMargins({ ...innerMargins, right: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                  className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs text-[var(--content-primary)] font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 />
               </div>
             </div>
           </div>
 
           {/* Outer margins / Bleed */}
-          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-            <span className="font-semibold text-slate-800">Marges Extérieures (Fond Perdu / Bleed)</span>
+          <div className="p-3.5 bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-lg space-y-2">
+            <span className="font-semibold text-[var(--content-primary)]">Marges Extérieures (Fond Perdu / Bleed)</span>
             <div className="grid grid-cols-4 gap-2">
               <div>
-                <label className="text-[11px] text-slate-500">Haut (mm)</label>
+                <label className="text-[11px] text-[var(--content-muted)]">Haut (mm)</label>
                 <input
                   type="number"
                   step="0.5"
                   min="0"
                   value={outerMargins.top}
                   onChange={(e) => setOuterMargins({ ...outerMargins, top: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                  className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs text-[var(--content-primary)] font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-500">Bas (mm)</label>
+                <label className="text-[11px] text-[var(--content-muted)]">Bas (mm)</label>
                 <input
                   type="number"
                   step="0.5"
                   min="0"
                   value={outerMargins.bottom}
                   onChange={(e) => setOuterMargins({ ...outerMargins, bottom: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                  className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs text-[var(--content-primary)] font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-500">Gauche (mm)</label>
+                <label className="text-[11px] text-[var(--content-muted)]">Gauche (mm)</label>
                 <input
                   type="number"
                   step="0.5"
                   min="0"
                   value={outerMargins.left}
                   onChange={(e) => setOuterMargins({ ...outerMargins, left: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                  className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs text-[var(--content-primary)] font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 />
               </div>
               <div>
-                <label className="text-[11px] text-slate-500">Droite (mm)</label>
+                <label className="text-[11px] text-[var(--content-muted)]">Droite (mm)</label>
                 <input
                   type="number"
                   step="0.5"
                   min="0"
                   value={outerMargins.right}
                   onChange={(e) => setOuterMargins({ ...outerMargins, right: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                  className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs text-[var(--content-primary)] font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                 />
               </div>
             </div>
@@ -368,19 +369,19 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
 
           {/* Reference Image for Calibration */}
           <div className="space-y-2">
-            <label className="block font-semibold text-slate-700">Image de Référence Arrière-plan (Non imprimée)</label>
+            <label className="block font-semibold text-[var(--content-primary)]">Image de Référence Arrière-plan (Non imprimée)</label>
             <div className="flex items-center gap-3">
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageFile}
-                className="text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[var(--surface-raised)] file:text-[var(--action-primary)] hover:file:opacity-90 cursor-pointer"
               />
               {bgImage && (
                 <button
                   type="button"
                   onClick={() => setBgImage(null)}
-                  className="text-xs text-rose-600 hover:underline"
+                  className="text-xs text-rose-500 hover:underline"
                 >
                   Supprimer l'image
                 </button>
@@ -389,7 +390,7 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
             {bgImage && (
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label className="text-[11px] text-slate-500">Opacité ({Math.round(bgImageOpacity * 100)}%)</label>
+                  <label className="text-[11px] text-[var(--content-muted)]">Opacité ({Math.round(bgImageOpacity * 100)}%)</label>
                   <input
                     type="range"
                     min="0.05"
@@ -397,15 +398,15 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
                     step="0.05"
                     value={bgImageOpacity}
                     onChange={(e) => setBgImageOpacity(parseFloat(e.target.value))}
-                    className="w-full"
+                    className="w-full accent-[var(--action-primary)]"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-slate-500">Ajustement</label>
+                  <label className="text-[11px] text-[var(--content-muted)]">Ajustement</label>
                   <select
                     value={bgImageFit}
                     onChange={(e) => setBgImageFit(e.target.value as any)}
-                    className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
+                    className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
                   >
                     <option value="contain">Conserver proportions (contain)</option>
                     <option value="cover">Remplir (cover)</option>
@@ -417,17 +418,17 @@ export const NewGabaritWizard: React.FC<NewGabaritWizardProps> = ({ isOpen, onCl
           </div>
 
           {/* Footer Buttons */}
-          <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2.5">
+          <div className="pt-4 border-t border-[var(--border-subtle)] flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition"
+              className="px-4 py-2 text-xs font-semibold text-[var(--content-secondary)] hover:text-[var(--content-primary)] hover:bg-[var(--surface-hover)] rounded-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
             >
               Annuler
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm transition"
+              className="px-5 py-2 text-xs font-semibold bg-[var(--action-primary)] hover:opacity-90 text-[var(--action-primary-fg)] rounded-lg shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
             >
               Créer le Gabarit
             </button>

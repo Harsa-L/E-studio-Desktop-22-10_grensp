@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ProductRecord } from '../types';
-import { Layers, Sparkles, Filter, CheckSquare, Square, Tag, RefreshCw } from 'lucide-react';
+import { Layers, Sparkles, Tag, RefreshCw } from 'lucide-react';
 import { ContextTooltip } from '../context/TooltipContext';
 
 interface ProductClusteringSidebarProps {
@@ -13,7 +13,6 @@ interface ProductClusteringSidebarProps {
 export const ProductClusteringSidebar: React.FC<ProductClusteringSidebarProps> = ({
   products,
   onApplySubstitution,
-  onFilterProducts,
   onClose,
 }) => {
   const [selectedClusterKey, setSelectedClusterKey] = useState<string | null>(null);
@@ -66,17 +65,21 @@ export const ProductClusteringSidebar: React.FC<ProductClusteringSidebarProps> =
   };
 
   return (
-    <aside className="w-80 bg-white border-l border-slate-200 flex flex-col h-full shadow-lg z-20 shrink-0">
+    <aside className="w-80 bg-[var(--surface-panel)] border-l border-[var(--border-subtle)] flex flex-col h-full shadow-lg z-20 shrink-0 text-[var(--content-primary)]">
       {/* Header */}
-      <div className="p-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+      <div className="p-3.5 border-b border-[var(--border-subtle)] bg-[var(--surface-raised)] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-blue-600" />
-          <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+          <Layers className="w-4 h-4 text-[var(--action-primary)]" />
+          <h2 className="text-xs font-bold text-[var(--content-primary)] uppercase tracking-wider">
             Clustering Produits & Assortiments
           </h2>
         </div>
         {onClose && (
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xs font-semibold">
+          <button
+            onClick={onClose}
+            className="text-[var(--content-muted)] hover:text-[var(--content-primary)] text-xs font-semibold p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
+            aria-label="Fermer"
+          >
             ✕
           </button>
         )}
@@ -84,12 +87,12 @@ export const ProductClusteringSidebar: React.FC<ProductClusteringSidebarProps> =
 
       {/* Cluster List */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        <div className="text-[11px] text-slate-500 font-medium mb-1">
-          {clusters.length} groupes sémantiques identifiés automatiquement :
+        <div className="text-[11px] text-[var(--content-muted)] font-medium mb-1">
+          <span className="font-mono tabular-nums font-bold">{clusters.length}</span> groupes sémantiques identifiés automatiquement :
         </div>
 
         {clusters.length === 0 ? (
-          <div className="text-xs text-slate-400 italic text-center py-6">
+          <div className="text-xs text-[var(--content-muted)] italic text-center py-6">
             Aucun groupe de variantes détecté dans la base actuelle.
           </div>
         ) : (
@@ -101,19 +104,19 @@ export const ProductClusteringSidebar: React.FC<ProductClusteringSidebarProps> =
                 onClick={() => setSelectedClusterKey(cluster.root)}
                 className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
                   isSelected
-                    ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-400'
-                    : 'bg-white border-slate-200 hover:border-slate-300'
+                    ? 'bg-[var(--surface-raised)] border-[var(--action-primary)] ring-1 ring-[var(--action-primary)]'
+                    : 'bg-[var(--surface-panel)] border-[var(--border-subtle)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)]'
                 }`}
               >
-                <div className="flex items-center justify-between font-semibold text-slate-800">
+                <div className="flex items-center justify-between font-semibold text-[var(--content-primary)]">
                   <span className="truncate">{cluster.root}</span>
-                  <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold">
+                  <span className="px-1.5 py-0.5 bg-[var(--surface-raised)] border border-[var(--border-subtle)] text-[var(--action-primary)] rounded-full text-[10px] font-bold font-mono tabular-nums">
                     {cluster.count} var.
                   </span>
                 </div>
                 {cluster.brands.length > 0 && (
-                  <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
-                    <Tag className="w-2.5 h-2.5 text-slate-400" />
+                  <div className="text-[10px] text-[var(--content-muted)] mt-1 flex items-center gap-1">
+                    <Tag className="w-2.5 h-2.5 text-[var(--content-muted)]" />
                     <span>{cluster.brands.join(', ')}</span>
                   </div>
                 )}
@@ -125,18 +128,18 @@ export const ProductClusteringSidebar: React.FC<ProductClusteringSidebarProps> =
 
       {/* Action Footer for Selected Cluster */}
       {activeCluster && (
-        <div className="p-3.5 border-t border-slate-200 bg-slate-50/70 space-y-2.5">
-          <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>Substitution Dynamique ({activeCluster.count} art.)</span>
+        <div className="p-3.5 border-t border-[var(--border-subtle)] bg-[var(--surface-raised)] space-y-2.5">
+          <div className="text-xs font-bold text-[var(--content-primary)] flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[var(--action-primary)]" />
+            <span>Substitution Dynamique (<span className="font-mono tabular-nums">{activeCluster.count}</span> art.)</span>
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-[11px] text-slate-600 font-medium">Modèle de libellé :</label>
+            <label className="block text-[11px] text-[var(--content-secondary)] font-medium">Modèle de libellé :</label>
             <select
               value={presetSubstitution}
               onChange={(e) => setPresetSubstitution(e.target.value)}
-              className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-800 outline-none"
+              className="w-full bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded px-2 py-1 text-xs text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
             >
               <option value="all_sizes">"Toutes tailles disponibles"</option>
               <option value="assorted_flavors">"Assortiment de parfums au choix"</option>
@@ -150,7 +153,7 @@ export const ProductClusteringSidebar: React.FC<ProductClusteringSidebarProps> =
                 value={customSubstitution}
                 onChange={(e) => setCustomSubstitution(e.target.value)}
                 placeholder="Texte de remplacement..."
-                className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-800 outline-none mt-1"
+                className="w-full bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded px-2 py-1 text-xs text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] mt-1"
               />
             )}
           </div>
@@ -162,7 +165,7 @@ export const ProductClusteringSidebar: React.FC<ProductClusteringSidebarProps> =
           >
             <button
               onClick={handleApplyToActiveCluster}
-              className="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition"
+              className="w-full py-1.5 bg-[var(--action-primary)] hover:opacity-90 text-[var(--action-primary-fg)] rounded text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Appliquer au groupe</span>

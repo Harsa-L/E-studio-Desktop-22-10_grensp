@@ -98,22 +98,27 @@ export const McpDraftReviewModal: React.FC<McpDraftReviewModalProps> = ({
   const draftId = drafts.find((draft) => draft.id === selectedId)?.id;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" role="presentation">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4" role="presentation">
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="mcp-drafts-title"
-        className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-panel)] text-[var(--content-primary)] shadow-2xl"
       >
-        <header className="flex items-center justify-between border-b border-slate-800 p-5">
+        <header className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-raised)] p-5">
           <div className="flex items-center gap-3">
-            <Bot className="h-5 w-5 text-blue-400" />
+            <Bot className="h-5 w-5 text-[var(--action-primary)]" />
             <div>
-              <h2 id="mcp-drafts-title" className="font-bold text-white">Brouillons MCP en attente</h2>
-              <p className="mt-1 text-xs text-slate-400">Aucun brouillon ne rejoint la bibliothèque sans votre approbation.</p>
+              <h2 id="mcp-drafts-title" className="font-bold text-[var(--content-primary)]">Brouillons MCP en attente</h2>
+              <p className="mt-1 text-xs text-[var(--content-muted)]">Aucun brouillon ne rejoint la bibliothèque sans votre approbation.</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Fermer" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            className="rounded-lg p-2 text-[var(--content-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
+          >
             <X className="h-4 w-4" />
           </button>
         </header>
@@ -121,8 +126,14 @@ export const McpDraftReviewModal: React.FC<McpDraftReviewModalProps> = ({
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-5 md:grid-cols-[260px_1fr]">
           <aside className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wide text-slate-400">{drafts.length} brouillon(s)</span>
-              <button type="button" onClick={() => void refreshDrafts()} disabled={isBusy} aria-label="Actualiser les brouillons" className="rounded p-1 text-slate-400 hover:bg-slate-800 disabled:opacity-50">
+              <span className="text-xs font-bold uppercase tracking-wide text-[var(--content-muted)] font-mono tabular-nums">{drafts.length} brouillon(s)</span>
+              <button
+                type="button"
+                onClick={() => void refreshDrafts()}
+                disabled={isBusy}
+                aria-label="Actualiser les brouillons"
+                className="rounded p-1 text-[var(--content-muted)] hover:bg-[var(--surface-hover)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
+              >
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -131,38 +142,58 @@ export const McpDraftReviewModal: React.FC<McpDraftReviewModalProps> = ({
                 type="button"
                 key={draft.id}
                 onClick={() => setSelectedId(draft.id)}
-                className={`w-full rounded-xl border p-3 text-left ${selectedId === draft.id ? 'border-blue-600 bg-blue-950/30' : 'border-slate-800 bg-slate-900 hover:border-slate-600'}`}
+                className={`w-full rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] ${
+                  selectedId === draft.id
+                    ? 'border-[var(--action-primary)] bg-[var(--surface-raised)] ring-1 ring-[var(--action-primary)]'
+                    : 'border-[var(--border-subtle)] bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)]'
+                }`}
               >
-                <span className="block truncate text-sm font-semibold text-white">{draft.name}</span>
-                <span className="mt-1 block text-xs text-slate-400">{draft.width_mm} × {draft.height_mm} mm · {draft.item_count} objet(s)</span>
+                <span className="block truncate text-sm font-semibold text-[var(--content-primary)]">{draft.name}</span>
+                <span className="mt-1 block text-xs text-[var(--content-muted)] font-mono tabular-nums">{draft.width_mm} × {draft.height_mm} mm · {draft.item_count} objet(s)</span>
               </button>
             ))}
-            {!drafts.length && !isBusy && <p className="rounded-lg border border-slate-800 p-3 text-xs text-slate-400">Aucun brouillon en attente.</p>}
+            {!drafts.length && !isBusy && <p className="rounded-lg border border-[var(--border-subtle)] p-3 text-xs text-[var(--content-muted)]">Aucun brouillon en attente.</p>}
           </aside>
 
           <div className="min-w-0 space-y-3">
-            <div className="rounded-xl border border-amber-900/60 bg-amber-950/30 p-3 text-xs text-amber-100">
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-500">
               Examinez les objets et propriétés avant approbation. Le brouillon est fourni par un outil IA local; les valeurs restent à vérifier avant impression.
             </div>
             {selectedDraft && (
               <>
-                <h3 className="text-sm font-bold text-white">{selectedDraft.name}</h3>
-                <pre className="max-h-[50vh] overflow-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-xs text-slate-300">
+                <h3 className="text-sm font-bold text-[var(--content-primary)]">{selectedDraft.name}</h3>
+                <pre className="max-h-[50vh] overflow-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-base)] p-4 font-mono text-xs text-[var(--content-primary)]">
                   {JSON.stringify(selectedDraft, null, 2)}
                 </pre>
               </>
             )}
-            {feedback && <p role="alert" className="rounded-lg border border-red-900/60 bg-red-950/30 p-3 text-xs text-red-200">{feedback}</p>}
+            {feedback && <p role="alert" className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-500 font-medium">{feedback}</p>}
           </div>
         </div>
 
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 p-5">
-          <button type="button" onClick={() => void handleDiscard()} disabled={isBusy || !draftId} className="inline-flex items-center gap-2 rounded-lg border border-red-900/70 px-4 py-2 text-xs font-semibold text-red-200 hover:bg-red-950/40 disabled:opacity-50">
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] bg-[var(--surface-raised)] p-5">
+          <button
+            type="button"
+            onClick={() => void handleDiscard()}
+            disabled={isBusy || !draftId}
+            className="inline-flex items-center gap-2 rounded-lg border border-rose-500/30 px-4 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
+          >
             <Trash2 className="h-3.5 w-3.5" /> Supprimer le brouillon
           </button>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={onClose} className="rounded-lg border border-slate-700 px-4 py-2 text-xs text-slate-300 hover:bg-slate-900">Fermer</button>
-            <button type="button" onClick={() => void handleApprove()} disabled={isBusy || !selectedDraft} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-panel)] px-4 py-2 text-xs font-semibold text-[var(--content-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
+            >
+              Fermer
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleApprove()}
+              disabled={isBusy || !selectedDraft}
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--action-primary)] hover:opacity-90 px-4 py-2 text-xs font-bold text-[var(--action-primary-fg)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
+            >
               {isBusy ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
               Examiner et ajouter au projet
             </button>

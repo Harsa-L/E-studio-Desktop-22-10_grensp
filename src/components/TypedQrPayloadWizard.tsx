@@ -16,8 +16,8 @@ const KIND_LABELS: Record<TypedQrPayloadKind, string> = {
   geo: 'Location',
 };
 
-const CONTROL_CLASS = 'w-full rounded border border-slate-300 bg-white px-2.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100';
-const FIELD_LABEL_CLASS = 'mb-1 block text-xs font-semibold text-slate-600';
+const CONTROL_CLASS = 'w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-input)] px-2.5 py-2 text-xs text-[var(--content-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]';
+const FIELD_LABEL_CLASS = 'mb-1 block text-xs font-semibold text-[var(--content-secondary)]';
 
 export const TypedQrPayloadWizard: React.FC<TypedQrPayloadWizardProps> = ({ onApply, onClose }) => {
   const [kind, setKind] = useState<TypedQrPayloadKind>('url');
@@ -49,16 +49,16 @@ export const TypedQrPayloadWizard: React.FC<TypedQrPayloadWizardProps> = ({ onAp
   );
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4" role="presentation">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4" role="presentation">
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="typed-qr-title"
-        className="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-panel)] text-[var(--content-primary)] shadow-2xl"
       >
-        <header className="border-b border-slate-200 px-5 py-4">
-          <h2 id="typed-qr-title" className="text-base font-bold text-slate-900">Build QR content</h2>
-          <p className="mt-1 text-xs text-slate-500">Create a typed payload and review the exact content before applying it.</p>
+        <header className="border-b border-[var(--border-subtle)] bg-[var(--surface-raised)] px-5 py-4">
+          <h2 id="typed-qr-title" className="text-base font-bold text-[var(--content-primary)]">Build QR content</h2>
+          <p className="mt-1 text-xs text-[var(--content-muted)]">Create a typed payload and review the exact content before applying it.</p>
         </header>
         <div className="space-y-4 overflow-y-auto p-5">
           <label className="block">
@@ -89,8 +89,13 @@ export const TypedQrPayloadWizard: React.FC<TypedQrPayloadWizardProps> = ({ onAp
                 </select>
               </label>
               {values.security !== 'nopass' && field('Password', 'password', { type: 'password' })}
-              <label className="flex items-center gap-2 text-xs text-slate-700">
-                <input type="checkbox" checked={Boolean(values.hidden)} onChange={(event) => update({ hidden: event.target.checked })} />
+              <label className="flex items-center gap-2 text-xs text-[var(--content-secondary)]">
+                <input
+                  type="checkbox"
+                  checked={Boolean(values.hidden)}
+                  onChange={(event) => update({ hidden: event.target.checked })}
+                  className="rounded border-[var(--border-strong)] accent-[var(--action-primary)]"
+                />
                 Hidden network
               </label>
             </div>
@@ -130,14 +135,27 @@ export const TypedQrPayloadWizard: React.FC<TypedQrPayloadWizardProps> = ({ onAp
             </div>
           )}
 
-          <div aria-live="polite" className={`rounded-lg border p-3 ${result.error ? 'border-rose-200 bg-rose-50' : 'border-emerald-200 bg-emerald-50'}`}>
-            <p className={`text-xs font-semibold ${result.error ? 'text-rose-800' : 'text-emerald-800'}`}>{result.error || 'Payload preview'}</p>
-            {result.payload && <pre className="mt-2 max-h-28 overflow-auto whitespace-pre-wrap break-all font-mono text-xs text-slate-700">{result.payload}</pre>}
+          <div aria-live="polite" className={`rounded-lg border p-3 ${result.error ? 'border-rose-500/30 bg-rose-500/10' : 'border-emerald-500/30 bg-emerald-500/10'}`}>
+            <p className={`text-xs font-semibold ${result.error ? 'text-rose-500' : 'text-emerald-500'}`}>{result.error || 'Payload preview'}</p>
+            {result.payload && <pre className="mt-2 max-h-28 overflow-auto whitespace-pre-wrap break-all font-mono text-xs text-[var(--content-primary)]">{result.payload}</pre>}
           </div>
         </div>
-        <footer className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3">
-          <button type="button" onClick={onClose} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100">Cancel</button>
-          <button type="button" disabled={!result.payload} onClick={() => onApply(result.payload)} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">Apply QR content</button>
+        <footer className="flex justify-end gap-2 border-t border-[var(--border-subtle)] bg-[var(--surface-raised)] px-5 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-panel)] px-3 py-2 text-xs font-semibold text-[var(--content-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!result.payload}
+            onClick={() => onApply(result.payload)}
+            className="rounded-lg bg-[var(--action-primary)] hover:opacity-90 px-3 py-2 text-xs font-semibold text-[var(--action-primary-fg)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)]"
+          >
+            Apply QR content
+          </button>
         </footer>
       </section>
     </div>

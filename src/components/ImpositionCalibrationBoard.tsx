@@ -194,23 +194,23 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
   const canvasScale = imposition.page_w_mm > 300 ? 1.4 : 1.75;
 
   return (
-    <div className="flex-1 bg-slate-100 flex flex-col overflow-hidden">
+    <div className="flex-1 bg-[var(--surface-base)] text-[var(--content-primary)] flex flex-col overflow-hidden">
       {/* Top Header */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3.5 flex items-center justify-between shadow-xs">
+      <div className="bg-[var(--surface-panel)] border-b border-[var(--border-subtle)] px-6 py-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-xs">
             <Compass className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-base font-bold text-[var(--content-primary)]">
                 Calibration d'Imposition sur Papier Pré-Imprimé
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400">
                 Blueprint Layer v2.0
               </span>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[var(--content-muted)]">
               Incrustation de calque d'arrière-plan, alignement millimétrique individuel de poses et export de presets découplés
             </p>
           </div>
@@ -220,9 +220,9 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
           <button
             type="button"
             onClick={() => jsonImportRef.current?.click()}
-            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
+            className="px-3 py-1.5 bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] text-[var(--content-primary)] rounded-lg text-xs font-semibold flex items-center gap-1.5 transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
           >
-            <FolderOpen className="w-4 h-4 text-slate-600" />
+            <FolderOpen className="w-4 h-4 text-[var(--content-muted)]" />
             <span>Importer Preset JSON</span>
           </button>
           <input
@@ -236,7 +236,7 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
           <button
             type="button"
             onClick={handleExportDecoupledPreset}
-            className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition"
+            className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition focus-visible:ring-2 focus-visible:ring-[var(--action-focus-ring)] focus:outline-none"
           >
             <Download className="w-4 h-4" />
             <span>Exporter Preset Découplé (.json)</span>
@@ -247,10 +247,10 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
       {/* Main Workspace Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Controls Drawer */}
-        <div className="w-96 bg-white border-r border-slate-200 flex flex-col overflow-y-auto p-5 space-y-5">
+        <div className="w-96 bg-[var(--surface-panel)] border-r border-[var(--border-subtle)] flex flex-col overflow-y-auto p-5 space-y-5 text-[var(--content-primary)]">
           {/* Preset Library Quick Switcher */}
           <div>
-            <label className="block font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">
+            <label className="block font-bold text-xs text-[var(--content-muted)] uppercase tracking-wider mb-2">
               Bibliothèque de Presets d'Imposition
             </label>
             <div className="space-y-1.5">
@@ -258,13 +258,13 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
                 <div
                   key={p.id}
                   onClick={() => handleApplyPreset(p)}
-                  className="p-2.5 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50/50 cursor-pointer transition text-xs flex items-center justify-between"
+                  className="p-2.5 rounded-xl border border-[var(--border-subtle)] hover:border-amber-400 hover:bg-[var(--surface-hover)] cursor-pointer transition text-xs flex items-center justify-between"
                 >
                   <div className="min-w-0 pr-2">
-                    <span className="font-bold text-slate-800 block truncate">{p.name}</span>
-                    <span className="text-[10px] text-slate-400 block truncate">{p.description}</span>
+                    <span className="font-bold text-[var(--content-primary)] block truncate">{p.name}</span>
+                    <span className="text-[10px] text-[var(--content-muted)] block truncate">{p.description}</span>
                   </div>
-                  <span className="font-mono text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded shrink-0">
+                  <span className="font-mono text-[9px] bg-[var(--surface-raised)] text-[var(--content-secondary)] px-1.5 py-0.5 rounded shrink-0 tabular-nums">
                     {p.config.page_size}
                   </span>
                 </div>
@@ -273,10 +273,10 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
           </div>
 
           {/* Section 1: Blueprint Background Overlay Controls */}
-          <div className="pt-3 border-t border-slate-200 space-y-3">
+          <div className="pt-3 border-t border-[var(--border-subtle)] space-y-3">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="w-4 h-4 text-amber-600" />
+              <label className="font-bold text-xs text-[var(--content-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-amber-500" />
                 <span>Calque Blueprint Arrière-Plan</span>
               </label>
               <button
@@ -287,7 +287,7 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
                   syncToParent(updated);
                 }}
                 className={`p-1 rounded transition ${
-                  blueprint.visible ? 'text-amber-700 bg-amber-100' : 'text-slate-400 hover:bg-slate-100'
+                  blueprint.visible ? 'text-amber-400 bg-amber-500/15' : 'text-[var(--content-muted)] hover:bg-[var(--surface-hover)]'
                 }`}
                 title="Afficher/Masquer le calque blueprint"
               >
@@ -295,7 +295,7 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
               </button>
             </div>
 
-            <p className="text-[11px] text-slate-500 leading-tight">
+            <p className="text-[11px] text-[var(--content-muted)] leading-tight">
               Chargez un scan ou tracé vectoriel du papier à en-tête / planche pré-perforée pour calibrer les marges et zones réservées.
             </p>
 
@@ -310,19 +310,19 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full py-2 bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+              className="w-full py-2 bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] text-[var(--content-primary)] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition"
             >
-              <Upload className="w-3.5 h-3.5 text-amber-600" />
+              <Upload className="w-3.5 h-3.5 text-amber-500" />
               <span>{blueprint.image_url ? 'Changer l\'image blueprint' : 'Charger l\'image du papier pré-imprimé'}</span>
             </button>
 
             {blueprint.image_url && (
-              <div className="space-y-3 pt-2 bg-amber-50/40 p-3 rounded-xl border border-amber-200">
+              <div className="space-y-3 pt-2 bg-amber-500/10 p-3 rounded-xl border border-amber-500/30">
                 {/* Opacity Slider */}
                 <div>
-                  <div className="flex items-center justify-between text-xs font-medium text-slate-700 mb-1">
+                  <div className="flex items-center justify-between text-xs font-medium text-[var(--content-primary)] mb-1">
                     <span>Opacité du calque</span>
-                    <span className="font-mono text-amber-800">{Math.round(blueprint.opacity * 100)}%</span>
+                    <span className="font-mono text-amber-400 tabular-nums">{Math.round(blueprint.opacity * 100)}%</span>
                   </div>
                   <input
                     type="range"
@@ -335,14 +335,14 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
                       setBlueprint(updated);
                       syncToParent(updated);
                     }}
-                    className="w-full accent-amber-600 cursor-pointer"
+                    className="w-full accent-amber-500 cursor-pointer"
                   />
                 </div>
 
                 {/* Scale & X/Y Offsets */}
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Échelle (%)</span>
+                    <span className="text-[10px] text-[var(--content-muted)] font-medium block mb-0.5">Échelle (%)</span>
                     <input
                       type="number"
                       min="50"
@@ -353,11 +353,11 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
                         setBlueprint(updated);
                         syncToParent(updated);
                       }}
-                      className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono"
+                      className="w-full px-2 py-1 bg-[var(--surface-input)] border border-[var(--border-subtle)] rounded text-xs font-mono tabular-nums text-[var(--content-primary)]"
                     />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Verrouiller</span>
+                    <span className="text-[10px] text-[var(--content-muted)] font-medium block mb-0.5">Verrouiller</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -367,8 +367,8 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
                       }}
                       className={`w-full py-1 px-2 rounded border text-xs font-semibold flex items-center justify-center gap-1 ${
                         blueprint.locked
-                          ? 'bg-amber-100 border-amber-300 text-amber-900'
-                          : 'bg-white border-slate-300 text-slate-600'
+                          ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
+                          : 'bg-[var(--surface-panel)] border-[var(--border-subtle)] text-[var(--content-secondary)]'
                       }`}
                     >
                       {blueprint.locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
@@ -381,36 +381,36 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
           </div>
 
           {/* Section 2: Individual Slot Micro-Nudge & Alignment */}
-          <div className="pt-3 border-t border-slate-200 space-y-3">
+          <div className="pt-3 border-t border-[var(--border-subtle)] space-y-3">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Sliders className="w-4 h-4 text-blue-600" />
+              <label className="font-bold text-xs text-[var(--content-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                <Sliders className="w-4 h-4 text-blue-500" />
                 <span>Micro-Alignement de Pose (Nudge)</span>
               </label>
               {selectedSlotIndex !== null && (
-                <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-mono font-bold">
+                <span className="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 text-[10px] font-mono font-bold tabular-nums">
                   Pose #{selectedSlotIndex + 1}
                 </span>
               )}
             </div>
 
-            <p className="text-[11px] text-slate-500 leading-tight">
+            <p className="text-[11px] text-[var(--content-muted)] leading-tight">
               Ajustez au dixième de millimètre le positionnement d'une étiquette spécifique pour compenser les tolérances du massicot ou de l'imprimante.
             </p>
 
             {/* Step size selector */}
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-600">Pas de déplacement :</span>
-              <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
+              <span className="text-[var(--content-secondary)]">Pas de déplacement :</span>
+              <div className="flex rounded-lg border border-[var(--border-subtle)] p-0.5 bg-[var(--surface-raised)]">
                 {[0.1, 0.2, 0.5, 1.0].map((step) => (
                   <button
                     key={step}
                     type="button"
                     onClick={() => setNudgeStepMm(step)}
-                    className={`px-2 py-0.5 text-[10px] font-mono rounded font-bold transition ${
+                    className={`px-2 py-0.5 text-[10px] font-mono tabular-nums rounded font-bold transition ${
                       nudgeStepMm === step
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] shadow-xs'
+                        : 'text-[var(--content-secondary)] hover:text-[var(--content-primary)]'
                     }`}
                   >
                     ±{step}mm
@@ -420,11 +420,11 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
             </div>
 
             {/* D-Pad Nudge Controls */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col items-center space-y-1.5">
+            <div className="bg-[var(--surface-raised)] border border-[var(--border-subtle)] rounded-xl p-3 flex flex-col items-center space-y-1.5">
               <button
                 type="button"
                 onClick={() => handleNudgeSlot(0, -nudgeStepMm)}
-                className="w-9 h-8 bg-white hover:bg-blue-50 hover:border-blue-300 border border-slate-300 rounded-lg shadow-xs flex items-center justify-center text-slate-700"
+                className="w-9 h-8 bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] rounded-lg shadow-xs flex items-center justify-center text-[var(--content-primary)]"
                 title="Déplacer vers le haut"
               >
                 <ArrowUp className="w-4 h-4" />
@@ -433,12 +433,12 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
                 <button
                   type="button"
                   onClick={() => handleNudgeSlot(-nudgeStepMm, 0)}
-                  className="w-9 h-8 bg-white hover:bg-blue-50 hover:border-blue-300 border border-slate-300 rounded-lg shadow-xs flex items-center justify-center text-slate-700"
+                  className="w-9 h-8 bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] rounded-lg shadow-xs flex items-center justify-center text-[var(--content-primary)]"
                   title="Déplacer vers la gauche"
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </button>
-                <div className="w-16 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-[10px] font-mono font-bold text-slate-700">
+                <div className="w-16 h-8 bg-[var(--surface-panel)] border border-[var(--border-subtle)] rounded-lg flex items-center justify-center text-[10px] font-mono tabular-nums font-bold text-[var(--content-primary)]">
                   {selectedSlotIndex !== null && slotNudges[selectedSlotIndex]
                     ? `${slotNudges[selectedSlotIndex].nudge_x_mm > 0 ? '+' : ''}${slotNudges[selectedSlotIndex].nudge_x_mm} / ${slotNudges[selectedSlotIndex].nudge_y_mm > 0 ? '+' : ''}${slotNudges[selectedSlotIndex].nudge_y_mm}`
                     : '0.0 / 0.0'}
@@ -446,7 +446,7 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
                 <button
                   type="button"
                   onClick={() => handleNudgeSlot(nudgeStepMm, 0)}
-                  className="w-9 h-8 bg-white hover:bg-blue-50 hover:border-blue-300 border border-slate-300 rounded-lg shadow-xs flex items-center justify-center text-slate-700"
+                  className="w-9 h-8 bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] rounded-lg shadow-xs flex items-center justify-center text-[var(--content-primary)]"
                   title="Déplacer vers la droite"
                 >
                   <ArrowRight className="w-4 h-4" />
@@ -455,7 +455,7 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
               <button
                 type="button"
                 onClick={() => handleNudgeSlot(0, nudgeStepMm)}
-                className="w-9 h-8 bg-white hover:bg-blue-50 hover:border-blue-300 border border-slate-300 rounded-lg shadow-xs flex items-center justify-center text-slate-700"
+                className="w-9 h-8 bg-[var(--surface-panel)] hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] rounded-lg shadow-xs flex items-center justify-center text-[var(--content-primary)]"
                 title="Déplacer vers le bas"
               >
                 <ArrowDown className="w-4 h-4" />
@@ -464,7 +464,7 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
               <button
                 type="button"
                 onClick={handleResetSlotNudge}
-                className="text-[10px] font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1 pt-1"
+                className="text-[10px] font-semibold text-[var(--content-muted)] hover:text-[var(--content-primary)] flex items-center gap-1 pt-1"
               >
                 <RotateCcw className="w-3 h-3" />
                 <span>Réinitialiser cette pose</span>
@@ -473,13 +473,13 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
           </div>
 
           {/* Section 3: Precision Grid Snapping */}
-          <div className="pt-3 border-t border-slate-200 space-y-2">
+          <div className="pt-3 border-t border-[var(--border-subtle)] space-y-2">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Grid className="w-4 h-4 text-slate-600" />
+              <label className="font-bold text-xs text-[var(--content-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                <Grid className="w-4 h-4 text-[var(--content-muted)]" />
                 <span>Magnétisme de Grille (Grid Snapping)</span>
               </label>
-              <span className="text-xs font-mono font-bold text-slate-700">{snapGridMm} mm</span>
+              <span className="text-xs font-mono tabular-nums font-bold text-[var(--content-primary)]">{snapGridMm} mm</span>
             </div>
             <div className="grid grid-cols-4 gap-1.5">
               {[0.1, 0.5, 1.0, 5.0].map((val) => (
@@ -490,10 +490,10 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
                     setSnapGridMm(val);
                     syncToParent(blueprint, slotNudges, val);
                   }}
-                  className={`py-1 rounded-lg border text-xs font-mono font-bold transition ${
+                  className={`py-1 rounded-lg border text-xs font-mono tabular-nums font-bold transition ${
                     snapGridMm === val
-                      ? 'bg-slate-900 text-white border-slate-900'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      ? 'bg-[var(--action-primary)] text-[var(--action-primary-fg)] border-transparent'
+                      : 'bg-[var(--surface-panel)] text-[var(--content-secondary)] border-[var(--border-subtle)] hover:bg-[var(--surface-hover)]'
                   }`}
                 >
                   {val} mm
@@ -504,17 +504,17 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
         </div>
 
         {/* Right Positioning Board (Full Bleed Layout Canvas) */}
-        <div className="flex-1 bg-slate-200 p-8 flex flex-col items-center justify-center overflow-auto select-none">
-          <div className="mb-2 text-xs font-medium text-slate-600 flex items-center gap-2">
-            <Maximize2 className="w-4 h-4 text-amber-700" />
-            <span>
+        <div className="flex-1 bg-[var(--canvas-pasteboard)] p-8 flex flex-col items-center justify-center overflow-auto select-none">
+          <div className="mb-2 text-xs font-medium text-[var(--content-muted)] flex items-center gap-2">
+            <Maximize2 className="w-4 h-4 text-amber-500" />
+            <span className="tabular-nums font-mono">
               Planche Physique {impositionConfig.page_size} ({imposition.page_w_mm} × {imposition.page_h_mm} mm) • Cliquez sur une étiquette pour ajuster son micro-alignement
             </span>
           </div>
 
           {/* Physical Sheet Container */}
           <div
-            className="bg-white shadow-2xl relative border border-slate-400 overflow-hidden"
+            className="bg-white shadow-2xl relative border border-slate-300 overflow-hidden"
             style={{
               width: `${imposition.page_w_mm * canvasScale}px`,
               height: `${imposition.page_h_mm * canvasScale}px`,
@@ -587,13 +587,13 @@ export const ImpositionCalibrationBoard: React.FC<ImpositionCalibrationBoardProp
                       {prod ? prod.ITEMNAME : `Pose #${slotIdx + 1}`}
                     </span>
                     {hasNudge && (
-                      <span className="text-[7px] font-mono text-amber-700 bg-amber-100 px-1 rounded">
+                      <span className="text-[7px] font-mono tabular-nums text-amber-700 bg-amber-100 px-1 rounded">
                         Δ {nudge.nudge_x_mm}/{nudge.nudge_y_mm}
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between text-[7px] text-slate-400 font-mono">
+                  <div className="flex items-center justify-between text-[7px] text-slate-400 font-mono tabular-nums">
                     <span>Pose #{slotIdx + 1}</span>
                     <span>{prod ? `${prod.SELLING_PRICE} €` : `${template.width_mm}x${template.height_mm}`}</span>
                   </div>

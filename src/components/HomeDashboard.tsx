@@ -117,9 +117,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         id: `tpl_dev_${Date.now()}`,
         name: 'Gabarit Test IPC SQLite',
         revision: 1,
+        schema_version: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        author: 'E-Studio Developer',
         width_mm: 80,
         height_mm: 40,
         inner_margins_mm: { top: 2, bottom: 2, left: 2, right: 2 },
@@ -176,6 +176,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         if (item && typeof item === 'object' && typeof item.name === 'string') {
           const docToImport: LabelTemplate = {
             id: `tpl_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            revision: Number(item.revision) || 1,
+            schema_version: Number(item.schema_version) || 1,
             name: item.name || 'Gabarit Importé',
             width_mm: Number(item.width_mm) || 80,
             height_mm: Number(item.height_mm) || 40,
